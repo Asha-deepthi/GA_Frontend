@@ -6,10 +6,38 @@ const BasicDetails = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log('Submitted Data:', { name, email, phone });
-    };
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+        const response = await fetch('http://127.0.0.1:8000/test-execution/submit-details/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                phone_number: phone,
+            }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert('Details submitted successfully!');
+            // Optionally reset form
+            setName('');
+            setEmail('');
+            setPhone('');
+        } else {
+            alert('Error: ' + JSON.stringify(data));
+        }
+    } catch (error) {
+        console.error('Error submitting details:', error);
+        alert('Something went wrong!');
+    }
+};
+
 
     return (
         <div className="w-screen h-screen bg-white flex flex-col items-center justify-center px-4 relative overflow-hidden font-overpass">
