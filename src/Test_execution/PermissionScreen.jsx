@@ -52,7 +52,7 @@ export default function PermissionScreen() {
                 className="flex items-center justify-between px-8 py-4 absolute"
                 style={{ top: "50px", left: "95px", width: "1250px" }}
             >
-                <div className="w-32 h-6 rounded" style={{ background: '#00000033' }} />
+                <div className="w-[197.78px] h-[40px] bg-gray-300"/>
 
                 <div className="flex items-center gap-4">
                     {/* FAQ Button */}
