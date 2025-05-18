@@ -49,7 +49,7 @@ const FormPage = () => {
       </div>
 
       {/* Header */}
-      <div className="w-[1250px] h-[44px] mt-[50px] ml-[95px] flex justify-between items-center">
+      <div className="w-[1250px] h-[44px] mt-[35px] ml-[95px] flex justify-between items-center">
         <div className="w-[197.78px] h-[40px] bg-gray-300 " />
         <button className="flex items-center justify-center w-[105px] h-[44px] border border-red-500 text-red-500 bg-red-50 rounded-full text-base font-medium">
           ❓ FAQs

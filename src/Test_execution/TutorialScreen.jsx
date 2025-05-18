@@ -5,7 +5,7 @@ export default function VideoInterviewGuide({ onNext }) {
   return (
     <div className="relative w-screen min-h-screen bg-white overflow-y-auto overflow-x-hidden font-overpass">
       {/* Top Colored Bar */}
-      <div className="sticky top-0 left-0 w-full flex h-1 z-10">
+      <div className="sticky top-0 left-0 w-full flex h-[10px] z-10">
         <div className="flex-1 bg-red-500" />
         <div className="flex-1 bg-orange-500" />
         <div className="flex-1 bg-green-500" />
@@ -14,8 +14,8 @@ export default function VideoInterviewGuide({ onNext }) {
       </div>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-20 py-4">
-        <div className="w-44 h-6 bg-gray-300 " />
+      <header className="flex items-center justify-between px-20 py-4 mt-[35px]">
+        <div className="w-[197.78px] h-[40px] bg-gray-300 " />
         <div className="flex items-center gap-4">
           <button
             className="flex items-center px-5 py-2 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2"
@@ -36,28 +36,36 @@ export default function VideoInterviewGuide({ onNext }) {
       </header>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center text-center px-4 mt-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">How to Complete Your AI Video Interview</h1>
-        <p className="mt-3 text-base md:text-lg text-gray-600 max-w-2xl">
-          Follow these steps for a smooth interview experience. Make sure to have a quiet space,
-          good lighting, and a stable internet connection.
-        </p>
+{/* Main Content */}
+<div className="w-full min-h-[728px] px-4 sm:px-8 lg:px-0 mx-auto flex flex-col items-center gap-[60px] mt-5 max-w-[856px]">
+  {/* Heading and Paragraph */}
+  <div className="w-full flex flex-col items-center gap-[10px]">
+    <h1 className="text-[32px] sm:text-[36px] md:text-[40px] leading-[44px] md:leading-[48px] font-extrabold text-gray-900 text-center">
+      How to Complete Your AI Video Interview
+    </h1>
+    <p className="font-overpass text-[18px] sm:text-[20px] leading-[28px] font-normal text-gray-600 text-center max-w-[772px]">
+      Follow these steps for a smooth interview experience. Make sure to have a quiet space,
+      good lighting, and a stable internet connection.
+    </p>
+  </div>
 
-        <div className="mt-12 flex justify-center">
-        <img
-          src="/images/video.png"
-          alt="AI Interview Guide"
-          className="rounded-xl w-[640px] h-auto shadow-md"
-        />
-        </div>
+  {/* Image */}
+  <div className="w-full max-w-[768px] h-auto rounded-[10px] overflow-hidden shadow-md">
+    <img
+      src="/images/video.png"
+      alt="AI Interview Guide"
+      className="w-full h-full object-cover"
+    />
+  </div>
 
-        <button
-          onClick={onNext}
-          className="mt-11 px-11 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-full text-base font-semibold shadow-md"
-        >
-          Next
-        </button>
-      </div>
+  {/* Button */}
+  <button
+    onClick={onNext}
+    className="px-11 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-full text-base font-semibold shadow-md"
+  >
+    Next
+  </button>
+</div>
 
       {/* Optional Decorative Star */}
       
