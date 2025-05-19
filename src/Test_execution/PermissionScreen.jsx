@@ -38,7 +38,8 @@ export default function PermissionScreen() {
   };
 
   return (
-    <div className="w-screen h-screen bg-white flex flex-col items-center justify-start px-4 relative overflow-hidden font-overpass overflow-x-hidden overflow-y-auto">
+    <div className="w-screen min-h-screen bg-white flex flex-col items-center justify-start px-4 relative overflow-hidden font-overpass overflow-x-hidden overflow-y-auto">
+
       {/* Top Colored Bar */}
       <div className="absolute top-0 left-0 w-full h-[10px] flex">
         <div className="flex-1 bg-red-500" />
@@ -48,20 +49,20 @@ export default function PermissionScreen() {
         <div className="flex-1 bg-cyan-500" />
       </div>
 
-      {/* Grey box, timer and profile container */}
-      <header className="absolute top-[50px] left-[95px] w-[90vw] max-w-[1250px] h-[44px] flex justify-between items-center px-4 md:px-2">
-        <div className="w-[198px] h-[40px] bg-gray-300 md:mb-0" />
+      {/* Responsive Header */}
+      <header className="absolute top-[50px] left-1/2 transform -translate-x-1/2 w-[90vw] max-w-[1250px] h-[44px] flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-12">
+        <div className="w-[198px] h-[40px] bg-gray-300 md:w-[250px]" />
 
         <div className="flex items-center gap-4">
           {/* FAQ Button */}
           <button
-            className="flex items-center gap-2.5 px-5 py-2.5 bg-[#E0302D0D] border border-[#E0302D] rounded-full"
+            className="flex items-center gap-2.5 px-4 py-2 bg-[#E0302D0D] border border-[#E0302D] rounded-full text-sm sm:text-base"
           >
             <FaQuestionCircle
               className="text-[#E0302D] text-[18px]"
-              style={{ fontWeight: 400 }} // Font weight for FaIcon can't be done with Tailwind easily
+              style={{ fontWeight: 400 }}
             />
-            <span className="font-overpass font-medium text-[16px] leading-6 text-[#E0302D]">FAQs</span>
+            <span className="font-overpass font-medium leading-6 text-[#E0302D]">FAQs</span>
           </button>
 
           {/* Divider Line */}
@@ -74,29 +75,31 @@ export default function PermissionScreen() {
               alt="Avatar"
               className="w-6 h-6 rounded-full"
             />
-            <span className="font-overpass font-medium text-[16px] leading-6 text-[#1A1A1A]">Arjun</span>
+            <span className="font-overpass font-medium text-[16px] leading-6 text-[#1A1A1A] truncate max-w-[60px] sm:max-w-full">Arjun</span>
           </div>
         </div>
       </header>
 
-      {/* Outer div (heading + permissions + next button) */}
-      <div className="absolute top-[174px] left-[50%] translate-x-[-50%] w-[90vw] max-w-[856px] h-[706px] flex flex-col gap-[60px]">
-        {/* Heading and paragraph div */}
-        <div className="flex flex-col gap-[10px] w-full h-[114px] text-center">
+      {/* Main Content Container - Responsive and wider */}
+      <div className="absolute top-[174px] left-1/2 transform -translate-x-1/2 w-[90vw] max-w-[1100px] min-h-[706px] flex flex-col gap-[60px]">
+
+        {/* Heading and paragraph div - responsive width and font sizes */}
+        <div className="flex flex-col gap-2 w-full max-w-[700px] mx-auto text-center px-2 sm:px-4">
           {/* Heading */}
-          <h1 className="font-overpass font-extrabold text-[40px] sm:text-[28px] md:text-[32px] leading-[48px] text-black w-full h-[48px]">
+          <h1 className="font-overpass font-extrabold text-[28px] sm:text-[32px] md:text-[40px] leading-[1.2] text-black">
             Enable Camera and Microphone
           </h1>
+
           {/* Paragraph */}
-          <p className="font-overpass font-normal text-[20px] sm:text-[16px] md:text-[18px] leading-7 text-gray-500 w-[632px] h-[56px] mx-auto">
+          <p className="font-overpass font-normal text-[16px] sm:text-[18px] md:text-[20px] leading-7 text-gray-500 max-w-[600px] mx-auto">
             To proceed with the interview, we need access to your camera and microphone. Please grant the necessary permissions.
           </p>
         </div>
 
         {/* Permissions container */}
-        <div className="flex flex-col gap-[30px] w-[500px] h-[428px] mx-auto">
+        <div className="flex flex-col gap-[30px] w-full max-w-[600px] mx-auto">
           {/* Webcam */}
-          <div className="flex items-center justify-between px-6 py-4 rounded-xl w-full h-[105px] gap-[10px] pr-[5px] pb-[5px] border-t-1 border-r-4 border-b-4 border-gray-400 bg-gray-50 shadow-lg">
+          <div className="flex items-center justify-between px-6 py-4 rounded-xl w-full h-[105px] gap-[10px] pr-[5px] pb-[5px] border-t border-r-4 border-b-4 border-gray-400 bg-gray-50 shadow-lg">
             <div className="flex items-center gap-3">
               <img src="images/Webcam.png" alt="Webcam" className="w-10 h-10" />
               <span className="text-gray-700">Grant permission to WebCam</span>
