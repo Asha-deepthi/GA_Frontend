@@ -45,7 +45,7 @@ const CodingQuestionScreen = () => {
       {/* Navigation Row: Back, Tabs, (04/04) */}
 <div className="relative w-full mt-4 mb-6 h-6">
   {/* Back Button - positioned under gray logo */}
-  <button onClick={handleBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
+  <button onClick={handleBack} className="absolute left-[110px] text-gray-600 bg-white flex items-center gap-2">
             <FaArrowLeft />
             <span>Back</span>
           </button>

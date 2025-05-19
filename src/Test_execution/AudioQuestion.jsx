@@ -67,7 +67,7 @@ const AudioQuestion = () => {
           style={{ gap: '1rem' }}
         >
           <button
-            onclick={handleBack} className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full mb-4 sm:mb-0 self-start sm:self-auto"
+            onClick={handleBack} className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full mb-4 sm:mb-0 self-start sm:self-auto"
           >
             &larr; Back
           </button>
@@ -123,7 +123,7 @@ const AudioQuestion = () => {
 
         {/* Submit Button */}
         <button
-          onclick={handleSubmit} className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8 mx-auto"
+          onClick={handleSubmit} className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8 mx-auto"
         >
           Submit & Continue
         </button>

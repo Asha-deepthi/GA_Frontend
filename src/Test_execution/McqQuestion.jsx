@@ -41,7 +41,7 @@ export default function MCQQuestionScreen({ onSubmit, onBack }) {
 
       {/* Navigation Row */}
       <div className="relative w-full flex items-center px-6 md:px-20 mb-12" style={{ height: 24 }}>
-        <button onClick={handleBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
+        <button onClick={handleBack} className="absolute left-[110px] text-gray-600 bg-white flex items-center gap-2">
           <FaArrowLeft />
           <span>Back</span>
         </button>
