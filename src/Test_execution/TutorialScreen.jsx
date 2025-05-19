@@ -1,7 +1,12 @@
 import React from 'react';
+import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 
 export default function VideoInterviewGuide({ onNext }) {
+  const navigate = useNavigate();
+  const handleAccept = () => {
+  navigate("/instructionscreen");
+    };
   return (
     <div className="relative w-screen min-h-screen bg-white overflow-y-auto overflow-x-hidden font-overpass">
       {/* Top Colored Bar */}
@@ -60,7 +65,7 @@ export default function VideoInterviewGuide({ onNext }) {
 
   {/* Button */}
   <button
-    onClick={onNext}
+    onClick={handleAccept}
     className="px-11 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-full text-base font-semibold shadow-md"
   >
     Next

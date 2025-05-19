@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 
 export default function InstructionScreen({ onNext, onBack }) {
@@ -16,6 +17,10 @@ export default function InstructionScreen({ onNext, onBack }) {
       text: "Once an answer is submitted, you won't be able to change it. Your responses will be evaluated at the end of the interview.",
     },
   ];
+  const navigate = useNavigate();
+    const handleAccept = () => {
+      navigate("/permission");
+    };
 
   return (
     <div className="relative w-screen min-h-screen bg-gray-50 overflow-y-auto font-overpass">
@@ -130,7 +135,7 @@ export default function InstructionScreen({ onNext, onBack }) {
       {/* Next Button */}
       <div className="flex justify-center mt-20 mb-10">
         <button
-          onClick={onNext}
+          onClick={handleAccept}
           className="px-10 py-2.5 rounded-full text-white text-[16px] leading-[24px] font-semibold shadow-md hover:shadow-lg transition-all"
           style={{ background: '#00A398' }}
         >

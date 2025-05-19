@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaQuestionCircle } from 'react-icons/fa';
+import { useNavigate } from "react-router-dom";
 
 export default function ConnectionStrengthScreen({ onNext }) {
   const data = [
@@ -29,6 +30,10 @@ export default function ConnectionStrengthScreen({ onNext }) {
       bg: 'bg-blue-50',
     },
   ];
+  const navigate = useNavigate();
+    const handleAccept = () => {
+      navigate("/demoquestion");
+    };
 
   return (
     <div className="relative w-screen h-screen bg-white overflow-auto font-overpass">
@@ -117,7 +122,7 @@ export default function ConnectionStrengthScreen({ onNext }) {
       {/* Next Button */}
       <div className="flex justify-center mt-10 mb-10">
         <button
-          onClick={onNext}
+          onClick={handleAccept}
           className="px-10 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-full font-semibold"
         >
           Next

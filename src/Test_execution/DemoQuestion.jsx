@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const DemoQuestion = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -6,6 +7,10 @@ const DemoQuestion = () => {
     const handleMicClick = () => {
         setIsRecording(prev => !prev);
     };
+    const navigate = useNavigate();
+      const handleAccept = () => {
+      navigate("/audioquestion");
+        };
 
     return (
         <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto">
@@ -66,7 +71,7 @@ const DemoQuestion = () => {
                     </div>
 
                     {/* Continue Button */}
-                    <button className="w-[148px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-[40px] px-[40px] py-[10px] transition mt-16 mb-4">
+                    <button onClick={handleAccept} className="w-[148px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-[40px] px-[40px] py-[10px] transition mt-16 mb-4">
                         Continue
                     </button>
 

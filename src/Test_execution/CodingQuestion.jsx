@@ -1,8 +1,19 @@
 import React from "react";
-import { FaMicrophone, FaVideo, FaClock } from "react-icons/fa";
-
+import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 const CodingQuestionScreen = () => {
+  const navigate = useNavigate();
+            const handleBack = () => {
+            navigate("/mcqquestion");
+              };
+            const handleFullscreen=() =>{
+              navigate("/fullscreen")
+            };
+            const handleSubmit=() =>{
+              navigate("/result")
+            };
+  
   return (
     <div className="w-screen h-screen bg-white font-sans overflow-auto">
       {/* Top Colored Bar */}
@@ -38,9 +49,10 @@ const CodingQuestionScreen = () => {
       {/* Navigation Row: Back, Tabs, (04/04) */}
 <div className="relative w-full mt-4 mb-6 h-6">
   {/* Back Button - positioned under gray logo */}
-  <div className="absolute left-40 top-0 text-gray-600 text-sm cursor-pointer font-medium">
-    ← Back
-  </div>
+  <button onClick={handleBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
+            <FaArrowLeft />
+            <span>Back</span>
+          </button>
 
   {/* Center Tabs */}
   <div className="flex justify-center absolute inset-0 items-center gap-4">
@@ -88,7 +100,7 @@ const CodingQuestionScreen = () => {
     <button className="bg-orange-400 active:bg-orange-500 text-white font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
       RUN the Code
     </button>
-    <button className="bg-white border border-orange-300  text-orange-500 font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
+    <button onClick={handleFullscreen} className="bg-white border border-orange-300  text-orange-500 font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
       See Full Screen
     </button>
   </div>
@@ -99,7 +111,7 @@ const CodingQuestionScreen = () => {
 
         {/* Submit Button */}
         <div className="mt-8">
-          <button className="bg-teal-500 active:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full focus:outline-none">
+          <button onClick={handleSubmit} className="bg-teal-500 active:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full focus:outline-none">
             Submit & Continue
           </button>
         </div>

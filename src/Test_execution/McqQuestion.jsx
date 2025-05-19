@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 export default function MCQQuestionScreen({ onSubmit, onBack }) {
   const [progress] = useState([true, true, true, false]);
+  const navigate = useNavigate();
+          const handleBack = () => {
+          navigate("/videoquestion");
+            };
+  const handleSubmit = () => {
+          navigate("/codingquestion");
+            };
 
   return (
     <div className="relative w-screen h-screen bg-white font-sans overflow-y-auto overflow-x-hidden">
@@ -33,7 +41,7 @@ export default function MCQQuestionScreen({ onSubmit, onBack }) {
 
       {/* Navigation Row */}
       <div className="relative w-full flex items-center px-6 md:px-20 mb-12" style={{ height: 24 }}>
-        <button onClick={onBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
+        <button onClick={handleBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
           <FaArrowLeft />
           <span>Back</span>
         </button>
@@ -73,7 +81,7 @@ export default function MCQQuestionScreen({ onSubmit, onBack }) {
       {/* Submit Button */}
       <div className="flex flex-col items-center mb-12">
         <button
-          onClick={onSubmit}
+          onClick={handleSubmit}
           className="px-8 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full"
         >
           Submit & Continue

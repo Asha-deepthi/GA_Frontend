@@ -1,8 +1,15 @@
 import React from "react";
-import { FaMicrophone, FaVideo, FaClock } from "react-icons/fa";
-
+import { FaMicrophone, FaVideo, FaClock,FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 const CodingQuestionScreen = () => {
+  const navigate = useNavigate();
+            const handleBack = () => {
+            navigate("/audioquestion");
+              };
+              const handleSubmit = () => {
+          navigate("/mcqquestion");
+            };
   return (
     <div className="w-screen h-screen bg-white font-sans overflow-auto">
       {/* Top Colored Bar */}
@@ -38,9 +45,10 @@ const CodingQuestionScreen = () => {
       {/* Navigation Row: Back, Tabs, (04/04) */}
 <div className="relative w-full mt-4 mb-6 h-6">
   {/* Back Button - positioned under gray logo */}
-  <div className="absolute left-40 top-0 text-gray-600 text-sm cursor-pointer font-medium">
-    ← Back
-  </div>
+  <button onClick={handleBack} className="absolute left-[110px] text-gray-600 flex items-center gap-2">
+            <FaArrowLeft />
+            <span>Back</span>
+          </button>
 
   {/* Center Tabs */}
   <div className="flex justify-center absolute inset-0 items-center gap-4">
@@ -88,7 +96,7 @@ const CodingQuestionScreen = () => {
 
         {/* Submit Button */}
         <div className="mt-8">
-          <button className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full">
+          <button onClick={handleSubmit} className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full">
             Submit & Continue
           </button>
         </div>

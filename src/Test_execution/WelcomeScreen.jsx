@@ -1,7 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from "react-icons/fa";
 
 const WelcomeScreen = () => {
+  const navigate = useNavigate();
+  const handleAccept = () => {
+    navigate("/basic-details");
+  };
   return (
     <div className="w-screen min-h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
       {/* Top Color Bar */}
@@ -53,7 +58,7 @@ const WelcomeScreen = () => {
           </div>
 
           <div className="flex justify-end">
-            <button className="bg-[#00A398] text-white px-6 py-2 rounded-3xl font-bold text-[16px]">
+            <button onClick={handleAccept} className="bg-[#00A398] text-white px-6 py-2 rounded-3xl font-bold text-[16px]">
               Accept
             </button>
           </div>

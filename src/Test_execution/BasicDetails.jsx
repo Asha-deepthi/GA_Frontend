@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 const FormPage = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -25,6 +26,7 @@ const FormPage = () => {
       const data = await response.json();
       if (response.ok) {
         alert('Details submitted successfully!');
+        navigate('/tutorialscreen');
         setName('');
         setEmail('');
         setPhone('');
@@ -120,7 +122,8 @@ const FormPage = () => {
             <div className="w-[206px] h-[44px] gap-[10px] mt-12 ml-auto flex">
               <button
                 type="button"
-                className="w-[99px] h-[44px] border border-teal-600 bg-white text-teal-600 rounded-full px-[30px] py-[10px]"
+                onClick={() => navigate('/welcome')}
+                className=" w-[99px] h-[44px] border border-teal-600 bg-white text-teal-600 rounded-full px-[30px] py-[10px]"
               >
                 Back
               </button>

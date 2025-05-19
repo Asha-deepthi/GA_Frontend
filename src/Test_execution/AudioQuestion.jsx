@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaClock } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const AudioQuestion = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -7,6 +8,13 @@ const AudioQuestion = () => {
     const handleMicClick = () => {
         setIsRecording(prev => !prev);
     };
+    const navigate = useNavigate();
+          const handleBack = () => {
+          navigate("/demoquestion");
+          };
+          const handleSubmit = () => {
+          navigate("/videoquestion");
+            };
 
     return (
         <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto">
@@ -104,6 +112,7 @@ const AudioQuestion = () => {
                     }}
                 >
                     <button
+                        onClick={handleBack}
                         className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full"
                     >
                         &larr; Back
@@ -162,7 +171,7 @@ const AudioQuestion = () => {
 
                 {/* Submit Button */}
                 <button
-                    className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8"
+                    onClick={handleSubmit} className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8"
                 >
                     Submit & Continue
                 </button>
