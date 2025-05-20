@@ -135,7 +135,7 @@ const DemoQuestion = () => {
                 autoPlay
                 muted
                 playsInline
-                style={{ width: "150px", height: "100px", borderRadius: "5px", background: "black" }}
+                 className="w-full h-full object-cover"
               />
             )}
           </div>

@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaClock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useStream } from './StreamContext'; // Import your stream context
 
 const AudioQuestion = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { webcamStream } = useStream(); // Access webcam stream
+  const videoRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleMicClick = () => {
     setIsRecording(prev => !prev);
   };
-
-  const navigate = useNavigate();
 
   const handleBack = () => {
     navigate("/demoquestion");
@@ -24,9 +26,7 @@ const AudioQuestion = () => {
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch questions");
-        }
+        if (!response.ok) throw new Error("Failed to fetch questions");
         return response.json();
       })
       .then(data => {
@@ -39,6 +39,24 @@ const AudioQuestion = () => {
         setLoading(false);
       });
   }, []);
+
+  // Attach webcam stream to video element
+  useEffect(() => {
+    if (webcamStream && videoRef.current) {
+      if (videoRef.current.srcObject !== webcamStream) {
+        videoRef.current.srcObject = webcamStream;
+        videoRef.current
+          .play()
+          .catch(err => console.error("Error playing webcam stream:", err));
+      }
+    }
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [webcamStream]);
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto pb-24">
@@ -55,14 +73,14 @@ const AudioQuestion = () => {
       <header className="absolute top-[50px] left-1/2 z-40 flex items-center justify-between px-4 sm:px-8 w-full max-w-[1250px] transform -translate-x-1/2 h-[44px] bg-white">
         <div className="w-[100px] sm:w-[144px] h-[24px] bg-black/20 rounded" />
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center px-3 sm:px-6 py-2 rounded-[70px] bg-[#FFEAEA] border border-[#E0302D] gap-2 sm:gap-2" style={{ minWidth: '90px' }}>
+          <div className="flex items-center justify-center px-3 sm:px-6 py-2 rounded-[70px] bg-[#FFEAEA] border border-[#E0302D] gap-2 sm:gap-2">
             <FaClock className="text-[#E0302D] text-lg" />
             <span className="font-medium text-[#E0302D] text-sm sm:text-base">05:00</span>
           </div>
           <div className="h-6 w-[2px] bg-gray-300 hidden sm:block" />
-          <div className="flex items-center gap-2 px-2 sm:px-4" style={{ minWidth: '80px' }}>
+          <div className="flex items-center gap-2 px-2 sm:px-4">
             <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="font-medium text-[#1A1A1A] text-sm sm:text-base whitespace-nowrap">Arjun</span>
+            <span className="font-medium text-[#1A1A1A] text-sm sm:text-base">Arjun</span>
           </div>
         </div>
       </header>
@@ -70,18 +88,18 @@ const AudioQuestion = () => {
       {/* Main */}
       <main className="relative max-w-[1250px] mx-auto px-4 sm:px-8 pb-10 pt-[130px] flex flex-col items-center text-center">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-10 w-full max-w-[1036px]" style={{ gap: '1rem' }}>
-          <button onClick={handleBack} className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full mb-4 sm:mb-0 self-start sm:self-auto">
+          <button onClick={handleBack} className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full mb-4 sm:mb-0">
             &larr; Back
           </button>
 
           <div className="flex gap-2 items-center justify-center mb-4 sm:mb-0">
-            <div className="w-20 sm:w-32 h-1 rounded-full transition-all duration-300" style={{ backgroundColor: 'rgba(0, 163, 152, 0.4)' }} />
-            <div className="w-20 sm:w-32 h-1 rounded-full" style={{ background: 'rgba(0, 163, 152, 0.10)' }} />
-            <div className="w-20 sm:w-32 h-1 rounded-full" style={{ background: 'rgba(0, 163, 152, 0.10)' }} />
-            <div className="w-20 sm:w-32 h-1 rounded-full" style={{ background: 'rgba(0, 163, 152, 0.10)' }} />
+            <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/40" />
+            <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
+            <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
+            <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
           </div>
 
-          <span className="text-sm font-medium text-black ml-0 sm:ml-8 whitespace-nowrap">(01/04)</span>
+          <span className="text-sm font-medium text-black ml-0 sm:ml-8">(01/04)</span>
         </div>
 
         <h2 className="text-3xl sm:text-[40px] font-extrabold text-black mb-6 px-2 sm:px-0 max-w-[900px]">
@@ -117,13 +135,19 @@ const AudioQuestion = () => {
         </p>
       </div>
 
-      {/* Webcam Box */}
+      {/* Webcam Box (Live feed) */}
       <div className="absolute bottom-6 right-6 flex items-center gap-2 z-40">
         <div className="w-12 h-12 rounded-md overflow-hidden flex items-center justify-center bg-white">
           <img src="/images/signal.png" alt="Voice Signal" className="w-full h-full object-contain" />
         </div>
-        <div className="w-[150px] h-[100px] rounded-md bg-gray-200 border border-gray-400 overflow-hidden">
-          <img src="/images/Webcam pic.png" alt="Webcam" className="w-full h-full object-cover" />
+        <div className="w-[150px] h-[100px] rounded-md bg-black border border-gray-400 overflow-hidden">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
     </div>

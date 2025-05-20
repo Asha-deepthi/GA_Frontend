@@ -1,16 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+import { useStream } from './StreamContext'; // Make sure this is properly implemented
 
-export default function MCQQuestionScreen({ onSubmit, onBack }) {
+export default function MCQQuestionScreen() {
   const [progress] = useState([true, true, true, false]);
   const navigate = useNavigate();
-          const handleBack = () => {
-          navigate("/videoquestion");
-            };
-  const handleSubmit = () => {
-          navigate("/codingquestion");
-            };
+  const { webcamStream } = useStream();
+  const videoRef = useRef(null);
+
+  const handleBack = () => navigate("/videoquestion");
+  const handleSubmit = () => navigate("/codingquestion");
+
+  useEffect(() => {
+    if (webcamStream && videoRef.current) {
+      if (videoRef.current.srcObject !== webcamStream) {
+        videoRef.current.srcObject = webcamStream;
+        videoRef.current.play().catch(err => console.error("Error playing webcam stream:", err));
+      }
+    }
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [webcamStream]);
 
   return (
     <div className="relative w-screen h-screen bg-white font-sans overflow-y-auto overflow-x-hidden">
@@ -92,7 +107,7 @@ export default function MCQQuestionScreen({ onSubmit, onBack }) {
         </p>
       </div>
 
-      {/* Bottom-Right Fixed Mini Preview */}
+      {/* Bottom-Right Live Webcam Feed */}
       <div className="fixed bottom-4 right-4 flex items-end gap-4 z-50">
         <div className="flex flex-col gap-2 items-start justify-end mr-2">
           <div className="flex items-center gap-1 text-gray-700">
@@ -110,11 +125,15 @@ export default function MCQQuestionScreen({ onSubmit, onBack }) {
             <div className="w-1 h-5 bg-green-500" />
           </div>
         </div>
-        <img
-          src="/images/photo.png"
-          alt="Mini Preview"
-          className="w-28 h-20 rounded-lg object-cover"
-        />
+        <div className="w-28 h-20 rounded-lg overflow-hidden border border-gray-300 bg-black">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        </div>
       </div>
     </div>
   );
