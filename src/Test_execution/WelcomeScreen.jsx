@@ -20,7 +20,7 @@ const WelcomeScreen = () => {
 
       {/* Header */}
       <header className="w-full max-w-[1250px] flex items-center justify-between px-4 md:px-10 py-4 mt-12 z-10 h-11">
-        <div className="w-36 h-6 rounded bg-black/20" />
+        <div className="w-[197.78px] h-[40px] bg-black/20" />
         <button className="flex items-center gap-2 px-5 py-2.5 border border-[#E0302D] bg-[#E0302D0D] rounded-full">
           <FaQuestionCircle className="text-[#E0302D] text-lg" />
           <span className="font-medium text-base text-center text-[#E0302D]">
