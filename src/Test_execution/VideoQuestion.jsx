@@ -1,16 +1,37 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import { useStream } from './StreamContext'; // Make sure this is correctly set up
+import { useStream } from './StreamContext';
 
 const VideoQuestion = () => {
   const navigate = useNavigate();
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
+  const [questionData, setQuestionData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const handleBack = () => navigate("/audioquestion");
   const handleSubmit = () => navigate("/mcqquestion");
 
+  // Fetch the video question from the backend
+  useEffect(() => {
+    fetch("http://localhost:8000/test-execution/demo-questions/")
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to fetch questions");
+        return response.json();
+      })
+      .then(data => {
+        const videoQuestion = data.find(q => q.question_type === "video");
+        setQuestionData(videoQuestion);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching video question:", error);
+        setLoading(false);
+      });
+  }, []);
+
+  // Attach webcam stream
   useEffect(() => {
     if (webcamStream && videoRef.current) {
       if (videoRef.current.srcObject !== webcamStream) {
@@ -76,26 +97,36 @@ const VideoQuestion = () => {
       {/* Main Content */}
       <div className="flex flex-col items-center px-4 md:px-20 w-full mt-20 pb-12">
         <h1 className="text-3xl text-black font-bold mb-6">Video Question</h1>
+
         <div className="flex flex-col lg:flex-row gap-8 w-full justify-center items-start mt-6">
-          <div className="border border-teal-200 p-6 rounded-xl w-[396px] h-[410px] shadow-md">
-            <p className="text-gray-700">
-              1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod?
-            </p>
+          <div className="border border-teal-200 p-6 rounded-xl w-[396px] h-[410px] shadow-md overflow-auto">
+            {loading ? (
+              <p className="text-gray-500 text-base">Loading question...</p>
+            ) : questionData ? (
+              <p className="text-gray-700 text-base leading-relaxed">
+                {questionData.question_text}
+              </p>
+            ) : (
+              <p className="text-red-500 text-base">No video question found.</p>
+            )}
           </div>
+
           <div className="border w-[610px] h-[410px] rounded-xl shadow-md flex flex-col items-center justify-center bg-gray-50 p-4">
-            <img
-              src="/images/photo.png"
-              alt="Code Display"
-              className="w-[580px] h-[329px] rounded-[5px] pt-[1%] pb-[1%] object-cover"
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-[580px] h-[329px] rounded-[5px] object-cover"
             />
           </div>
         </div>
 
         <div className="mt-8">
-          <button onClick={handleSubmit} className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full">
+          <button
+            onClick={handleSubmit}
+            className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full"
+          >
             Submit & Continue
           </button>
         </div>

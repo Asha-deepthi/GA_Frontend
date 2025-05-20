@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-import { useStream } from './StreamContext'; // Make sure this is properly implemented
+import { useStream } from './StreamContext';
 
 export default function MCQQuestionScreen() {
   const [progress] = useState([true, true, true, false]);
@@ -9,8 +9,30 @@ export default function MCQQuestionScreen() {
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
 
+  const [questionData, setQuestionData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedOptions, setSelectedOptions] = useState([]);
+
   const handleBack = () => navigate("/videoquestion");
   const handleSubmit = () => navigate("/codingquestion");
+
+  useEffect(() => {
+    fetch("http://localhost:8000/test-execution/demo-questions/")
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch questions");
+        return res.json();
+      })
+      .then(data => {
+        // Find the MCQ question and extract fields
+        const mcqQuestionEntry = data.find(q => q.question_type === "mcq");
+        setQuestionData(mcqQuestionEntry);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching MCQ question:", err);
+        setLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
     if (webcamStream && videoRef.current) {
@@ -19,13 +41,16 @@ export default function MCQQuestionScreen() {
         videoRef.current.play().catch(err => console.error("Error playing webcam stream:", err));
       }
     }
-
     return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [webcamStream]);
+
+  const toggleOption = (key) => {
+    setSelectedOptions(prev => 
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
 
   return (
     <div className="relative w-screen h-screen bg-white font-sans overflow-y-auto overflow-x-hidden">
@@ -73,23 +98,33 @@ export default function MCQQuestionScreen() {
       </div>
 
       {/* Title & Text */}
-      <div className="text-center px-6 md:px-20 mt-8 mb-8">
+      <div className="text-center px-6 md:px-20 mt-8 mb-8 max-w-3xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">MCQ Question</h1>
-        <p className="mt-4 text-base md:text-lg text-gray-700 max-w-3xl mx-auto">
-          1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod Lorem ipsum dolor sit amet,
-          consectetur adipiscing elit, sed do eiusmod Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ?
-        </p>
+        {loading ? (
+          <p className="text-gray-500">Loading question...</p>
+        ) : questionData ? (
+          <p className="mt-4 text-base md:text-lg text-gray-700">{questionData.question_text}</p>
+        ) : (
+          <p className="mt-4 text-base md:text-lg text-red-500">No MCQ question found.</p>
+        )}
       </div>
 
       {/* Options Grid */}
       <div className="px-6 md:px-20 mb-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-        {['Lorem Ipsum Dummy Text', 'Lorem Ipsum Dummy Text', 'Lorem Ipsum Dummy Text', 'Lorem Ipsum Dummy Text'].map(
-          (opt, idx) => (
-            <label key={idx} className="flex items-center gap-2">
-              <input type="checkbox" className="form-checkbox h-5 w-5 text-teal-500 rounded" />
-              <span className="text-gray-800">{opt}</span>
+        {questionData && questionData.options ? (
+          Object.entries(questionData.options).map(([key, value]) => (
+            <label key={key} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedOptions.includes(key)}
+                onChange={() => toggleOption(key)}
+                className="form-checkbox h-5 w-5 text-teal-500 rounded"
+              />
+              <span className="text-gray-800">{value}</span>
             </label>
-          )
+          ))
+        ) : (
+          <p className="text-gray-500">No options available</p>
         )}
       </div>
 
