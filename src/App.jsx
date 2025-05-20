@@ -1,5 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import { StreamProvider } from './Test_execution/StreamContext';
+
 import InstructionScreen from './Test_execution/InstructionScreen';
 import TutorialScreen from './Test_execution/TutorialScreen';
 import ConnectionStrength from './Test_execution/ConnectionStrength';
@@ -14,30 +17,28 @@ import AudioQuestion from './Test_execution/AudioQuestion';
 import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
 
-
 function App() {
-    return (
-            <Router>
-                <Routes>
-                    <Route path="/instructionscreen" element={<InstructionScreen />} />
-                    <Route path="/tutorialscreen" element={<TutorialScreen />} />
-                    <Route path="/connectionstrength" element={<ConnectionStrength />} />
-                    <Route path="/videoquestion" element={<VideoQuestion />} />
-                    <Route path="/codingquestion" element={<CodingQuestion />} />
-                    <Route path="/mcqquestion" element={<McqQuestion />} />
-                    <Route path="/fullscreen" element={<FullScreen />} />
-                    <Route path="/welcome" element={<WelcomeScreen />} />
-                    <Route path="/basic-details" element={<BasicDetails />} />
-                    <Route path="/permission" element={<PermissionScreen />} />
-                    <Route path="/audioquestion" element={<AudioQuestion />} />
-                    <Route path="/demoquestion" element={<DemoQuestion />} />
-                    <Route path="/result" element={<ResultScreen />} />
-                </Routes>
-            </Router>
-    );
-};
+  return (
+    <StreamProvider>
+      <Router>
+        <Routes>
+          <Route path="/instructionscreen" element={<InstructionScreen />} />
+          <Route path="/tutorialscreen" element={<TutorialScreen />} />
+          <Route path="/connectionstrength" element={<ConnectionStrength />} />
+          <Route path="/videoquestion" element={<VideoQuestion />} />
+          <Route path="/codingquestion" element={<CodingQuestion />} />
+          <Route path="/mcqquestion" element={<McqQuestion />} />
+          <Route path="/fullscreen" element={<FullScreen />} />
+          <Route path="/welcome" element={<WelcomeScreen />} />
+          <Route path="/basic-details" element={<BasicDetails />} />
+          <Route path="/permission" element={<PermissionScreen />} />
+          <Route path="/audioquestion" element={<AudioQuestion />} />
+          <Route path="/demoquestion" element={<DemoQuestion />} />
+          <Route path="/result" element={<ResultScreen />} />
+        </Routes>
+      </Router>
+    </StreamProvider>
+  );
+}
 
 export default App;
-
-
-
