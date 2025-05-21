@@ -1,55 +1,64 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaQuestionCircle } from "react-icons/fa";
-import { useStream } from './StreamContext';  // Custom hook from context
+import { useStream } from './StreamContext';  // Your custom context hook
 
 export default function PermissionScreen() {
   const [webcam, setWebcam] = useState(false);
   const [mic, setMic] = useState(false);
   const [screen, setScreen] = useState(false);
   const navigate = useNavigate();
-  const { setWebcamStream } = useStream();  // Setter from context
+  const { requestWebcamAndMic, setWebcamStream } = useStream();
 
-  // Request permissions for webcam, mic or screen
   const requestPermission = async (type) => {
     try {
-      if (type === 'webcam') {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setWebcamStream(stream);  // Save stream globally via context
-        console.log('Webcam stream set:', stream);
-        setWebcam(true);
-      } else if (type === 'mic') {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        setMic(true);
+      if (type === 'webcam' || type === 'mic') {
+        const success = await requestWebcamAndMic();
+        if (success) {
+          setWebcam(true);
+          setMic(true);
+        } else {
+          setWebcam(false);
+          setMic(false);
+        }
       } else if (type === 'screen') {
         await navigator.mediaDevices.getDisplayMedia({ video: true });
         setScreen(true);
       }
     } catch (err) {
       alert(`Permission for ${type} was denied or error occurred.`);
+      if (type === 'webcam' || type === 'mic') {
+        setWebcam(false);
+        setMic(false);
+      } else if (type === 'screen') {
+        setScreen(false);
+      }
     }
   };
 
-  // Toggle switches handler - request permission if off, or revoke state if on
   const toggleSwitch = (type) => {
     if (
       (type === 'webcam' && !webcam) ||
-      (type === 'mic' && !mic) ||
-      (type === 'screen' && !screen)
+      (type === 'mic' && !mic)
     ) {
-      requestPermission(type);
+      requestPermission('webcam'); // handles both webcam and mic
+    } else if (type === 'screen' && !screen) {
+      requestPermission('screen');
     } else {
-      // "Revoke" permission state - no real permission revocation possible via JS, but clear state
       if (type === 'webcam') {
         setWebcam(false);
-        setWebcamStream(null);  // Clear webcam stream in context
+        setMic(false);
+        setWebcamStream(null); // Stop stream
+      } else if (type === 'mic') {
+        setMic(false);
+        setWebcam(false);
+        setWebcamStream(null); // Stop stream
+      } else if (type === 'screen') {
+        setScreen(false);
       }
-      if (type === 'mic') setMic(false);
-      if (type === 'screen') setScreen(false);
     }
   };
 
-  // On Next, only allow if all permissions granted
   const handleNext = () => {
     if (webcam && mic && screen) {
       navigate('/connectionstrength');
