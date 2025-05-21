@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStream } from './StreamContext';  // Use your context hook
+import { useStream } from './StreamContext';
+import { FaMicrophone, FaVideo } from 'react-icons/fa';
 
 const DemoQuestion = () => {
-  const { webcamStream } = useStream();  // Get the stream from context
+  const { webcamStream } = useStream();
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
@@ -19,32 +20,21 @@ const DemoQuestion = () => {
   };
 
   useEffect(() => {
-    console.log("webcamStream:", webcamStream);
-
     if (webcamStream && videoRef.current) {
       if (videoRef.current.srcObject !== webcamStream) {
-        console.log("Setting video source to webcam stream...");
         videoRef.current.srcObject = webcamStream;
-
-        videoRef.current
-          .play()
-          .then(() => {
-            console.log("Video playing...");
-          })
-          .catch((err) => {
-            console.error("Error playing video:", err);
-          });
+        videoRef.current.play().catch((err) => {
+          console.error("Error playing video:", err);
+        });
       }
     }
 
-    // Optional cleanup if webcamStream might change or component unmounts
     return () => {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
   }, [webcamStream]);
-
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto">
@@ -109,7 +99,7 @@ const DemoQuestion = () => {
         </main>
       </div>
 
-      {/* Note + Webcam Wrapper at bottom */}
+      {/* Bottom Area */}
       <div className="bottom-4 left-0 w-full z-50 pointer-events-none">
         {/* Centered Note */}
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto">
@@ -118,29 +108,51 @@ const DemoQuestion = () => {
           </p>
         </div>
 
-        <div className="absolute bottom-2 right-6 flex items-end gap-[20px] pointer-events-auto">
-          <img
-            src="/images/signal.png"
-            alt="Signal Icon"
-            className="w-[49px] h-[38px] mb-6"
-          />
-          <div className="relative rounded-[5px] overflow-hidden w-[150px] h-[100px] border border-gray-300 bg-black">
-            {error ? (
-              <div className="flex items-center justify-center w-full h-full bg-gray-100 text-sm text-red-600 p-2">
-                {error}
-              </div>
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                 className="w-full h-full object-cover"
-              />
-            )}
-          </div>
-        </div>
+        {/* Right Bottom Controls */}
+<div className="absolute bottom-2 right-6 flex items-end gap-[20px] pointer-events-auto">
+  {/* Mic + Video stacked, each with side-by-side bars */}
+  <div className="flex flex-col items-start gap-4 mb-6">
+    
+    {/* Mic */}
+    <div className="flex items-center gap-2">
+      <FaMicrophone className="text-gray-700 text-[16px]" />
+      <div className="flex items-end gap-[2px]">
+        <div className="w-[2px] h-[6px] bg-gray-300" />
+        <div className="w-[2px] h-[8px] bg-red-400" />
+        <div className="w-[2px] h-[10px] bg-yellow-400" />
+        <div className="w-[2px] h-[14px] bg-green-400" />
+      </div>
+    </div>
 
+    {/* Video */}
+    <div className="flex items-center gap-2">
+      <FaVideo className="text-gray-700 text-[16px]" />
+      <div className="flex items-end gap-[2px]">
+        <div className="w-[2px] h-[6px] bg-gray-300" />
+        <div className="w-[2px] h-[8px] bg-red-400" />
+        <div className="w-[2px] h-[10px] bg-yellow-400" />
+        <div className="w-[2px] h-[14px] bg-green-400" />
+      </div>
+    </div>
+  </div>
+
+  {/* Webcam Preview */}
+  <div className="relative rounded-[5px] overflow-hidden w-[150px] h-[100px] border border-gray-300 bg-black">
+    {error ? (
+      <div className="flex items-center justify-center w-full h-full bg-gray-100 text-sm text-red-600 p-2">
+        {error}
+      </div>
+    ) : (
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="w-full h-full object-cover"
+      />
+    )}
+  </div>
+</div>
 
       </div>
     </div>
