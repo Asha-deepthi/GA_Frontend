@@ -1,50 +1,151 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom';
-import { useStream } from './StreamContext';
+import {
+  FaMicrophone,
+  FaVideo,
+  FaClock,
+  FaArrowLeft,
+  FaRedo,
+  FaStop,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useStream } from "./StreamContext";
 
 const VideoQuestion = () => {
   const navigate = useNavigate();
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
+  const smallVideoRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState(null);
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const handleBack = () => navigate("/audioquestion");
   const handleSubmit = () => navigate("/mcqquestion");
 
-  // Fetch the video question from the backend
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
-      .then(response => {
-        if (!response.ok) throw new Error("Failed to fetch questions");
-        return response.json();
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch video question.");
+        return res.json();
       })
-      .then(data => {
-        const videoQuestion = data.find(q => q.question_type === "video");
-        setQuestionData(videoQuestion);
+      .then((data) => {
+        const videoQ = data.find((q) => q.question_type === "video");
+        setQuestionData(videoQ);
         setLoading(false);
       })
-      .catch(error => {
-        console.error("Error fetching video question:", error);
+      .catch((err) => {
+        console.error("Fetch error:", err);
         setLoading(false);
       });
   }, []);
 
-  // Attach webcam stream
   useEffect(() => {
-    if (webcamStream && videoRef.current) {
-      if (videoRef.current.srcObject !== webcamStream) {
+    if (webcamStream) {
+      console.log("Audio tracks count:", webcamStream.getAudioTracks().length);
+      console.log("Audio tracks:", webcamStream.getAudioTracks());
+      console.log("Video tracks count:", webcamStream.getVideoTracks().length);
+      console.log("Video tracks:", webcamStream.getVideoTracks());
+    }
+  }, [webcamStream]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (recordedBlob) {
+        const videoURL = URL.createObjectURL(recordedBlob);
+        videoRef.current.srcObject = null;
+        videoRef.current.src = videoURL;
+        videoRef.current.muted = false; // unmute playback
+        videoRef.current.controls = true;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play().catch((err) => console.error("Playback error:", err));
+        };
+      } else if (webcamStream) {
+        videoRef.current.src = null;
         videoRef.current.srcObject = webcamStream;
-        videoRef.current.play().catch(err => console.error("Error playing webcam stream:", err));
+        videoRef.current.muted = true; // mute live preview
+        videoRef.current.controls = false;
+        videoRef.current.play().catch((err) => console.error("Live video play error:", err));
       }
     }
+  }, [webcamStream, recordedBlob]);
+
+  useEffect(() => {
+    if (webcamStream && smallVideoRef.current) {
+      smallVideoRef.current.srcObject = webcamStream;
+      smallVideoRef.current.muted = true;
+      smallVideoRef.current.play().catch((err) => console.error("Small video play error:", err));
+    }
     return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      if (videoRef.current) videoRef.current.srcObject = null;
+      if (smallVideoRef.current) smallVideoRef.current.srcObject = null;
     };
   }, [webcamStream]);
+
+  const startRecording = () => {
+  if (!webcamStream) {
+    alert("Webcam stream not available");
+    return;
+  }
+
+  const audioTracks = webcamStream.getAudioTracks();
+  const videoTracks = webcamStream.getVideoTracks();
+
+  if (audioTracks.length === 0 || videoTracks.length === 0) {
+    console.error("Missing audio or video tracks");
+    alert("Missing audio or video tracks in stream");
+    return;
+  }
+
+  const chunks = [];
+  let options = { mimeType: "video/webm;codecs=vp8,opus" };
+
+  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    console.warn(`${options.mimeType} not supported, falling back`);
+    options = { mimeType: "video/webm" };
+  }
+
+  try {
+    const combinedStream = new MediaStream([...videoTracks, ...audioTracks]);
+    const mediaRecorder = new MediaRecorder(combinedStream, options);
+    mediaRecorderRef.current = mediaRecorder;
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      setRecordedBlob(blob);
+    };
+
+    mediaRecorder.onerror = (event) => {
+      console.error("MediaRecorder error:", event.error);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
+  } catch (err) {
+    console.error("Failed to create MediaRecorder:", err);
+    alert("Recording is not supported on your browser or device.");
+  }
+};
+
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const retryRecording = () => {
+    setRecordedBlob(null);
+  };
 
   return (
     <div className="w-screen h-screen bg-white font-sans overflow-auto">
@@ -79,7 +180,10 @@ const VideoQuestion = () => {
 
       {/* Navigation Row */}
       <div className="relative w-full mt-4 mb-6 h-6">
-        <button onClick={handleBack} className="absolute left-[110px] text-gray-600 bg-white flex items-center gap-2">
+        <button
+          onClick={handleBack}
+          className="absolute left-[110px] text-gray-600 bg-white flex items-center gap-2"
+        >
           <FaArrowLeft />
           <span>Back</span>
         </button>
@@ -99,6 +203,7 @@ const VideoQuestion = () => {
         <h1 className="text-3xl text-black font-bold mb-6">Video Question</h1>
 
         <div className="flex flex-col lg:flex-row gap-8 w-full justify-center items-start mt-6">
+          {/* Question Box */}
           <div className="border border-teal-200 p-6 rounded-xl w-[396px] h-[410px] shadow-md overflow-auto">
             {loading ? (
               <p className="text-gray-500 text-base">Loading question...</p>
@@ -111,14 +216,50 @@ const VideoQuestion = () => {
             )}
           </div>
 
-          <div className="border w-[610px] h-[410px] rounded-xl shadow-md flex flex-col items-center justify-center bg-gray-50 p-4">
+          {/* Video Box */}
+          <div className="border w-[610px] h-[410px] rounded-xl shadow-md flex flex-col items-center justify-center bg-gray-50 p-4 relative">
             <video
               ref={videoRef}
               autoPlay
-              muted
+              muted={!recordedBlob} // mute live preview, unmute playback
               playsInline
-              className="w-[580px] h-[329px] rounded-[5px] object-cover"
+              className="w-[580px] h-[329px] rounded-[5px] object-cover mb-2"
             />
+
+            <div className="flex gap-4 mt-2 absolute bottom-4">
+              {!isRecording && !recordedBlob && (
+                <button
+                  onClick={startRecording}
+                  className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                >
+                  <FaVideo />
+                </button>
+              )}
+              {isRecording && (
+                <button
+                  onClick={stopRecording}
+                  className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                >
+                  <FaStop />
+                </button>
+              )}
+              {!isRecording && recordedBlob && (
+                <>
+                  <button
+                    onClick={retryRecording}
+                    className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <FaRedo />
+                  </button>
+                  <button
+                    onClick={startRecording}
+                    className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <FaVideo />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -132,7 +273,7 @@ const VideoQuestion = () => {
         </div>
       </div>
 
-      {/* Footer Section with Live Video */}
+      {/* Footer */}
       <div className="relative w-full">
         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-sm text-black font-medium">
           Note : Do not refresh the page or you'll lose your data
@@ -156,7 +297,7 @@ const VideoQuestion = () => {
           </div>
           <div className="w-[112px] h-[80px] rounded-lg bg-black overflow-hidden border border-gray-300">
             <video
-              ref={videoRef}
+              ref={smallVideoRef}
               autoPlay
               muted
               playsInline

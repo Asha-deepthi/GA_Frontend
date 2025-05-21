@@ -1,3 +1,4 @@
+// AudioQuestion.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { FaClock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -68,9 +69,8 @@ const AudioQuestion = () => {
         };
 
         recorder.onstop = () => {
-          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
 
-          // Revoke old URL if exists
           if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
           }
@@ -79,7 +79,6 @@ const AudioQuestion = () => {
           setAudioUrl(url);
           console.log("Audio URL:", url);
 
-          // Stop all audio tracks
           stream.getTracks().forEach(track => track.stop());
           setIsProcessing(false);
         };
@@ -105,7 +104,6 @@ const AudioQuestion = () => {
     setIsRecording(false);
     audioChunksRef.current = [];
   };
-
 
   const handleBack = () => navigate("/demoquestion");
   const handleSubmit = () => navigate("/videoquestion");
@@ -167,7 +165,7 @@ const AudioQuestion = () => {
             {/* Mic Button */}
             <button
               onClick={handleMicClick}
-              className={`w-20 h-20 rounded-full p-2 flex items-center justify-center ${isRecording ? 'bg-teal-500' : 'bg-teal-500'} shadow-md transition duration-300`}
+              className={`w-20 h-20 rounded-full p-2 flex items-center justify-center bg-teal-500 shadow-md transition duration-300`}
               aria-label="Toggle Recording"
               disabled={isProcessing}
             >
@@ -190,17 +188,16 @@ const AudioQuestion = () => {
               </button>
             )}
           </div>
-
-
-
         </div>
 
-
         {/* Audio Playback */}
-        {audioUrl && (
-          <div className="mb-6">
-            <audio controls src={audioUrl} className="w-full max-w-md" />
+        {audioUrl ? (
+          <div className="mb-6 text-center">
+            <p className="text-sm text-gray-700 mb-2">Your Recorded Answer:</p>
+            <audio controls autoPlay src={audioUrl} className="w-full max-w-md" />
           </div>
+        ) : (
+          <p className="text-sm text-gray-400 mb-6">No recording yet</p>
         )}
 
         {/* Submit */}
