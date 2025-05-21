@@ -1,28 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaClock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { useStream } from './StreamContext'; // Import your stream context
+import { useStream } from './StreamContext';
+import { FiRefreshCw } from 'react-icons/fi';
 
 const AudioQuestion = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { webcamStream } = useStream(); // Access webcam stream
+  const [isProcessing, setIsProcessing] = useState(false);
+  const audioChunksRef = useRef([]);
+
+  const { webcamStream } = useStream();
   const videoRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleMicClick = () => {
-    setIsRecording(prev => !prev);
-  };
-
-  const handleBack = () => {
-    navigate("/demoquestion");
-  };
-
-  const handleSubmit = () => {
-    navigate("/videoquestion");
-  };
-
+  // Fetch audio question
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
       .then(response => {
@@ -40,23 +35,80 @@ const AudioQuestion = () => {
       });
   }, []);
 
-  // Attach webcam stream to video element
+  // Display webcam stream
   useEffect(() => {
     if (webcamStream && videoRef.current) {
       if (videoRef.current.srcObject !== webcamStream) {
         videoRef.current.srcObject = webcamStream;
-        videoRef.current
-          .play()
-          .catch(err => console.error("Error playing webcam stream:", err));
+        videoRef.current.play().catch(err =>
+          console.error("Error playing webcam stream:", err)
+        );
       }
     }
-
     return () => {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
   }, [webcamStream]);
+
+  // Handle mic recording
+  const handleMicClick = async () => {
+    setIsProcessing(true);
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+          // Revoke old URL if exists
+          if (audioUrl) {
+            URL.revokeObjectURL(audioUrl);
+          }
+
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          console.log("Audio URL:", url);
+
+          // Stop all audio tracks
+          stream.getTracks().forEach(track => track.stop());
+          setIsProcessing(false);
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setIsRecording(true);
+        setIsProcessing(false);
+      } catch (err) {
+        console.error("Microphone access denied:", err);
+        setIsProcessing(false);
+      }
+    } else {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        setIsRecording(false);
+      }
+    }
+  };
+
+  const handleRetry = () => {
+    setAudioUrl(null);
+    setIsRecording(false);
+    audioChunksRef.current = [];
+  };
+
+
+  const handleBack = () => navigate("/demoquestion");
+  const handleSubmit = () => navigate("/videoquestion");
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto pb-24">
@@ -85,45 +137,77 @@ const AudioQuestion = () => {
         </div>
       </header>
 
-      {/* Main */}
+      {/* Main Section */}
       <main className="relative max-w-[1250px] mx-auto px-4 sm:px-8 pb-10 pt-[130px] flex flex-col items-center text-center">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-10 w-full max-w-[1036px]" style={{ gap: '1rem' }}>
           <button onClick={handleBack} className="text-sm font-medium border border-white bg-white text-black px-4 py-2 rounded-full mb-4 sm:mb-0">
             &larr; Back
           </button>
-
           <div className="flex gap-2 items-center justify-center mb-4 sm:mb-0">
             <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/40" />
             <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
             <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
             <div className="w-20 sm:w-32 h-1 rounded-full bg-teal-500/10" />
           </div>
-
           <span className="text-sm font-medium text-black ml-0 sm:ml-8">(01/04)</span>
         </div>
 
-        <h2 className="text-3xl sm:text-[40px] font-extrabold text-black mb-6 px-2 sm:px-0 max-w-[900px]">
-          Audio Question
-        </h2>
-
+        {/* Question */}
+        <h2 className="text-3xl sm:text-[40px] font-extrabold text-black mb-6">Audio Question</h2>
         {loading ? (
           <p className="text-lg text-gray-600">Loading question...</p>
         ) : questionData ? (
-          <p className="text-base sm:text-xl text-gray-600 max-w-[900px] mb-12 leading-relaxed px-2 sm:px-0">
-            {questionData.question_text}
-          </p>
+          <p className="text-base sm:text-xl text-gray-600 max-w-[900px] mb-12 leading-relaxed">{questionData.question_text}</p>
         ) : (
           <p className="text-lg text-red-500">No audio question found.</p>
         )}
 
-        {/* Recording Button */}
-        <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex items-center justify-center px-4 sm:px-[362px] mb-14 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
-          <button onClick={handleMicClick} className={`w-18 h-18 rounded-full p-1 flex items-center justify-center ${isRecording ? 'bg-red-500' : 'bg-transparent'} shadow-md transition duration-300`} aria-label="Toggle Recording">
-            <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain" />
-          </button>
+        <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
+          <div className="flex items-center gap-6">
+            {/* Mic Button */}
+            <button
+              onClick={handleMicClick}
+              className={`w-20 h-20 rounded-full p-2 flex items-center justify-center ${isRecording ? 'bg-teal-500' : 'bg-teal-500'} shadow-md transition duration-300`}
+              aria-label="Toggle Recording"
+              disabled={isProcessing}
+            >
+              <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain rounded-full" />
+            </button>
+
+            {/* Status Text */}
+            <div className="flex flex-col gap-2 items-start">
+              {isRecording && <p className="text-sm text-gray-600">Recording...</p>}
+            </div>
+
+            {/* Retry Button */}
+            {audioUrl && (
+              <button
+                onClick={handleRetry}
+                className="w-20 h-20 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
+                aria-label="Retry Recording"
+              >
+                <FiRefreshCw className="w-6 h-6 text-white" />
+              </button>
+            )}
+          </div>
+
+
+
         </div>
 
-        <button onClick={handleSubmit} className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8 mx-auto">
+
+        {/* Audio Playback */}
+        {audioUrl && (
+          <div className="mb-6">
+            <audio controls src={audioUrl} className="w-full max-w-md" />
+          </div>
+        )}
+
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8"
+        >
           Submit & Continue
         </button>
       </main>
@@ -135,19 +219,13 @@ const AudioQuestion = () => {
         </p>
       </div>
 
-      {/* Webcam Box (Live feed) */}
+      {/* Webcam Box */}
       <div className="absolute bottom-6 right-6 flex items-center gap-2 z-40">
         <div className="w-12 h-12 rounded-md overflow-hidden flex items-center justify-center bg-white">
           <img src="/images/signal.png" alt="Voice Signal" className="w-full h-full object-contain" />
         </div>
         <div className="w-[150px] h-[100px] rounded-md bg-black border border-gray-400 overflow-hidden">
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
         </div>
       </div>
     </div>
