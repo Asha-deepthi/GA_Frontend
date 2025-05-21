@@ -282,17 +282,19 @@ const VideoQuestion = () => {
           <div className="flex flex-col gap-2 items-start justify-end mr-2">
             <div className="flex items-center gap-1 text-gray-700">
               <FaMicrophone className="mr-1" />
-              <div className="w-1 h-2 bg-gray-300" />
-              <div className="w-1 h-3 bg-yellow-500" />
-              <div className="w-1 h-4 bg-green-500" />
-              <div className="w-1 h-5 bg-green-500" />
+            <div className="w-[2px] h-[3px] bg-yellow-500" />
+            <div className="w-[2px] h-[9px] bg-yellow-500" />
+            <div className="w-[2px] h-[15px] bg-yellow-500" />
+            <div className="w-[2px] h-[21px] bg-yellow-500" />
+            <div className="w-[2px] h-[27px] bg-yellow-500" />
             </div>
             <div className="flex items-center gap-1 text-gray-700">
               <FaVideo className="mr-1" />
-              <div className="w-1 h-2 bg-gray-300" />
-              <div className="w-1 h-3 bg-yellow-500" />
-              <div className="w-1 h-4 bg-green-500" />
-              <div className="w-1 h-5 bg-green-500" />
+               <div className="w-[2px] h-[3px] bg-green-500" />
+            <div className="w-[2px] h-[9px] bg-green-500" />
+            <div className="w-[2px] h-[15px] bg-green-500" />
+            <div className="w-[2px] h-[21px] bg-green-500" />
+            <div className="w-[2px] h-[27px] bg-green-500" />
             </div>
           </div>
           <div className="w-[112px] h-[80px] rounded-lg bg-black overflow-hidden border border-gray-300">
