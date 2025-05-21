@@ -145,14 +145,14 @@ export default function MCQQuestionScreen() {
       {/* Bottom-Right Live Webcam Feed */}
       <div className="fixed bottom-4 right-4 flex items-end gap-4 z-50">
         <div className="flex flex-col gap-2 items-start justify-end mr-2">
-          <div className="flex items-center gap-1 text-gray-700">
+          <div className="flex items-end gap-1 text-gray-700">
             <FaMicrophone />
             <div className="w-1 h-2 bg-gray-300" />
             <div className="w-1 h-3 bg-yellow-500" />
             <div className="w-1 h-4 bg-green-500" />
             <div className="w-1 h-5 bg-green-500" />
           </div>
-          <div className="flex items-center gap-1 text-gray-700">
+          <div className="flex items-end gap-1 text-gray-700">
             <FaVideo />
             <div className="w-1 h-2 bg-gray-300" />
             <div className="w-1 h-3 bg-yellow-500" />

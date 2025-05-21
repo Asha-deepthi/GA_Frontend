@@ -146,14 +146,14 @@ const CodingQuestionScreen = () => {
 
         <div className="absolute bottom-2 right-4 flex gap-2 items-end">
           <div className="flex flex-col gap-2 items-start justify-end mr-2">
-            <div className="flex items-center gap-1 text-gray-700">
+            <div className="flex items-end gap-1 text-gray-700">
               <FaMicrophone className="mr-1" />
               <div className="w-1 h-2 bg-gray-300" />
               <div className="w-1 h-3 bg-yellow-500" />
               <div className="w-1 h-4 bg-green-500" />
               <div className="w-1 h-5 bg-green-500" />
             </div>
-            <div className="flex items-center gap-1 text-gray-700">
+            <div className="flex items-end gap-1 text-gray-700">
               <FaVideo className="mr-1" />
               <div className="w-1 h-2 bg-gray-300" />
               <div className="w-1 h-3 bg-yellow-500" />
