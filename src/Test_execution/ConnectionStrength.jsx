@@ -12,9 +12,8 @@ export default function ConnectionStrengthScreen() {
   const [audioBars, setAudioBars] = useState(0);
   const [netBars, setNetBars] = useState(5);
 
-  // store peer connection
+  // peer connection & audio analyser refs
   const pcRef = useRef(null);
-  // audio analyser
   const analyserRef = useRef(null);
 
   useEffect(() => {
@@ -23,9 +22,12 @@ export default function ConnectionStrengthScreen() {
       try {
         const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         setStream(media);
-        if (videoRef.current) videoRef.current.srcObject = media;
+        // assign stream to video once
+        if (videoRef.current && !videoRef.current.srcObject) {
+          videoRef.current.srcObject = media;
+        }
 
-        // setup simple analyser for audio
+        // audio analyser setup
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaStreamSource(media);
         const analyser = audioCtx.createAnalyser();
@@ -33,15 +35,14 @@ export default function ConnectionStrengthScreen() {
         source.connect(analyser);
         analyserRef.current = analyser;
 
-        // setup loopback for network stats
+        // peer connection for network stats
         const pc = new RTCPeerConnection();
-        media.getTracks().forEach(t => pc.addTrack(t, media));
+        media.getTracks().forEach((track) => pc.addTrack(track, media));
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await pc.setRemoteDescription(offer);
         pcRef.current = pc;
 
-        // polling intervals
         statInterval = setInterval(pollStats, 1000);
         audioInterval = setInterval(pollAudio, 200);
       } catch (e) {
@@ -54,16 +55,16 @@ export default function ConnectionStrengthScreen() {
       clearInterval(audioInterval);
       if (analyserRef.current) analyserRef.current.disconnect();
       if (pcRef.current) pcRef.current.close();
-      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (stream) stream.getTracks().forEach((t) => t.stop());
     };
-  }, [stream]);
+  }, []);
 
   const pollStats = async () => {
     const pc = pcRef.current;
     if (!pc) return;
     const stats = await pc.getStats();
     let sent = 0, lost = 0, rtt = 0;
-    stats.forEach(report => {
+    stats.forEach((report) => {
       if (report.type === 'outbound-rtp' && report.kind === 'video') {
         sent += report.packetsSent || 0;
         lost += report.packetsLost || 0;
@@ -90,7 +91,6 @@ export default function ConnectionStrengthScreen() {
       sum += norm * norm;
     }
     const rms = Math.sqrt(sum / data.length);
-    // increase sensitivity multiplier
     const level = Math.min(5, Math.ceil(rms * 50));
     setAudioBars(level);
   };
@@ -100,7 +100,7 @@ export default function ConnectionStrengthScreen() {
       <div
         key={i}
         style={{ width: '7.25px', height: '36px' }}
-        className={`${i < count ? color : 'bg-gray-200'} rounded-sm`}
+        className={`${i < count ? color : 'bg-gray-200'} rounded-sm`} 
       />
     ));
 
