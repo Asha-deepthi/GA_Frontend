@@ -52,7 +52,7 @@ export default function PermissionScreen() {
   // On Next, only allow if all permissions granted
   const handleNext = () => {
     if (webcam && mic && screen) {
-      navigate('/demoquestion');
+      navigate('/connectionstrength');
     } else {
       alert('Please grant all permissions before proceeding.');
     }

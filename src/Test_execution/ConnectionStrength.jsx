@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FaQuestionCircle } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
+import { useStream } from './StreamContext'; // Import your webcam stream context
 
-export default function ConnectionStrengthScreen({ onNext }) {
+export default function ConnectionStrengthScreen() {
+  const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const { webcamStream } = useStream();
+
+  useEffect(() => {
+    if (webcamStream && videoRef.current) {
+      videoRef.current.srcObject = webcamStream;
+    }
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [webcamStream]);
+
+  const handleAccept = () => {
+    navigate("/demoquestion");
+  };
+
   const data = [
     {
       title: 'Your camera is ready to record.',
@@ -10,7 +31,6 @@ export default function ConnectionStrengthScreen({ onNext }) {
       levels: 8,
       filled: 6,
       color: 'bg-teal-400',
-      imageSrc: 'images/photo.png',
       bg: 'bg-blue-50',
     },
     {
@@ -30,10 +50,6 @@ export default function ConnectionStrengthScreen({ onNext }) {
       bg: 'bg-blue-50',
     },
   ];
-  const navigate = useNavigate();
-    const handleAccept = () => {
-      navigate("/demoquestion");
-    };
 
   return (
     <div className="relative w-screen h-screen bg-white overflow-auto font-overpass">
@@ -74,14 +90,22 @@ export default function ConnectionStrengthScreen({ onNext }) {
       <div className="flex flex-col md:flex-row items-start justify-center gap-8 px-4 mt-10 max-w-[1100px] mx-auto">
         {/* Camera Box */}
         <div className="relative w-full md:w-1/2 bg-blue-50 p-6 rounded-xl drop-shadow-md border-b-4 border-r-4 border-teal-400">
-          <img src={data[0].imageSrc} alt="Camera" className="w-full h-64 object-cover rounded-lg" />
+          <div className="w-full h-64 bg-black rounded-lg overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
           <p className="mt-4 font-semibold text-gray-900">{data[0].title}</p>
           <p className="text-sm text-gray-600 mt-1">{data[0].subtitle}</p>
           <div className="absolute bottom-6 right-6 flex space-x-1">
             {Array.from({ length: data[0].levels }).map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-10  ${i < data[0].filled ? data[0].color : 'bg-gray-200'}`}
+                className={`w-2 h-10 ${i < data[0].filled ? data[0].color : 'bg-gray-200'}`}
               />
             ))}
           </div>
@@ -90,14 +114,14 @@ export default function ConnectionStrengthScreen({ onNext }) {
         {/* Right Boxes */}
         <div className="flex flex-col gap-12 w-full md:w-1/3">
           {/* Microphone */}
-          <div className="relative bg-blue-50 p-6 rounded-xl drop-shadow-md  border-b-4 border-r-4 border-teal-400">
+          <div className="relative bg-blue-50 p-6 rounded-xl drop-shadow-md border-b-4 border-r-4 border-teal-400">
             <p className="font-semibold text-gray-900">{data[1].title}</p>
             <p className="text-sm text-gray-600 mt-1">{data[1].subtitle}</p>
-            <div className=" flex space-x-1 mt-4">
+            <div className="flex space-x-1 mt-4">
               {Array.from({ length: data[1].levels }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-2 h-6  ${i < data[1].filled ? data[1].color : 'bg-gray-200'}`}
+                  className={`w-2 h-6 ${i < data[1].filled ? data[1].color : 'bg-gray-200'}`}
                 />
               ))}
             </div>
@@ -107,11 +131,11 @@ export default function ConnectionStrengthScreen({ onNext }) {
           <div className="relative bg-blue-50 p-6 rounded-xl drop-shadow-md border-b-4 border-r-4 border-teal-400">
             <p className="font-semibold text-gray-900">{data[2].title}</p>
             <p className="text-sm text-gray-600 mt-1">{data[2].subtitle}</p>
-            <div className=" flex space-x-1 mt-4">
+            <div className="flex space-x-1 mt-4">
               {Array.from({ length: data[2].levels }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-2 h-6  ${i < data[2].filled ? data[2].color : 'bg-gray-200'}`}
+                  className={`w-2 h-6 ${i < data[2].filled ? data[2].color : 'bg-gray-200'}`}
                 />
               ))}
             </div>
