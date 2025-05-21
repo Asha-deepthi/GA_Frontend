@@ -7,12 +7,14 @@ const DemoQuestion = () => {
   const { webcamStream } = useStream();
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState('');
+  const [micStrength, setMicStrength] = useState(0);
+  const [videoStrength, setVideoStrength] = useState(0);
   const videoRef = useRef(null);
   const navigate = useNavigate();
 
   const handleMicClick = () => {
-    setIsRecording(prev => !prev);
-    // TODO: add real audio recording logic here if needed
+    setIsRecording((prev) => !prev);
+    // Optionally add real recording logic
   };
 
   const handleAccept = () => {
@@ -21,18 +23,91 @@ const DemoQuestion = () => {
 
   useEffect(() => {
     if (webcamStream && videoRef.current) {
+      let active = true;
       if (videoRef.current.srcObject !== webcamStream) {
         videoRef.current.srcObject = webcamStream;
-        videoRef.current.play().catch((err) => {
-          console.error("Error playing video:", err);
-        });
       }
+      videoRef.current
+        .play()
+        .catch((err) => {
+          if (active) console.error('Error playing video:', err);
+        });
+      return () => {
+        active = false;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      };
+    }
+  }, [webcamStream]);
+
+  useEffect(() => {
+    if (!webcamStream) return;
+
+    // MIC STRENGTH ANALYSER ONLY IF AUDIO TRACKS EXIST
+    const audioTracks = webcamStream.getAudioTracks();
+    let audioContext, micSource, analyser, dataArray, micAnimationFrameId;
+
+    if (audioTracks.length > 0) {
+      audioContext = new AudioContext();
+      micSource = audioContext.createMediaStreamSource(webcamStream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      micSource.connect(analyser);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateMicStrength = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setMicStrength(avg);
+        micAnimationFrameId = requestAnimationFrame(updateMicStrength);
+      };
+      updateMicStrength();
+    } else {
+      setMicStrength(0);
     }
 
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+    // VIDEO STRENGTH ANALYSER
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let videoAnimationFrameId;
+
+    const updateVideoStrength = () => {
+      const video = videoRef.current;
+      if (!video || video.readyState !== 4) {
+        // Not enough video data yet, try again next frame
+        videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
+        return;
       }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const length = frame.data.length;
+
+      let totalBrightness = 0;
+      for (let i = 0; i < length; i += 4) {
+        const r = frame.data[i];
+        const g = frame.data[i + 1];
+        const b = frame.data[i + 2];
+        const brightness = (r + g + b) / 3;
+        totalBrightness += brightness;
+      }
+
+      const avgBrightness = totalBrightness / (length / 4);
+      setVideoStrength(avgBrightness);
+      videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
+    };
+    updateVideoStrength();
+
+    return () => {
+      if (audioTracks.length > 0) {
+        cancelAnimationFrame(micAnimationFrameId);
+        audioContext.close();
+      }
+      cancelAnimationFrame(videoAnimationFrameId);
     };
   }, [webcamStream]);
 
@@ -47,9 +122,7 @@ const DemoQuestion = () => {
         <div className="flex-1 bg-cyan-500" />
       </div>
 
-      {/* Container */}
       <div className="relative max-w-[1250px] mx-auto px-4 pt-[70px] pb-12">
-        {/* Header */}
         <header className="flex justify-between items-center h-[44px] px-8 mb-12">
           <div className="w-[197.78px] h-[40px] bg-gray-300" />
           <div className="flex items-center gap-2">
@@ -62,7 +135,6 @@ const DemoQuestion = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex flex-col items-center text-center px-4">
           <h2 className="w-full max-w-[856px] font-extrabold text-[28px] sm:text-[32px] md:text-[36px] lg:text-[40px] leading-[40px] md:leading-[44px] lg:leading-[48px] text-black text-center mb-10">
             Demo Question
@@ -75,15 +147,16 @@ const DemoQuestion = () => {
           <div
             className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex items-center justify-center px-8 sm:px-24 md:px-[200px] lg:px-[362px] py-[50px] gap-[10px] mb-12"
             style={{
-              background: `linear-gradient(0deg, rgba(0, 163, 152, 0.03), rgba(0, 163, 152, 0.03)), #FFFFFF`
+              background: `linear-gradient(0deg, rgba(0, 163, 152, 0.03), rgba(0, 163, 152, 0.03)), #FFFFFF`,
             }}
           >
             <button
               onClick={handleMicClick}
-              className={`w-17 h-17 rounded-full p-1 flex items-center justify-center ${isRecording ? 'bg-red-500' : 'bg-transparent'
-                } shadow-md transition duration-300`}
+              className={`w-17 h-17 rounded-full p-1 flex items-center justify-center ${
+                isRecording ? 'bg-red-500' : 'bg-transparent'
+              } shadow-md transition duration-300`}
               aria-pressed={isRecording}
-              aria-label={isRecording ? "Stop recording" : "Start recording"}
+              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
             >
               <img
                 src="/images/Audio Recording.png"
@@ -93,7 +166,10 @@ const DemoQuestion = () => {
             </button>
           </div>
 
-          <button onClick={handleAccept} className="w-[148px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-[40px] px-[40px] py-[10px] transition mt-16 mb-4">
+          <button
+            onClick={handleAccept}
+            className="w-[148px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-[40px] px-[40px] py-[10px] transition mt-16 mb-4"
+          >
             Continue
           </button>
         </main>
@@ -101,60 +177,57 @@ const DemoQuestion = () => {
 
       {/* Bottom Area */}
       <div className="bottom-4 left-0 w-full z-50 pointer-events-none">
-        {/* Centered Note */}
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto">
           <p className="text-[14px] leading-[20px] font-medium text-gray-500 text-center">
             Note: Do not refresh the page or you'll lose your data
           </p>
         </div>
 
-        {/* Right Bottom Controls */}
-<div className="absolute bottom-2 right-6 flex items-end gap-[20px] pointer-events-auto">
-  {/* Mic + Video stacked, each with side-by-side bars */}
-  <div className="flex flex-col items-start gap-4 mb-6">
-    
-    {/* Mic */}
+        {/* Bottom Right Controls */}
+{/* Bottom Right Controls */}
+<div className="absolute bottom-6 right-6 flex items-center gap-4 z-50 pointer-events-auto">
+  {/* Mic + Video strength bars */}
+  <div className="flex flex-col items-start gap-4">
+    {/* Mic strength bars */}
     <div className="flex items-center gap-2">
-      <FaMicrophone className="text-gray-700 text-[16px]" />
+      <FaMicrophone className="text-gray-500 text-[16px]" />
       <div className="flex items-end gap-[2px]">
-        <div className="w-[2px] h-[6px] bg-gray-300" />
-        <div className="w-[2px] h-[8px] bg-red-400" />
-        <div className="w-[2px] h-[10px] bg-yellow-400" />
-        <div className="w-[2px] h-[14px] bg-green-400" />
+        {[10, 30, 50, 70, 90].map((threshold, i) => (
+          <div
+            key={i}
+            style={{ width: 2, height: 6 + i * 3 }}
+            className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
+          />
+        ))}
       </div>
     </div>
 
-    {/* Video */}
+    {/* Video strength bars */}
     <div className="flex items-center gap-2">
-      <FaVideo className="text-gray-700 text-[16px]" />
+      <FaVideo className="text-gray-500 text-[16px]" />
       <div className="flex items-end gap-[2px]">
-        <div className="w-[2px] h-[6px] bg-gray-300" />
-        <div className="w-[2px] h-[8px] bg-red-400" />
-        <div className="w-[2px] h-[10px] bg-yellow-400" />
-        <div className="w-[2px] h-[14px] bg-green-400" />
+        {[20, 60, 100, 140, 180].map((threshold, i) => (
+          <div
+            key={i}
+            style={{ width: 2, height: 6 + i * 3 }}
+            className={videoStrength > threshold ? 'bg-blue-500' : 'bg-gray-300'}
+          />
+        ))}
       </div>
     </div>
   </div>
 
-  {/* Webcam Preview */}
-  <div className="relative rounded-[5px] overflow-hidden w-[150px] h-[100px] border border-gray-300 bg-black">
-    {error ? (
-      <div className="flex items-center justify-center w-full h-full bg-gray-100 text-sm text-red-600 p-2">
-        {error}
-      </div>
-    ) : (
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        className="w-full h-full object-cover"
-      />
-    )}
-  </div>
+  {/* Webcam video preview */}
+  <video
+    ref={videoRef}
+    autoPlay
+    muted
+    playsInline
+    className="w-28 h-20 rounded-md shadow-lg object-cover border border-gray-300"
+  />
 </div>
 
-      </div>
+</div>
     </div>
   );
 };
