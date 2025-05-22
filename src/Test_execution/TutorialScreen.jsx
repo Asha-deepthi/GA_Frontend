@@ -3,6 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 
 export default function VideoInterviewGuide({ onNext }) {
+  const [userName, setUserName] = useState(null);
+   // fetch from your backend
+  useEffect(() => {
+  const id = localStorage.getItem('userId');
+  if (!id) return setUserName('Guest');
+
+  fetch('http://127.0.0.1:8000/test-execution/submit-details/${id}/')
+    .then(res => res.json())
+    .then(profile => setUserName(profile.name))
+    .catch(() => setUserName('Guest'));
+}, []);
+
   const navigate = useNavigate();
   const handleAccept = () => {
   navigate("/instructionscreen");
@@ -35,7 +47,7 @@ export default function VideoInterviewGuide({ onNext }) {
               alt="Avatar"
               className="w-6 h-6 rounded-full"
             />
-            <span className="text-[#1A1A1A] text-base font-medium">Arjun</span>
+            <span className="text-[#1A1A1A] text-base font-medium">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </header>
