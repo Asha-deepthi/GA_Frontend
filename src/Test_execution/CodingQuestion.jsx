@@ -10,6 +10,8 @@ const CodingQuestionScreen = () => {
 
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [micLevel, setMicLevel] = useState(0);
+  const [videoLevel, setVideoLevel] = useState(0);
 
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
@@ -42,9 +44,82 @@ const CodingQuestionScreen = () => {
     };
   }, [webcamStream]);
 
+  useEffect(() => {
+    if (!webcamStream || !videoRef.current) return;
+    const videoEl = videoRef.current;
+    let prevFrames = 0;
+    let prevDropped = 0;
+    let initialized = false;
+
+    const getStats = () => {
+      if (videoEl.getVideoPlaybackQuality) {
+        const quality = videoEl.getVideoPlaybackQuality();
+        return { total: quality.totalVideoFrames, dropped: quality.droppedVideoFrames };
+      }
+      const total = videoEl.webkitDecodedFrameCount || 0;
+      const dropped = videoEl.webkitDroppedFrameCount || 0;
+      return { total, dropped };
+    };
+
+    const initQuality = () => {
+      const { total, dropped } = getStats();
+      prevFrames = total;
+      prevDropped = dropped;
+      initialized = true;
+    };
+
+    const checkQuality = () => {
+      if (!initialized) {
+        initQuality();
+      } else {
+        const { total, dropped } = getStats();
+        const newFrames = total - prevFrames;
+        const newDropped = dropped - prevDropped;
+        const ratio = newFrames > 0 ? (newFrames - newDropped) / newFrames : 1;
+        const level = Math.min(5, Math.max(1, Math.ceil(ratio * 5)));
+        setVideoLevel(level);
+        prevFrames = total;
+        prevDropped = dropped;
+      }
+      setTimeout(checkQuality, 1000);
+    };
+    checkQuality();
+  }, [webcamStream]);
+
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        const src = audioCtx.createMediaStreamSource(stream);
+        src.connect(analyser);
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const data = new Uint8Array(bufferLength);
+
+        const measure = () => {
+          analyser.getByteFrequencyData(data);
+          const avg = data.reduce((sum, v) => sum + v, 0) / bufferLength;
+          const level = Math.min(5, Math.ceil((avg / 255) * 5));
+          setMicLevel(level);
+          requestAnimationFrame(measure);
+        };
+        measure();
+      })
+      .catch(console.error);
+  }, []);
+
   const handleBack = () => navigate("/mcqquestion");
   const handleFullscreen = () => navigate("/fullscreen");
   const handleSubmit = () => navigate("/result");
+
+  const renderBars = (level, color) => (
+    <div className="flex items-end gap-1">
+      {[1,2,3,4,5].map(n => (
+        <div key={n} className={`w-[4px] ${n <= level ? `bg-${color}-500` : 'bg-gray-200'}`} style={{ height: `${n * 4}px` }} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="w-screen h-screen bg-white font-sans overflow-auto">
@@ -67,11 +142,7 @@ const CodingQuestionScreen = () => {
           </div>
           <div className="w-px h-8 bg-gray-300" />
           <div className="flex items-center gap-2">
-            <img
-              src="/images/profilepic.png"
-              alt="Profile"
-              className="w-6 h-6 rounded-full object-cover"
-            />
+            <img src="/images/profilepic.png" alt="Profile" className="w-6 h-6 rounded-full object-cover" />
             <div className="text-sm text-gray-700 font-semibold">Arjun</div>
           </div>
         </div>
@@ -101,9 +172,7 @@ const CodingQuestionScreen = () => {
             {loading ? (
               <p className="text-gray-500">Loading question...</p>
             ) : questionData ? (
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {questionData.question_text}
-              </p>
+              <p className="text-gray-700 whitespace-pre-wrap">{questionData.question_text}</p>
             ) : (
               <p className="text-red-500">No coding question found.</p>
             )}
@@ -111,69 +180,38 @@ const CodingQuestionScreen = () => {
 
           {/* Right Box - Code Display */}
           <div className="border w-[610px] h-[410px] rounded-xl shadow-md flex flex-col items-center justify-center bg-gray-50 p-4">
-            <img
-              src="/images/codeblock.png"
-              alt="Code Display"
-              className="w-[580px] h-[329px] rounded-[5px] pt-[1%] pb-[1%] object-cover"
-            />
+            <img src="/images/codeblock.png" alt="Code Display" className="w-[580px] h-[329px] rounded-[5px] pt-[1%] pb-[1%] object-cover" />
             <div className="flex justify-end items-center gap-[10px] w-[425px] h-[36px] mt-2">
-              <button className="bg-green-500 active:bg-green-600 text-white font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
-                Save Code
-              </button>
-              <button className="bg-orange-400 active:bg-orange-500 text-white font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
-                RUN the Code
-              </button>
-              <button onClick={handleFullscreen} className="bg-white border border-orange-300 text-orange-500 font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">
-                See Full Screen
-              </button>
+              <button className="bg-green-500 active:bg-green-600 text-white font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">Save Code</button>
+              <button className="bg-orange-400 active:bg-orange-500 text-white font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">RUN the Code</button>
+              <button onClick={handleFullscreen} className="bg-white border border-orange-300 text-orange-500 font-semibold px-4 py-1 rounded-full text-sm h-full focus:outline-none">See Full Screen</button>
             </div>
           </div>
         </div>
 
         {/* Submit Button */}
         <div className="mt-8">
-          <button onClick={handleSubmit} className="bg-teal-500 active:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full focus:outline-none">
-            Submit & Continue
-          </button>
+          <button onClick={handleSubmit} className="bg-teal-500 active:bg-teal-600 text-white font-semibold px-6 py-3 rounded-full focus:outline-none">Submit & Continue</button>
         </div>
       </div>
 
       {/* Footer Webcam Section */}
-      <div className="relative w-full">
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-sm text-black font-medium">
-          Note : Do not refresh the page or you'll lose your data
-        </div>
-
-        <div className="absolute bottom-2 right-4 flex gap-2 items-end">
-          <div className="flex flex-col gap-2 items-start justify-end mr-2">
-            <div className="flex items-end gap-1 text-gray-700">
-              <FaMicrophone className="mr-1" />
-            <div className="w-[2px] h-[3px] bg-yellow-500" />
-            <div className="w-[2px] h-[9px] bg-yellow-500" />
-            <div className="w-[2px] h-[15px] bg-yellow-500" />
-            <div className="w-[2px] h-[21px] bg-yellow-500" />
-            <div className="w-[2px] h-[27px] bg-yellow-500" />
-            </div>
-            <div className="flex items-end gap-1 text-gray-700">
-              <FaVideo className="mr-1" />
-            <div className="w-[2px] h-[3px] bg-green-500" />
-            <div className="w-[2px] h-[9px] bg-green-500" />
-            <div className="w-[2px] h-[15px] bg-green-500" />
-            <div className="w-[2px] h-[21px] bg-green-500" />
-            <div className="w-[2px] h-[27px] bg-green-500" />
-            </div>
-          </div>
-          <div className="w-28 h-20 rounded-lg overflow-hidden bg-black border border-gray-300">
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
+      <div className="fixed bottom-4 right-4 z-50">
+  <div className="flex gap-4 items-end">
+    <div className="flex flex-col items-end gap-2 text-gray-700">
+      <div className="flex items-center gap-1">
+        <FaMicrophone /> {renderBars(micLevel, 'yellow')}
       </div>
+      <div className="flex items-center gap-1">
+        <FaVideo /> {renderBars(videoLevel, 'teal')}
+      </div>
+    </div>
+    <div className="w-28 h-20 rounded-lg overflow-hidden border border-gray-300 bg-black">
+      <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+    </div>
+  </div>
+</div>
+
     </div>
   );
 };

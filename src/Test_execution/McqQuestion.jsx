@@ -12,48 +12,112 @@ export default function MCQQuestionScreen() {
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [micLevel, setMicLevel] = useState(0);
+  const [videoLevel, setVideoLevel] = useState(0);
 
   const handleBack = () => navigate("/videoquestion");
   const handleSubmit = () => navigate("/codingquestion");
 
+  // Fetch MCQ question
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch questions");
-        return res.json();
-      })
+      .then(res => res.ok ? res.json() : Promise.reject("Fetch failed"))
       .then(data => {
-        // Find the MCQ question and extract fields
-        const mcqQuestionEntry = data.find(q => q.question_type === "mcq");
-        setQuestionData(mcqQuestionEntry);
-        setLoading(false);
+        const mcq = data.find(q => q.question_type === "mcq");
+        setQuestionData(mcq);
       })
-      .catch(err => {
-        console.error("Error fetching MCQ question:", err);
-        setLoading(false);
-      });
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
+  // Monitor video playback quality
   useEffect(() => {
-    if (webcamStream && videoRef.current) {
-      if (videoRef.current.srcObject !== webcamStream) {
-        videoRef.current.srcObject = webcamStream;
-        videoRef.current.play().catch(err => console.error("Error playing webcam stream:", err));
+    if (!webcamStream || !videoRef.current) return;
+    const videoEl = videoRef.current;
+    videoEl.srcObject = webcamStream;
+    videoEl.play().catch(console.error);
+
+    let prevFrames = 0;
+    let prevDropped = 0;
+    let initialized = false;
+
+    const getStats = () => {
+      if (videoEl.getVideoPlaybackQuality) {
+        const quality = videoEl.getVideoPlaybackQuality();
+        return { total: quality.totalVideoFrames, dropped: quality.droppedVideoFrames };
       }
-    }
-    return () => {
-      if (videoRef.current) videoRef.current.srcObject = null;
+      const total = videoEl.webkitDecodedFrameCount || 0;
+      const dropped = videoEl.webkitDroppedFrameCount || 0;
+      return { total, dropped };
     };
+
+    const initQuality = () => {
+      const { total, dropped } = getStats();
+      prevFrames = total;
+      prevDropped = dropped;
+      initialized = true;
+    };
+
+    const checkQuality = () => {
+      if (!initialized) {
+        initQuality();
+      } else {
+        const { total, dropped } = getStats();
+        const newFrames = total - prevFrames;
+        const newDropped = dropped - prevDropped;
+        const ratio = newFrames > 0 ? (newFrames - newDropped) / newFrames : 1;
+        const level = Math.min(5, Math.max(1, Math.ceil(ratio * 5)));
+        setVideoLevel(level);
+        prevFrames = total;
+        prevDropped = dropped;
+      }
+      setTimeout(checkQuality, 1000);
+    };
+    checkQuality();
   }, [webcamStream]);
 
-  const toggleOption = (key) => {
-    setSelectedOptions(prev => 
+  // Monitor microphone level
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        const src = audioCtx.createMediaStreamSource(stream);
+        src.connect(analyser);
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const data = new Uint8Array(bufferLength);
+
+        const measure = () => {
+          analyser.getByteFrequencyData(data);
+          const avg = data.reduce((sum, v) => sum + v, 0) / bufferLength;
+          const level = Math.min(5, Math.ceil((avg / 255) * 5));
+          setMicLevel(level);
+          requestAnimationFrame(measure);
+        };
+        measure();
+      })
+      .catch(console.error);
+  }, []);
+
+  const toggleOption = key => {
+    setSelectedOptions(prev =>
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     );
   };
 
+  const renderBars = (level, color) => (
+    <div className="flex items-end gap-1">
+      {[1,2,3,4,5].map(n => (
+        <div key={n}
+             className={`w-[4px] ${n <= level ? `bg-${color}-500` : 'bg-gray-200'}`}
+             style={{ height: `${n * 4}px` }} />
+      ))}
+    </div>
+  );
+
   return (
-    <div className="relative w-screen h-screen bg-white font-sans overflow-y-auto overflow-x-hidden">
+    <div className="relative w-screen h-screen bg-white font-sans overflow-auto">
       {/* Top Colored Bar */}
       <div className="flex w-full h-1">
         <div className="flex-1 bg-red-500" />
@@ -63,7 +127,7 @@ export default function MCQQuestionScreen() {
         <div className="flex-1 bg-cyan-500" />
       </div>
 
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex justify-between items-center px-6 md:px-20 py-6">
         <div className="w-44 h-6 bg-gray-300" />
         <div className="flex items-center gap-4">
@@ -79,7 +143,7 @@ export default function MCQQuestionScreen() {
         </div>
       </div>
 
-      {/* Navigation Row */}
+      {/* Navigation */}
       <div className="relative w-full flex items-center px-6 md:px-20 mb-12" style={{ height: 24 }}>
         <button onClick={handleBack} className="absolute left-[110px] text-gray-600 bg-white flex items-center gap-2">
           <FaArrowLeft />
@@ -97,7 +161,7 @@ export default function MCQQuestionScreen() {
         <div className="absolute right-[160px] text-gray-700 font-semibold">(03/04)</div>
       </div>
 
-      {/* Title & Text */}
+      {/* Question */}
       <div className="text-center px-6 md:px-20 mt-8 mb-8 max-w-3xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">MCQ Question</h1>
         {loading ? (
@@ -109,7 +173,7 @@ export default function MCQQuestionScreen() {
         )}
       </div>
 
-      {/* Options Grid */}
+      {/* Options */}
       <div className="px-6 md:px-20 mb-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
         {questionData && questionData.options ? (
           Object.entries(questionData.options).map(([key, value]) => (
@@ -128,7 +192,7 @@ export default function MCQQuestionScreen() {
         )}
       </div>
 
-      {/* Submit Button */}
+      {/* Submit */}
       <div className="flex flex-col items-center mb-12">
         <button
           onClick={handleSubmit}
@@ -136,40 +200,23 @@ export default function MCQQuestionScreen() {
         >
           Submit & Continue
         </button>
-        {/* Note Below Submit */}
         <p className="mt-16 text-center text-sm text-black font-medium">
           Note: Do not refresh the page or you'll lose your data
         </p>
       </div>
 
-      {/* Bottom-Right Live Webcam Feed */}
-      <div className="fixed bottom-4 right-4 flex items-end gap-4 z-50">
-        <div className="flex flex-col gap-2 items-start justify-end mr-2">
-          <div className="flex items-end gap-1 text-gray-700">
-            <FaMicrophone />
-            <div className="w-[2px] h-[3px] bg-yellow-500" />
-            <div className="w-[2px] h-[9px] bg-yellow-500" />
-            <div className="w-[2px] h-[15px] bg-yellow-500" />
-            <div className="w-[2px] h-[21px] bg-yellow-500" />
-            <div className="w-[2px] h-[27px] bg-yellow-500" />
+      {/* Live Signals */}
+      <div className="absolute bottom-4 right-4 flex items-end gap-4 z-50">
+        <div className="flex flex-col gap-2 items-start justify-end mr-2 text-gray-700">
+          <div className="flex items-center gap-1">
+            <FaMicrophone /> {renderBars(micLevel, 'yellow')}
           </div>
-          <div className="flex items-end gap-1 text-gray-700">
-            <FaVideo />
-            <div className="w-[2px] h-[3px] bg-green-500" />
-            <div className="w-[2px] h-[9px] bg-green-500" />
-            <div className="w-[2px] h-[15px] bg-green-500" />
-            <div className="w-[2px] h-[21px] bg-green-500" />
-            <div className="w-[2px] h-[27px] bg-green-500" />
+          <div className="flex items-center gap-1">
+            <FaVideo /> {renderBars(videoLevel, 'teal')}
           </div>
         </div>
         <div className="w-28 h-20 rounded-lg overflow-hidden border border-gray-300 bg-black">
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
         </div>
       </div>
     </div>

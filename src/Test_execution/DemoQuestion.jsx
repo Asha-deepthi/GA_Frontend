@@ -195,7 +195,7 @@ const DemoQuestion = () => {
         {[10, 30, 50, 70, 90].map((threshold, i) => (
           <div
             key={i}
-            style={{ width: 2, height: 6 + i * 3 }}
+            style={{ width: 2, height: 2.22 + i*4.45 }}
             className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
           />
         ))}
@@ -209,8 +209,8 @@ const DemoQuestion = () => {
         {[20, 60, 100, 140, 180].map((threshold, i) => (
           <div
             key={i}
-            style={{ width: 2, height: 6 + i * 3 }}
-            className={videoStrength > threshold ? 'bg-blue-500' : 'bg-gray-300'}
+            style={{ width: 2, height: 2.22 + i*4.45 }}
+            className={videoStrength > threshold ? 'bg-teal-500' : 'bg-gray-300'}
           />
         ))}
       </div>
