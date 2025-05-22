@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 
@@ -9,7 +9,7 @@ export default function VideoInterviewGuide({ onNext }) {
   const id = localStorage.getItem('userId');
   if (!id) return setUserName('Guest');
 
-  fetch('http://127.0.0.1:8000/test-execution/submit-details/${id}/')
+  fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
     .then(res => res.json())
     .then(profile => setUserName(profile.name))
     .catch(() => setUserName('Guest'));
