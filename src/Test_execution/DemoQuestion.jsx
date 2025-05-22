@@ -176,18 +176,18 @@ const DemoQuestion = () => {
           <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
             <div className="flex items-center gap-6">
               {/* Mic Button */}
-              <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="relative w-18 h-18 flex items-center justify-center">
                 {isRecording && (
                   <>
-                    <span className="absolute w-24 h-24 rounded-full border-8 border-teal-400 animate-pingCustom" />
-                    <span className="absolute w-26 h-26 rounded-full border-8 border-teal-300 animate-pingCustom delay-200" />
-                    <span className="absolute w-28 h-28 rounded-full border-8 border-teal-200 animate-pingCustom delay-400" />
+                    <span className="absolute w-20 h-20 rounded-full border-8 border-teal-400 animate-pingCustom" />
+                    <span className="absolute w-22 h-22 rounded-full border-8 border-teal-300 animate-pingCustom delay-200" />
+                    <span className="absolute w-24 h-24 rounded-full border-8 border-teal-200 animate-pingCustom delay-400" />
 
                   </>
                 )}
                 <button
                   onClick={handleMicClick}
-                  className={`relative z-10 w-20 h-20 rounded-full p-2 flex items-center justify-center transition duration-300 shadow-md ${isRecording ? 'bg-teal-600' : 'bg-teal-500'
+                  className={`relative z-10 w-16 h-16 rounded-full p-0 flex items-center justify-center transition duration-300 shadow-md ${isRecording ? 'bg-teal-600' : 'bg-teal-500'
                     }`}
                   aria-label="Toggle Recording"
                   disabled={isProcessing}
@@ -204,7 +204,7 @@ const DemoQuestion = () => {
               {audioUrl && (
                 <button
                   onClick={handleRetry}
-                  className="w-20 h-20 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
+                  className="w-16 h-16 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
                   aria-label="Retry Recording"
                 >
                   <FiRefreshCw className="w-6 h-6 text-white" />
@@ -246,11 +246,11 @@ const DemoQuestion = () => {
             {/* Mic Strength Bars */}
             <div className="flex items-center gap-2">
               <FaMicrophone className="text-gray-500 text-[16px]" />
-              <div className="flex items-end gap-[2px]">
+              <div className="flex items-end gap-[3px]">
                 {[10, 30, 50, 70, 90].map((threshold, i) => (
                   <div
                     key={i}
-                    style={{ width: 2, height: 6 + i * 3 }}
+                    style={{ width: 4, height: 4 + i * 4 }}
                     className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
                   />
                 ))}
@@ -260,11 +260,11 @@ const DemoQuestion = () => {
             {/* Video Strength Bars */}
             <div className="flex items-center gap-2">
               <FaVideo className="text-gray-500 text-[16px]" />
-              <div className="flex items-end gap-[2px]">
+              <div className="flex items-end gap-[3px]">
                 {[20, 60, 100, 140, 180].map((threshold, i) => (
                   <div
                     key={i}
-                    style={{ width: 2, height: 6 + i * 3 }}
+                    style={{ width: 4, height: 4 + i * 4 }}
                     className={videoStrength > threshold ? 'bg-blue-500' : 'bg-gray-300'}
                   />
                 ))}

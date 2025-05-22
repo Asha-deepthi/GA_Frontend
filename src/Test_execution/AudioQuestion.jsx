@@ -120,23 +120,23 @@ const AudioQuestion = () => {
     formData.append("audio_file", audioBlob, "response.webm");
 
     try {
-  const response = await fetch("http://localhost:8000/test-execution/upload-audio/", {
-    method: "POST",
-    body: formData,
-    // Do NOT set 'Content-Type' manually for FormData
-  });
+      const response = await fetch("http://localhost:8000/test-execution/upload-audio/", {
+        method: "POST",
+        body: formData,
+        // Do NOT set 'Content-Type' manually for FormData
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text();  // get error details
-    console.error("Upload failed:", response.status, errorText);
-    throw new Error("Failed to upload audio");
-  }
+      if (!response.ok) {
+        const errorText = await response.text();  // get error details
+        console.error("Upload failed:", response.status, errorText);
+        throw new Error("Failed to upload audio");
+      }
 
-  const result = await response.json();
-  console.log("Audio uploaded:", result);
-} catch (error) {
-  console.error("Upload error:", error);
-}
+      const result = await response.json();
+      console.log("Audio uploaded:", result);
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
 
   };
 
@@ -195,14 +195,26 @@ const AudioQuestion = () => {
         {/* Mic and Controls */}
         <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
           <div className="flex items-center gap-6">
-            <button
-              onClick={handleMicClick}
-              className="w-20 h-20 rounded-full p-2 flex items-center justify-center bg-teal-500 shadow-md transition duration-300"
-              aria-label="Toggle Recording"
-              disabled={isProcessing}
-            >
-              <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain rounded-full" />
-            </button>
+            <div className="relative w-18 h-18 flex items-center justify-center">
+              {isRecording && (
+                <>
+                  <span className="absolute w-20 h-20 rounded-full border-8 border-teal-400 animate-pingCustom" />
+                  <span className="absolute w-22 h-22 rounded-full border-8 border-teal-300 animate-pingCustom delay-200" />
+                  <span className="absolute w-24 h-24 rounded-full border-8 border-teal-200 animate-pingCustom delay-400" />
+
+                </>
+              )}
+              <button
+                onClick={handleMicClick}
+                className={`relative z-10 w-16 h-16 rounded-full p-0 flex items-center justify-center transition duration-300 shadow-md ${isRecording ? 'bg-teal-600' : 'bg-teal-500'
+                  }`}
+                aria-label="Toggle Recording"
+                disabled={isProcessing}
+              >
+                <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain" />
+              </button>
+            </div>
+
 
             <div className="flex flex-col gap-2 items-start">
               {isRecording && <p className="text-sm text-gray-600">Recording...</p>}
@@ -211,7 +223,7 @@ const AudioQuestion = () => {
             {audioUrl && (
               <button
                 onClick={handleRetry}
-                className="w-20 h-20 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
+                className="w-16 h-16 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
                 aria-label="Retry Recording"
               >
                 <FiRefreshCw className="w-6 h-6 text-white" />
