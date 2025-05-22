@@ -2,72 +2,88 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStream } from './StreamContext';
 import { FaMicrophone, FaVideo } from 'react-icons/fa';
+import { FiRefreshCw } from 'react-icons/fi';
 
 const DemoQuestion = () => {
   const { webcamStream } = useStream();
   const [isRecording, setIsRecording] = useState(false);
-  const [error, setError] = useState('');
   const [micStrength, setMicStrength] = useState(0);
   const [videoStrength, setVideoStrength] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [micStream, setMicStream] = useState(null);
   const videoRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const navigate = useNavigate();
 
-  const handleMicClick = () => {
-    setIsRecording((prev) => !prev);
-    // Optionally add real recording logic
+  const handleMicClick = async () => {
+    setIsProcessing(true);
+
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setMicStream(stream);
+        const recorder = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+          if (audioUrl) URL.revokeObjectURL(audioUrl);
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          stream.getTracks().forEach((track) => track.stop());
+          setMicStream(null);
+          setIsProcessing(false);
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setIsRecording(true);
+        setIsProcessing(false);
+      } catch (err) {
+        console.error('Microphone access denied:', err);
+        setIsProcessing(false);
+      }
+    } else {
+      mediaRecorder?.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setAudioUrl(null);
   };
 
   const handleAccept = () => {
     navigate('/audioquestion');
   };
 
+  // Webcam setup
   useEffect(() => {
     if (webcamStream && videoRef.current) {
       let active = true;
       if (videoRef.current.srcObject !== webcamStream) {
         videoRef.current.srcObject = webcamStream;
       }
-      videoRef.current
-        .play()
-        .catch((err) => {
-          if (active) console.error('Error playing video:', err);
-        });
+      videoRef.current.play().catch((err) => {
+        if (active) console.error('Error playing video:', err);
+      });
       return () => {
         active = false;
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
-        }
+        if (videoRef.current) videoRef.current.srcObject = null;
       };
     }
   }, [webcamStream]);
 
+  // Video strength analyzer
   useEffect(() => {
     if (!webcamStream) return;
 
-    // MIC STRENGTH ANALYSER ONLY IF AUDIO TRACKS EXIST
-    const audioTracks = webcamStream.getAudioTracks();
-    let audioContext, micSource, analyser, dataArray, micAnimationFrameId;
-
-    if (audioTracks.length > 0) {
-      audioContext = new AudioContext();
-      micSource = audioContext.createMediaStreamSource(webcamStream);
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      micSource.connect(analyser);
-      dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      const updateMicStrength = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        setMicStrength(avg);
-        micAnimationFrameId = requestAnimationFrame(updateMicStrength);
-      };
-      updateMicStrength();
-    } else {
-      setMicStrength(0);
-    }
-
-    // VIDEO STRENGTH ANALYSER
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     let videoAnimationFrameId;
@@ -75,14 +91,12 @@ const DemoQuestion = () => {
     const updateVideoStrength = () => {
       const video = videoRef.current;
       if (!video || video.readyState !== 4) {
-        // Not enough video data yet, try again next frame
         videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
         return;
       }
 
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const length = frame.data.length;
@@ -92,28 +106,47 @@ const DemoQuestion = () => {
         const r = frame.data[i];
         const g = frame.data[i + 1];
         const b = frame.data[i + 2];
-        const brightness = (r + g + b) / 3;
-        totalBrightness += brightness;
+        totalBrightness += (r + g + b) / 3;
       }
 
       const avgBrightness = totalBrightness / (length / 4);
       setVideoStrength(avgBrightness);
       videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
     };
-    updateVideoStrength();
 
-    return () => {
-      if (audioTracks.length > 0) {
-        cancelAnimationFrame(micAnimationFrameId);
-        audioContext.close();
-      }
-      cancelAnimationFrame(videoAnimationFrameId);
-    };
+    updateVideoStrength();
+    return () => cancelAnimationFrame(videoAnimationFrameId);
   }, [webcamStream]);
+
+  // Mic strength analyzer
+  useEffect(() => {
+    if (!micStream) return;
+
+    const audioContext = new AudioContext();
+    const micSource = audioContext.createMediaStreamSource(micStream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    micSource.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let micAnimationFrameId;
+
+    const updateMicStrength = () => {
+      analyser.getByteFrequencyData(dataArray);
+      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+      setMicStrength(avg);
+      micAnimationFrameId = requestAnimationFrame(updateMicStrength);
+    };
+
+    updateMicStrength();
+    return () => {
+      cancelAnimationFrame(micAnimationFrameId);
+      audioContext.close();
+    };
+  }, [micStream]);
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto">
-      {/* Top Color Bar */}
+      {/* Top Colored Progress Bar */}
       <div className="top-0 left-0 w-full h-[10px] flex z-50">
         <div className="flex-1 bg-red-500" />
         <div className="flex-1 bg-orange-400" />
@@ -122,50 +155,75 @@ const DemoQuestion = () => {
         <div className="flex-1 bg-cyan-500" />
       </div>
 
+      {/* Header */}
       <div className="relative max-w-[1250px] mx-auto px-4 pt-[70px] pb-12">
         <header className="flex justify-between items-center h-[44px] px-8 mb-12">
           <div className="w-[197.78px] h-[40px] bg-gray-300" />
           <div className="flex items-center gap-2">
-            <img
-              src="/images/profilepic.png"
-              alt="Avatar"
-              className="w-6 h-6 rounded-full"
-            />
+            <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
             <span className="text-base font-medium text-gray-900">Arjun</span>
           </div>
         </header>
 
+        {/* Main Content */}
         <main className="flex flex-col items-center text-center px-4">
-          <h2 className="w-full max-w-[856px] font-extrabold text-[28px] sm:text-[32px] md:text-[36px] lg:text-[40px] leading-[40px] md:leading-[44px] lg:leading-[48px] text-black text-center mb-10">
-            Demo Question
-          </h2>
-
-          <p className="w-full max-w-[894px] font-normal text-[18px] sm:text-[20px] md:text-[22px] lg:text-[24px] leading-[30px] md:leading-[32px] lg:leading-[34px] text-gray-600 text-center mb-12">
-            1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod?
+          <h2 className="font-extrabold text-[40px] leading-[48px] text-black mb-10">Demo Question</h2>
+          <p className="text-[24px] leading-[34px] text-gray-600 mb-12 max-w-[894px]">
+            1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod...
           </p>
 
-          <div
-            className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex items-center justify-center px-8 sm:px-24 md:px-[200px] lg:px-[362px] py-[50px] gap-[10px] mb-12"
-            style={{
-              background: `linear-gradient(0deg, rgba(0, 163, 152, 0.03), rgba(0, 163, 152, 0.03)), #FFFFFF`,
-            }}
-          >
-            <button
-              onClick={handleMicClick}
-              className={`w-17 h-17 rounded-full p-1 flex items-center justify-center ${
-                isRecording ? 'bg-red-500' : 'bg-transparent'
-              } shadow-md transition duration-300`}
-              aria-pressed={isRecording}
-              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-            >
-              <img
-                src="/images/Audio Recording.png"
-                alt="Mic Icon"
-                className="w-full h-full object-contain"
-              />
-            </button>
+          {/* Mic Section */}
+          <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
+            <div className="flex items-center gap-6">
+              {/* Mic Button */}
+              <div className="relative w-24 h-24 flex items-center justify-center">
+                {isRecording && (
+                  <>
+                    <span className="absolute w-24 h-24 rounded-full border-8 border-teal-400 animate-pingCustom" />
+                    <span className="absolute w-26 h-26 rounded-full border-8 border-teal-300 animate-pingCustom delay-200" />
+                    <span className="absolute w-28 h-28 rounded-full border-8 border-teal-200 animate-pingCustom delay-400" />
+
+                  </>
+                )}
+                <button
+                  onClick={handleMicClick}
+                  className={`relative z-10 w-20 h-20 rounded-full p-2 flex items-center justify-center transition duration-300 shadow-md ${isRecording ? 'bg-teal-600' : 'bg-teal-500'
+                    }`}
+                  aria-label="Toggle Recording"
+                  disabled={isProcessing}
+                >
+                  <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain" />
+                </button>
+              </div>
+
+
+              {/* Status Text */}
+              {isRecording && <p className="text-sm text-gray-600">Recording...</p>}
+
+              {/* Retry Button */}
+              {audioUrl && (
+                <button
+                  onClick={handleRetry}
+                  className="w-20 h-20 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center shadow transition"
+                  aria-label="Retry Recording"
+                >
+                  <FiRefreshCw className="w-6 h-6 text-white" />
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* Audio Playback */}
+          {audioUrl ? (
+            <div className="mb-6 text-center">
+              <p className="text-sm text-gray-700 mb-2">Your Recorded Answer:</p>
+              <audio controls autoPlay src={audioUrl} className="w-full max-w-md" />
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 mb-6">No recording yet</p>
+          )}
+
+          {/* Continue Button */}
           <button
             onClick={handleAccept}
             className="w-[148px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-[40px] px-[40px] py-[10px] transition mt-16 mb-4"
@@ -175,7 +233,7 @@ const DemoQuestion = () => {
         </main>
       </div>
 
-      {/* Bottom Area */}
+      {/* Bottom HUD */}
       <div className="bottom-4 left-0 w-full z-50 pointer-events-none">
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 pointer-events-auto">
           <p className="text-[14px] leading-[20px] font-medium text-gray-500 text-center">
@@ -183,51 +241,46 @@ const DemoQuestion = () => {
           </p>
         </div>
 
-        {/* Bottom Right Controls */}
-{/* Bottom Right Controls */}
-<div className="absolute bottom-6 right-6 flex items-center gap-4 z-50 pointer-events-auto">
-  {/* Mic + Video strength bars */}
-  <div className="flex flex-col items-start gap-4">
-    {/* Mic strength bars */}
-    <div className="flex items-center gap-2">
-      <FaMicrophone className="text-gray-500 text-[16px]" />
-      <div className="flex items-end gap-[2px]">
-        {[10, 30, 50, 70, 90].map((threshold, i) => (
-          <div
-            key={i}
-            style={{ width: 2, height: 2.22 + i*4.45 }}
-            className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
+        <div className="absolute bottom-6 right-6 flex items-center gap-4 z-50 pointer-events-auto">
+          <div className="flex flex-col items-start gap-4">
+            {/* Mic Strength Bars */}
+            <div className="flex items-center gap-2">
+              <FaMicrophone className="text-gray-500 text-[16px]" />
+              <div className="flex items-end gap-[2px]">
+                {[10, 30, 50, 70, 90].map((threshold, i) => (
+                  <div
+                    key={i}
+                    style={{ width: 2, height: 6 + i * 3 }}
+                    className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Video Strength Bars */}
+            <div className="flex items-center gap-2">
+              <FaVideo className="text-gray-500 text-[16px]" />
+              <div className="flex items-end gap-[2px]">
+                {[20, 60, 100, 140, 180].map((threshold, i) => (
+                  <div
+                    key={i}
+                    style={{ width: 2, height: 6 + i * 3 }}
+                    className={videoStrength > threshold ? 'bg-blue-500' : 'bg-gray-300'}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-28 h-20 rounded-md shadow-lg object-cover border border-gray-300"
           />
-        ))}
+        </div>
       </div>
-    </div>
-
-    {/* Video strength bars */}
-    <div className="flex items-center gap-2">
-      <FaVideo className="text-gray-500 text-[16px]" />
-      <div className="flex items-end gap-[2px]">
-        {[20, 60, 100, 140, 180].map((threshold, i) => (
-          <div
-            key={i}
-            style={{ width: 2, height: 2.22 + i*4.45 }}
-            className={videoStrength > threshold ? 'bg-teal-500' : 'bg-gray-300'}
-          />
-        ))}
-      </div>
-    </div>
-  </div>
-
-  {/* Webcam video preview */}
-  <video
-    ref={videoRef}
-    autoPlay
-    muted
-    playsInline
-    className="w-28 h-20 rounded-md shadow-lg object-cover border border-gray-300"
-  />
-</div>
-
-</div>
     </div>
   );
 };
