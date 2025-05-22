@@ -126,11 +126,12 @@ const AudioQuestion = () => {
         // Do NOT set 'Content-Type' manually for FormData
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();  // get error details
-        console.error("Upload failed:", response.status, errorText);
-        throw new Error("Failed to upload audio");
-      }
+  if (!response.ok) {
+    const errorText = await response.text();  // get error details
+    console.error("Upload failed:", response.status, errorText);
+    throw new Error("Failed to upload audio");
+  }
+  navigate("/videoquestion");
 
       const result = await response.json();
       console.log("Audio uploaded:", result);

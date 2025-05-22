@@ -25,7 +25,35 @@ const VideoQuestion = () => {
   const [videoLevel, setVideoLevel] = useState(0);
 
   const handleBack = () => navigate("/audioquestion");
-  const handleSubmit = () => navigate("/mcqquestion");
+  const handleSubmit = async () => {
+  if (!recordedBlob) {
+    alert("Please record your video answer before submitting.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("question_id", questionData?.id); // include the related question ID if needed
+  formData.append("video", recordedBlob, "recorded-video.webm");
+
+  try {
+    const response = await fetch("http://localhost:8000/test-execution/upload-video/", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();  // get error details
+      console.error("Upload failed:", response.status, errorText);
+      throw new Error("Failed to upload video.");
+    }
+
+    console.log("Video uploaded successfully.");
+    navigate("/mcqquestion");
+  } catch (error) {
+    console.error("Video upload failed:", error);
+    alert("Upload failed. Please try again.");
+  }
+};
 
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")

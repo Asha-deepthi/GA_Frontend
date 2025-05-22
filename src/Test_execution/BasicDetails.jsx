@@ -25,6 +25,8 @@ const FormPage = () => {
 
       const data = await response.json();
       if (response.ok) {
+        localStorage.setItem('userId', data.id);
+        localStorage.setItem('userName', data.name)
         alert('Details submitted successfully!');
         navigate('/tutorialscreen');
         setName('');

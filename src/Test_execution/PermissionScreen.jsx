@@ -4,6 +4,17 @@ import { FaQuestionCircle } from "react-icons/fa";
 import { useStream } from './StreamContext';  // Your custom context hook
 
 export default function PermissionScreen() {
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   const [webcam, setWebcam] = useState(false);
   const [mic, setMic] = useState(false);
   const [screen, setScreen] = useState(false);
@@ -89,7 +100,7 @@ export default function PermissionScreen() {
           <div className="h-6 w-[2px] bg-gray-300" />
           <div className="w-[90px] h-[44px] flex items-center justify-between gap-1.5 px-2">
             <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="font-overpass font-medium text-[16px] text-[#1A1A1A] truncate max-w-[60px]">Arjun</span>
+            <span className="font-overpass font-medium text-[16px] text-[#1A1A1A] truncate max-w-[60px]">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </header>
