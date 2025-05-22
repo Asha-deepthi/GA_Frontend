@@ -12,6 +12,7 @@ const AudioQuestion = () => {
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null); // Store blob to send to backend
   const audioChunksRef = useRef([]);
 
   const { webcamStream } = useStream();
@@ -77,7 +78,7 @@ const AudioQuestion = () => {
 
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
-          console.log("Audio URL:", url);
+          setAudioBlob(blob); // Save blob for upload
 
           stream.getTracks().forEach(track => track.stop());
           setIsProcessing(false);
@@ -101,12 +102,43 @@ const AudioQuestion = () => {
 
   const handleRetry = () => {
     setAudioUrl(null);
+    setAudioBlob(null);
     setIsRecording(false);
     audioChunksRef.current = [];
   };
 
   const handleBack = () => navigate("/demoquestion");
-  const handleSubmit = () => navigate("/videoquestion");
+
+  const handleSubmit = async () => {
+    if (!audioBlob) {
+      alert("Please record your answer before submitting.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("question_id", questionData?.id || "");
+    formData.append("audio_file", audioBlob, "response.webm");
+
+    try {
+  const response = await fetch("http://localhost:8000/test-execution/upload-audio/", {
+    method: "POST",
+    body: formData,
+    // Do NOT set 'Content-Type' manually for FormData
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();  // get error details
+    console.error("Upload failed:", response.status, errorText);
+    throw new Error("Failed to upload audio");
+  }
+
+  const result = await response.json();
+  console.log("Audio uploaded:", result);
+} catch (error) {
+  console.error("Upload error:", error);
+}
+
+  };
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto pb-24">
@@ -160,24 +192,22 @@ const AudioQuestion = () => {
           <p className="text-lg text-red-500">No audio question found.</p>
         )}
 
+        {/* Mic and Controls */}
         <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
           <div className="flex items-center gap-6">
-            {/* Mic Button */}
             <button
               onClick={handleMicClick}
-              className={`w-20 h-20 rounded-full p-2 flex items-center justify-center bg-teal-500 shadow-md transition duration-300`}
+              className="w-20 h-20 rounded-full p-2 flex items-center justify-center bg-teal-500 shadow-md transition duration-300"
               aria-label="Toggle Recording"
               disabled={isProcessing}
             >
               <img src="/images/Audio Recording.png" alt="Mic Icon" className="w-full h-full object-contain rounded-full" />
             </button>
 
-            {/* Status Text */}
             <div className="flex flex-col gap-2 items-start">
               {isRecording && <p className="text-sm text-gray-600">Recording...</p>}
             </div>
 
-            {/* Retry Button */}
             {audioUrl && (
               <button
                 onClick={handleRetry}
@@ -200,7 +230,7 @@ const AudioQuestion = () => {
           <p className="text-sm text-gray-400 mb-6">No recording yet</p>
         )}
 
-        {/* Submit */}
+        {/* Submit Button */}
         <button
           onClick={handleSubmit}
           className="w-[218px] h-[44px] bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition flex items-center justify-center mb-8"
