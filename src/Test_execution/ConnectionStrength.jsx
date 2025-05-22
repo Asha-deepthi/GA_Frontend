@@ -6,7 +6,17 @@ export default function ConnectionStrengthScreen() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
-
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   // live quality state
   const [videoBars, setVideoBars] = useState(0);
   const [audioBars, setAudioBars] = useState(0);
@@ -131,7 +141,7 @@ export default function ConnectionStrengthScreen() {
           <div className="h-6 w-px bg-gray-300" />
           <div className="flex items-center gap-2">
             <img src="images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-gray-900 text-base font-medium">Arjun</span>
+            <span className="text-gray-900 text-base font-medium">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </header>

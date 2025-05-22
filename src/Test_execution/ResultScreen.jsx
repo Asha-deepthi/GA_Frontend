@@ -1,7 +1,18 @@
-import React from "react";
+import React, { useState, useEffect } from 'react';
 import { FaQuestionCircle } from "react-icons/fa";
 
 const ResultScreen = () => {
+    const [userName, setUserName] = useState(null);
+   // fetch from your backend
+  useEffect(() => {
+  const id = localStorage.getItem('userId');
+  if (!id) return setUserName('Guest');
+
+  fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    .then(res => res.json())
+    .then(profile => setUserName(profile.name))
+    .catch(() => setUserName('Guest'));
+}, []);
     return (
         <div className="w-screen min-h-screen bg-white flex flex-col items-center justify-start px-4 pt-6 font-overpass relative overflow-hidden">
             {/* Top Color Bar */}
@@ -62,7 +73,7 @@ const ResultScreen = () => {
                                 color: '#1A1A1A',
                             }}
                         >
-                            Arjun
+                        {userName ?? 'Loading...'}
                         </span>
                     </div>
                 </div>

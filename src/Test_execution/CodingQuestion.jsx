@@ -12,7 +12,17 @@ const CodingQuestionScreen = () => {
   const [loading, setLoading] = useState(true);
   const [micLevel, setMicLevel] = useState(0);
   const [videoLevel, setVideoLevel] = useState(0);
-
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
       .then(res => {
@@ -143,7 +153,7 @@ const CodingQuestionScreen = () => {
           <div className="w-px h-8 bg-gray-300" />
           <div className="flex items-center gap-2">
             <img src="/images/profilepic.png" alt="Profile" className="w-6 h-6 rounded-full object-cover" />
-            <div className="text-sm text-gray-700 font-semibold">Arjun</div>
+            <div className="text-sm text-gray-700 font-semibold">{userName ?? 'Loading...'}</div>
           </div>
         </div>
       </div>

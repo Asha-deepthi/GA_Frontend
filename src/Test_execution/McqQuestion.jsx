@@ -4,6 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { useStream } from './StreamContext';
 
 export default function MCQQuestionScreen() {
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   const [progress] = useState([true, true, true, false]);
   const navigate = useNavigate();
   const { webcamStream } = useStream();
@@ -138,7 +149,7 @@ export default function MCQQuestionScreen() {
           <div className="h-6 w-px bg-gray-300" />
           <div className="flex items-center gap-2">
             <img src="/images/profilepic.png" alt="Profile" className="w-6 h-6 rounded-full" />
-            <span className="text-gray-700 font-semibold">Arjun</span>
+            <span className="text-gray-700 font-semibold">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </div>
