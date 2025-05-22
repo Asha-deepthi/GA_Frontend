@@ -131,6 +131,7 @@ const AudioQuestion = () => {
     console.error("Upload failed:", response.status, errorText);
     throw new Error("Failed to upload audio");
   }
+  navigate("/videoquestion");
 
   const result = await response.json();
   console.log("Audio uploaded:", result);
