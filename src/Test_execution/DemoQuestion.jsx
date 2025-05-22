@@ -16,7 +16,17 @@ const DemoQuestion = () => {
   const videoRef = useRef(null);
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
-
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   const handleMicClick = async () => {
     setIsProcessing(true);
 
@@ -161,7 +171,7 @@ const DemoQuestion = () => {
           <div className="w-[197.78px] h-[40px] bg-gray-300" />
           <div className="flex items-center gap-2">
             <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-base font-medium text-gray-900">Arjun</span>
+            <span className="text-base font-medium text-gray-900">{userName ?? 'Loading...'}</span>
           </div>
         </header>
 

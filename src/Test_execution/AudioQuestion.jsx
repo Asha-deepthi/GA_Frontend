@@ -18,7 +18,17 @@ const AudioQuestion = () => {
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
   const navigate = useNavigate();
-
+  const [userName, setUserName] = useState(null);
+     // fetch from your backend
+    useEffect(() => {
+    const id = localStorage.getItem('userId');
+    if (!id) return setUserName('Guest');
+  
+    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      .then(res => res.json())
+      .then(profile => setUserName(profile.name))
+      .catch(() => setUserName('Guest'));
+  }, []);
   // Fetch audio question
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
@@ -163,7 +173,7 @@ const AudioQuestion = () => {
           <div className="h-6 w-[2px] bg-gray-300 hidden sm:block" />
           <div className="flex items-center gap-2 px-2 sm:px-4">
             <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="font-medium text-[#1A1A1A] text-sm sm:text-base">Arjun</span>
+            <span className="font-medium text-[#1A1A1A] text-sm sm:text-base">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </header>
