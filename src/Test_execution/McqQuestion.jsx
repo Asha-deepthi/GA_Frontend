@@ -185,7 +185,7 @@ export default function MCQQuestionScreen() {
       </div>
 
       {/* Options */}
-      <div className="px-6 md:px-20 mb-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+      <div className="px-6 md:px-20 mb-12 grid grid-cols-1  md:grid-cols-2 gap-6 max-w-3xl mx-auto">
         {questionData && questionData.options ? (
           Object.entries(questionData.options).map(([key, value]) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer">
