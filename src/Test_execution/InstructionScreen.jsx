@@ -21,7 +21,17 @@ export default function InstructionScreen({ onNext, onBack }) {
     const handleAccept = () => {
       navigate("/permission");
     };
-
+    const [userName, setUserName] = useState(null);
+       // fetch from your backend
+      useEffect(() => {
+      const id = localStorage.getItem('userId');
+      if (!id) return setUserName('Guest');
+    
+      fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+        .then(res => res.json())
+        .then(profile => setUserName(profile.name))
+        .catch(() => setUserName('Guest'));
+    }, []);
   return (
     <div className="relative w-screen min-h-screen bg-gray-50 overflow-y-auto font-overpass">
       {/* Top Colored Bar */}
@@ -100,7 +110,7 @@ export default function InstructionScreen({ onNext, onBack }) {
                 color: '#1A1A1A',
               }}
             >
-              Arjun
+            {userName ?? 'Loading...'}
             </span>
           </div>
         </div>
