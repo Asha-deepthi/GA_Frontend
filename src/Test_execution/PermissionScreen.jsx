@@ -100,7 +100,7 @@ export default function PermissionScreen() {
           <div className="h-6 w-[2px] bg-gray-300" />
           <div className="w-[90px] h-[44px] flex items-center justify-between gap-1.5 px-2">
             <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="font-overpass font-medium text-[16px] text-[#1A1A1A] truncate max-w-[60px]">{userName ?? 'Loading...'}</span>
+            <span className="font-overpass font-medium text-[16px] text-[#1A1A1A]  max-w-[60px]">{userName ?? 'Loading...'}</span>
           </div>
         </div>
       </header>
