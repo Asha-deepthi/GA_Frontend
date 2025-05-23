@@ -1,9 +1,9 @@
-// AudioQuestion.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { FaClock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useStream } from './StreamContext';
 import { FiRefreshCw } from 'react-icons/fi';
+import { FaMicrophone, FaVideo } from 'react-icons/fa';
 
 const AudioQuestion = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -12,23 +12,28 @@ const AudioQuestion = () => {
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null); // Store blob to send to backend
-  const audioChunksRef = useRef([]);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [micStrength, setMicStrength] = useState(0);
+  const [videoStrength, setVideoStrength] = useState(0);
+  const [micStream, setMicStream] = useState(null); 
+  const [userName, setUserName] = useState(null);
 
+  const audioChunksRef = useRef([]);
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
   const navigate = useNavigate();
-  const [userName, setUserName] = useState(null);
-     // fetch from your backend
-    useEffect(() => {
+
+  // Fetch user name
+  useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
-  
+
     fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
   }, []);
+
   // Fetch audio question
   useEffect(() => {
     fetch("http://localhost:8000/test-execution/demo-questions/")
@@ -64,12 +69,82 @@ const AudioQuestion = () => {
     };
   }, [webcamStream]);
 
-  // Handle mic recording
+  // Track mic strength
+  useEffect(() => {
+    if (!micStream) return;
+
+    const audioContext = new AudioContext();
+    const micSource = audioContext.createMediaStreamSource(micStream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    micSource.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let micAnimationFrameId;
+
+    const updateMicStrength = () => {
+      analyser.getByteFrequencyData(dataArray);
+      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+      setMicStrength(avg);
+      micAnimationFrameId = requestAnimationFrame(updateMicStrength);
+    };
+
+    updateMicStrength();
+
+    return () => {
+      cancelAnimationFrame(micAnimationFrameId);
+      audioContext.close();
+    };
+  }, [micStream]);
+
+  // Track video strength
+  useEffect(() => {
+    if (!webcamStream) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let videoAnimationFrameId;
+
+    const updateVideoStrength = () => {
+      const video = videoRef.current;
+      if (!video || video.readyState !== 4) {
+        videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const length = frame.data.length;
+
+      let totalBrightness = 0;
+      for (let i = 0; i < length; i += 4) {
+        const r = frame.data[i];
+        const g = frame.data[i + 1];
+        const b = frame.data[i + 2];
+        totalBrightness += (r + g + b) / 3;
+      }
+
+      const avgBrightness = totalBrightness / (length / 4);
+      setVideoStrength(avgBrightness);
+      videoAnimationFrameId = requestAnimationFrame(updateVideoStrength);
+    };
+
+    updateVideoStrength();
+
+    return () => cancelAnimationFrame(videoAnimationFrameId);
+  }, [webcamStream]);
+
+  // Mic recording logic
   const handleMicClick = async () => {
     setIsProcessing(true);
+
     if (!isRecording) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setMicStream(stream); // ✅ Store mic stream
         const recorder = new MediaRecorder(stream);
         audioChunksRef.current = [];
 
@@ -88,9 +163,10 @@ const AudioQuestion = () => {
 
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
-          setAudioBlob(blob); // Save blob for upload
+          setAudioBlob(blob);
 
           stream.getTracks().forEach(track => track.stop());
+          setMicStream(null); // ✅ Stop tracking mic
           setIsProcessing(false);
         };
 
@@ -114,6 +190,7 @@ const AudioQuestion = () => {
     setAudioUrl(null);
     setAudioBlob(null);
     setIsRecording(false);
+    setMicStream(null);
     audioChunksRef.current = [];
   };
 
@@ -133,23 +210,23 @@ const AudioQuestion = () => {
       const response = await fetch("http://localhost:8000/test-execution/upload-audio/", {
         method: "POST",
         body: formData,
-        // Do NOT set 'Content-Type' manually for FormData
       });
 
-  if (!response.ok) {
-    const errorText = await response.text();  // get error details
-    console.error("Upload failed:", response.status, errorText);
-    throw new Error("Failed to upload audio");
-  }
-  navigate("/videoquestion");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Upload failed:", response.status, errorText);
+        throw new Error("Failed to upload audio");
+      }
 
       const result = await response.json();
       console.log("Audio uploaded:", result);
+      navigate("/videoquestion");
     } catch (error) {
       console.error("Upload error:", error);
     }
-
   };
+
+  
 
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto pb-24">
@@ -270,14 +347,45 @@ const AudioQuestion = () => {
       </div>
 
       {/* Webcam Box */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 z-40">
-        <div className="w-12 h-12 rounded-md overflow-hidden flex items-center justify-center bg-white">
-          <img src="/images/signal.png" alt="Voice Signal" className="w-full h-full object-contain" />
-        </div>
-        <div className="w-[150px] h-[100px] rounded-md bg-black border border-gray-400 overflow-hidden">
-          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-        </div>
-      </div>
+      <div className="absolute bottom-6 right-6 flex items-center gap-4 z-50 pointer-events-auto">
+                <div className="flex flex-col items-start gap-4">
+                  {/* Mic Strength Bars */}
+                  <div className="flex items-center gap-2">
+                    <FaMicrophone className="text-gray-500 text-[16px]" />
+                    <div className="flex items-end gap-[3px]">
+                      {[10, 30, 50, 70, 90].map((threshold, i) => (
+                        <div
+                          key={i}
+                          style={{ width: 4, height: 4 + i * 4 }}
+                          className={micStrength > threshold ? 'bg-orange-500' : 'bg-gray-300'}
+                        />
+                      ))}
+                    </div>
+                  </div>
+      
+                  {/* Video Strength Bars */}
+                  <div className="flex items-center gap-2">
+                    <FaVideo className="text-gray-500 text-[16px]" />
+                    <div className="flex items-end gap-[3px]">
+                      {[20, 60, 100, 140, 180].map((threshold, i) => (
+                        <div
+                          key={i}
+                          style={{ width: 4, height: 4 + i * 4 }}
+                          className={videoStrength > threshold ? 'bg-blue-500' : 'bg-gray-300'}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+      
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-28 h-20 rounded-md shadow-lg object-cover border border-gray-300"
+                />
+              </div>
     </div>
   );
 };
