@@ -17,6 +17,9 @@ const DemoQuestion = () => {
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
+  const [questionData, setQuestionData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [audioBlob, setAudioBlob] = useState(null);
      // fetch from your backend
     useEffect(() => {
     const id = localStorage.getItem('userId');
@@ -27,6 +30,24 @@ const DemoQuestion = () => {
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
   }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/test-execution/demo-questions/")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch video question.");
+        return res.json();
+      })
+      .then((data) => {
+        const videoQ = data.find((q) => q.question_type === "audio" && q.is_demo);
+        setQuestionData(videoQ);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setLoading(false);
+      });
+  }, []);
+
   const handleMicClick = async () => {
     setIsProcessing(true);
 
@@ -46,6 +67,7 @@ const DemoQuestion = () => {
           if (audioUrl) URL.revokeObjectURL(audioUrl);
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
+          setAudioBlob(blob);
           stream.getTracks().forEach((track) => track.stop());
           setMicStream(null);
           setIsProcessing(false);
@@ -69,8 +91,34 @@ const DemoQuestion = () => {
     setAudioUrl(null);
   };
 
-  const handleAccept = () => {
-    navigate('/audioquestion');
+  const handleAccept = async () => {
+    if (!audioBlob) {
+      alert("Please record your answer before submitting.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("question_id", questionData?.id || "");
+    formData.append("demo_audio_file", audioBlob, "response.webm");
+
+    try {
+      const response = await fetch("http://localhost:8000/test-execution/upload-demo-audio/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Upload failed:", response.status, errorText);
+        throw new Error("Failed to upload audio");
+      }
+
+      const result = await response.json();
+      console.log("Audio uploaded:", result);
+      navigate("/audioquestion");
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
   };
 
   // Webcam setup
@@ -178,9 +226,13 @@ const DemoQuestion = () => {
         {/* Main Content */}
         <main className="flex flex-col items-center text-center px-4">
           <h2 className="font-extrabold text-[40px] leading-[48px] text-black mb-10">Demo Question</h2>
-          <p className="text-[24px] leading-[34px] text-gray-600 mb-12 max-w-[894px]">
-            1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod...
-          </p>
+          {loading ? (
+          <p className="text-lg text-gray-600">Loading question...</p>
+        ) : questionData ? (
+          <p className="text-base sm:text-xl text-gray-600 max-w-[900px] mb-12 leading-relaxed">{questionData.question_text}</p>
+        ) : (
+          <p className="text-lg text-red-500">No audio question found.</p>
+        )}
 
           {/* Mic Section */}
           <div className="w-full max-w-[824px] h-[200px] border border-teal-500/20 rounded-[10px] flex flex-col items-center justify-center px-4 sm:px-[362px] mb-6 bg-[linear-gradient(0deg,rgba(0,163,152,0.03),rgba(0,163,152,0.03)),#FFFFFF]">
