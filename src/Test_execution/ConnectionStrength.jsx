@@ -7,11 +7,11 @@ export default function ConnectionStrengthScreen() {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [userName, setUserName] = useState(null);
-     // fetch from your backend
-    useEffect(() => {
+  // fetch from your backend
+  useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
-  
+
     fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
@@ -53,7 +53,7 @@ export default function ConnectionStrengthScreen() {
         await pc.setRemoteDescription(offer);
         pcRef.current = pc;
 
-        statInterval = setInterval(pollStats, 1000);
+        statInterval = setInterval(pollStats, 3000);
         audioInterval = setInterval(pollAudio, 200);
       } catch (e) {
         console.error(e);
@@ -72,22 +72,45 @@ export default function ConnectionStrengthScreen() {
   const pollStats = async () => {
     const pc = pcRef.current;
     if (!pc) return;
+
     const stats = await pc.getStats();
-    let sent = 0, lost = 0, rtt = 0;
+    let videoSent = 0, videoLost = 0, videoFPS = 0;
+    let rtt = 0, netSent = 0, netLost = 0;
+
     stats.forEach((report) => {
       if (report.type === 'outbound-rtp' && report.kind === 'video') {
-        sent += report.packetsSent || 0;
-        lost += report.packetsLost || 0;
+        videoSent += report.packetsSent || 0;
+        videoLost += report.packetsLost || 0;
+        if (report.framesPerSecond) videoFPS = report.framesPerSecond;
       }
       if (report.type === 'candidate-pair' && report.state === 'succeeded') {
         rtt = report.currentRoundTripTime || rtt;
       }
+      if (report.type === 'outbound-rtp' && report.kind === 'audio') {
+        netSent += report.packetsSent || 0;
+        netLost += report.packetsLost || 0;
+      }
     });
-    const loss = sent ? lost / sent : 0;
-    const videoLevel = Math.max(0, 5 - Math.ceil(loss * 5));
-    const netLevel = rtt ? Math.max(0, 5 - Math.floor(rtt * 2)) : 5;
+
+    // Calculate video packet loss and FPS level (scale FPS roughly 0-5 bars)
+    const videoLoss = videoSent ? videoLost / videoSent : 0;
+    const videoLossLevel = Math.max(1, 5 - Math.ceil(videoLoss * 5));
+    const fpsLevel = Math.min(5, Math.max(1, Math.round((videoFPS / 30) * 5)));
+    const videoLevel = Math.round((videoLossLevel + fpsLevel) / 2);
+    const netLoss = netSent ? netLost / netSent : 0;
+    const netLossLevel = Math.max(1, 5 - Math.ceil(netLoss * 5));
+    const rttLevel = rtt ? Math.max(1, 5 - Math.floor(rtt * 5)) : 5;
+    const netLevel = Math.round((netLossLevel + rttLevel) / 2);
+
     setVideoBars(videoLevel);
     setNetBars(netLevel);
+
+    console.log('Video packet loss:', videoLoss, 'FPS:', videoFPS, 'Video Level:', videoLevel);
+    console.log('Network packet loss:', netLoss, 'RTT:', rtt, 'Network Level:', netLevel);
+
+    if (videoLevel <= 2 || netLevel <= 2) {
+      console.warn("⚠️ Low video/network quality");
+    }
   };
 
   const pollAudio = () => {
@@ -101,21 +124,23 @@ export default function ConnectionStrengthScreen() {
       sum += norm * norm;
     }
     const rms = Math.sqrt(sum / data.length);
-    const level = Math.min(5, Math.ceil(rms * 50));
+    const level = Math.min(5, Math.max(1, Math.ceil(rms * 50)));
     setAudioBars(level);
+    console.log('Audio RMS:', rms, 'Audio Level:', level);
   };
 
-  const renderBars = (count, color) =>
-    Array.from({ length: 5 }).map((_, i) => (
+  const renderBars = (count, type = 'teal') => {
+    const filledClass = type === 'teal' ? 'bg-teal-600' : 'bg-orange-600';
+    const emptyClass = type === 'teal' ? 'bg-teal-200' : 'bg-orange-200';
+    return Array.from({ length: 5 }).map((_, i) => (
       <div
         key={i}
         style={{ width: '7.25px', height: '36px' }}
-        className={`${i < count ? color : 'bg-gray-200'} rounded-sm`} 
+        className={`${i < count ? filledClass : emptyClass} rounded-sm`}
       />
     ));
-
+  };
   const handleAccept = () => navigate('/demoquestion');
-
   const data = [
     { title: 'Your camera is ready to record.', subtitle: 'Ensure you have good lighting for a clear video.' },
     { title: 'Your microphone is working properly.', subtitle: 'Make sure your surroundings are quiet to capture clear audio.' },
@@ -156,18 +181,22 @@ export default function ConnectionStrengthScreen() {
           </div>
           <p className="mt-4 font-semibold text-gray-900">{data[0].title}</p>
           <p className="text-sm text-gray-600 mt-1">{data[0].subtitle}</p>
-          <div className="absolute bottom-6 right-6 flex space-x-1">{renderBars(videoBars, 'bg-teal-400')}</div>
+          <div className="absolute bottom-6 right-6 flex space-x-1">
+            {renderBars(videoBars, 'teal')}
+          </div>
         </div>
         <div className="flex flex-col gap-12 w-full md:w-1/3">
           <div className="relative bg-blue-50 p-6 rounded-xl drop-shadow-md border-b-4 border-r-4 border-teal-400">
             <p className="font-semibold text-gray-900">{data[1].title}</p>
             <p className="text-sm text-gray-600 mt-1">{data[1].subtitle}</p>
-            <div className="flex space-x-1 mt-4">{renderBars(audioBars, 'bg-orange-400')}</div>
+            <div className="flex space-x-1 mt-4">{renderBars(audioBars, 'orange')}
+            </div>
           </div>
           <div className="relative bg-blue-50 p-6 rounded-xl drop-shadow-md border-b-4 border-r-4 border-teal-400">
             <p className="font-semibold text-gray-900">{data[2].title}</p>
             <p className="text-sm text-gray-600 mt-1">{data[2].subtitle}</p>
-            <div className="flex space-x-1 mt-4">{renderBars(netBars, 'bg-green-400')}</div>
+            <div className="flex space-x-1 mt-4">{renderBars(netBars, 'teal')}
+            </div>
           </div>
         </div>
       </div>
