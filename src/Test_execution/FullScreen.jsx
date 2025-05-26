@@ -1,7 +1,10 @@
 import React from "react";
 import { FaArrowLeft, FaClock } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 import { LuClock } from "react-icons/lu";
 export default function CodeExecutionPage() {
+  const navigate = useNavigate();
+  const handleBack = () => navigate("/codingquestion");
   return (
     <div className="w-[1440px] h-screen overflow-x-auto bg-white">
       {/* Top Color Bar */}
@@ -20,7 +23,7 @@ export default function CodeExecutionPage() {
           <div className="w-[1036px] h-[24px] flex items-center gap-[155px]">
             <div className="w-[62.71px] h-[24px] flex items-center gap-[10px] rounded-full">
               <FaArrowLeft className="text-gray-600" />
-              <span className="text-sm text-gray-600">Back</span>
+              <span onClick={handleBack} className="text-sm text-gray-600">Back</span>
             </div>
           </div>
           <div className="w-[115px] h-[44px] flex items-center justify-center bg-[#E0302D0D] border border-[#E0302D] rounded-full px-[20px] py-[10px] gap-[10px]">
