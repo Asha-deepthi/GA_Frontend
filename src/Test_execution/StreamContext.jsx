@@ -44,6 +44,34 @@ export const StreamProvider = ({ children }) => {
     }
   };
 
+  // 📌 NEW: Detect permission changes and re-request stream
+  useEffect(() => {
+    const setupPermissionListeners = async () => {
+      try {
+        const camPerm = await navigator.permissions.query({ name: "camera" });
+
+        camPerm.onchange = () => {
+          console.log("Camera permission changed:", camPerm.state);
+          if (camPerm.state === "granted") {
+            requestWebcamAndMic(); // re-request stream if permission is re-enabled
+          } else if (camPerm.state === "denied") {
+            // Optional: stop the stream if permission is revoked
+            setWebcamStream(null);
+            setMicStream(null);
+          }
+        };
+
+        return () => {
+          camPerm.onchange = null;
+        };
+      } catch (err) {
+        console.warn("Permissions API not fully supported:", err);
+      }
+    };
+
+    setupPermissionListeners();
+  }, []);
+
   // Cleanup streams on unmount or change
   useEffect(() => {
     return () => {

@@ -26,6 +26,33 @@ export default function ConnectionStrengthScreen() {
   const pcRef = useRef(null);
   const analyserRef = useRef(null);
 
+
+  useEffect(() => {
+  const handlePermissionChange = async () => {
+    try {
+      const micStatus = await navigator.permissions.query({ name: 'microphone' });
+      const camStatus = await navigator.permissions.query({ name: 'camera' });
+
+      const listener = () => {
+        console.warn("Permission changed, reloading...");
+        window.location.reload();
+      };
+
+      micStatus.onchange = listener;
+      camStatus.onchange = listener;
+
+      return () => {
+        micStatus.onchange = null;
+        camStatus.onchange = null;
+      };
+    } catch (err) {
+      console.error("Permission check failed:", err);
+    }
+  };
+
+  handlePermissionChange();
+}, []);
+
   useEffect(() => {
     let statInterval, audioInterval;
     async function setup() {
