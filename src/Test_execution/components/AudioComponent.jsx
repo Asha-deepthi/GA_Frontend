@@ -10,7 +10,7 @@ const AudioComponent = ({ question }) => {
     formData.append("question_type", question.question_type);
     formData.append("answer", blob, "audio.webm");
 
-    await fetch("/api/store-answer/", {
+    await fetch("http://127.0.0.1:8000/test-execution/answers", {
       method: "POST",
       body: formData
     });
