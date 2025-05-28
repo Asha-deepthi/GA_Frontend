@@ -1,3 +1,4 @@
+import { useReactMediaRecorder } from "react-media-recorder";
 const VideoComponent = ({ question }) => {
   const { startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({ audio: true, video: true });
 
