@@ -5,9 +5,8 @@ import IntegerComponent from "./IntegerComponent";
 import SubjectiveComponent from "./SubjectiveComponent";
 import AudioComponent from "./AudioComponent";
 import VideoComponent from "./VideoComponent";
-//import CodeComponent from "./CodeComponent";
 
-const SectionComponent = ({ section_id, apiurl }) => {
+const SectionComponent = ({ section_id, apiurl, onComplete }) => {
   const [sectionData, setSectionData] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -17,13 +16,11 @@ const SectionComponent = ({ section_id, apiurl }) => {
     const fetchSectionQuestions = async () => {
       try {
         const response = await fetch(`${apiurl}/fetch-section-questions/${section_id}/`);
-        console.log("API response status:", response.status);
         if (!response.ok) throw new Error("Section not found");
 
         const data = await response.json();
-        console.log("Fetched section data:", data);
         setSectionData(data);
-        setTimeLeft(data.timer || 0);  // <-- Use 'timer' key here
+        setTimeLeft(data.timer || 0); // Start timer
       } catch (error) {
         console.error("Failed to fetch section questions:", error);
       }
@@ -66,6 +63,10 @@ const SectionComponent = ({ section_id, apiurl }) => {
 
       const result = await response.json();
       console.log("Submission successful:", result);
+
+      if (onComplete) {
+        onComplete(); // Move to next section
+      }
     } catch (error) {
       console.error("Auto-submission failed:", error);
     }
@@ -85,21 +86,19 @@ const SectionComponent = ({ section_id, apiurl }) => {
         return <FillInTheBlankComponent key={question.question_id} question={question} />;
       case "integer":
         return <IntegerComponent key={question.question_id} question={question} />;
-     case "subjective":
+      case "subjective":
         return <SubjectiveComponent key={question.question_id} question={question} />;
       case "audio":
         return <AudioComponent key={question.question_id} question={question} />;
       case "video":
         return <VideoComponent key={question.question_id} question={question} />;
-      //case "code":
-         //return <CodeComponent key={question.question_id} question={question} />;
       default:
         return <p key={question.question_id}>Unknown question type</p>;
     }
   };
 
   if (!sectionData) return <div>Loading section questions...</div>;
-  if (submitted) return <div>Time's up! Your answers have been submitted.</div>;
+  if (submitted) return <div>Time's up! Your answers have been submitted. Moving to next section...</div>;
 
   const currentQuestion = sectionData.questions[currentQuestionIndex];
 
@@ -110,11 +109,12 @@ const SectionComponent = ({ section_id, apiurl }) => {
         <p className="text-lg">Time Left: {formatTime(timeLeft)}</p>
       </div>
 
-      {/* Question box with padding, border, rounded corners, shadow */}
+      {/* Question box */}
       <div className="mb-6 p-6 border border-gray-300 rounded-lg shadow-sm max-w-3xl mx-auto">
         {renderQuestion(currentQuestion)}
       </div>
 
+      {/* Navigation buttons for questions */}
       <div className="flex justify-center gap-2 flex-wrap mb-4">
         {sectionData.questions.map((_, index) => (
           <button
