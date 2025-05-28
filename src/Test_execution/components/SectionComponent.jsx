@@ -5,7 +5,7 @@ import IntegerComponent from "./IntegerComponent";
 import SubjectiveComponent from "./SubjectiveComponent";
 import AudioComponent from "./AudioComponent";
 import VideoComponent from "./VideoComponent";
-import CodeComponent from "./CodeComponent";
+//import CodeComponent from "./CodeComponent";
 
 const SectionComponent = ({ section_id, apiurl }) => {
   const [sectionData, setSectionData] = useState(null);
@@ -91,8 +91,8 @@ const SectionComponent = ({ section_id, apiurl }) => {
         return <AudioComponent key={question.question_id} question={question} />;
       case "video":
         return <VideoComponent key={question.question_id} question={question} />;
-      case "code":
-         return <CodeComponent key={question.question_id} question={question} />;
+      //case "code":
+         //return <CodeComponent key={question.question_id} question={question} />;
       default:
         return <p key={question.question_id}>Unknown question type</p>;
     }
