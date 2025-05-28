@@ -1,30 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const MultipleChoiceComponent = ({ question, onNext }) => {
-  const [selectedOption, setSelectedOption] = useState(null);
+const MultipleChoiceComponent = ({
+  question,
+  savedAnswer,
+  isMarkedForReview,
+  onSaveAnswer,
+  onNext,
+}) => {
+  const [selectedOption, setSelectedOption] = useState(savedAnswer || null);
+  const [marked, setMarked] = useState(isMarkedForReview || false);
+
+  useEffect(() => {
+    setSelectedOption(savedAnswer || null);
+  }, [savedAnswer]);
+
+  useEffect(() => {
+    setMarked(isMarkedForReview || false);
+  }, [isMarkedForReview]);
 
   const handleOptionChange = (value) => {
     setSelectedOption(value);
   };
 
-  const handleSubmit = async (isReview = false) => {
-    await fetch("http://localhost:8000/api/submit-answer/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        question_id: question.question_id,
-        selected_answer: selectedOption || null,
-        is_marked_for_review: isReview,
-      }),
-    });
+  const handleMarkForReviewToggle = () => {
+    const newMarked = !marked;
+    setMarked(newMarked);
+    onSaveAnswer(question.question_id, selectedOption, newMarked);
+  };
 
-    onNext(); // Move to the next question
+  const handleSaveAndNext = (e) => {
+    e.preventDefault();
+    onSaveAnswer(question.question_id, selectedOption, marked);
+    onNext();
   };
 
   return (
-    <div className="p-4 border rounded-xl shadow-md max-w-xl mx-auto">
+    <form onSubmit={handleSaveAndNext} className="p-4 border rounded-xl shadow-md max-w-xl mx-auto">
       <h2 className="text-xl font-bold mb-4">{question.question}</h2>
 
       <div className="space-y-2">
@@ -47,19 +58,20 @@ const MultipleChoiceComponent = ({ question, onNext }) => {
 
       <div className="mt-6 flex gap-4">
         <button
+          type="button"
+          className={`px-4 py-2 rounded ${marked ? "bg-yellow-400 text-black" : "bg-gray-300 text-black"}`}
+          onClick={handleMarkForReviewToggle}
+        >
+          {marked ? "Marked for Review" : "Mark for Review"}
+        </button>
+        <button
+          type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={() => handleSubmit(false)}
         >
           Save & Next
         </button>
-        <button
-          className="bg-yellow-500 text-white px-4 py-2 rounded"
-          onClick={() => handleSubmit(true)}
-        >
-          Mark for Review
-        </button>
       </div>
-    </div>
+    </form>
   );
 };
 
