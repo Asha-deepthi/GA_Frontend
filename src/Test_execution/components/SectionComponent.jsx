@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import MultipleChoiceComponent from "./MultipleChoiceComponent";
 import FillInTheBlankComponent from "./FillInTheBlankComponent";
 import IntegerComponent from "./IntegerComponent";
-// import SubjectiveComponent from "./SubjectiveComponent";
-// import AudioComponent from "./AudioComponent";
-// import VideoComponent from "./VideoComponent";
-// import CodeComponent from "./CodeComponent";
+import SubjectiveComponent from "./SubjectiveComponent";
+import AudioComponent from "./AudioComponent";
+import VideoComponent from "./VideoComponent";
+import CodeComponent from "./CodeComponent";
 
 const SectionComponent = ({ section_id, apiurl }) => {
   const [sectionData, setSectionData] = useState(null);
@@ -85,14 +85,14 @@ const SectionComponent = ({ section_id, apiurl }) => {
         return <FillInTheBlankComponent key={question.question_id} question={question} />;
       case "integer":
         return <IntegerComponent key={question.question_id} question={question} />;
-      // case "subjective":
-      //   return <SubjectiveComponent key={question.question_id} question={question} />;
-      // case "audio":
-      //   return <AudioComponent key={question.question_id} question={question} />;
-      // case "video":
-      //   return <VideoComponent key={question.question_id} question={question} />;
-      // case "code":
-      //   return <CodeComponent key={question.question_id} question={question} />;
+     case "subjective":
+        return <SubjectiveComponent key={question.question_id} question={question} />;
+      case "audio":
+        return <AudioComponent key={question.question_id} question={question} />;
+      case "video":
+        return <VideoComponent key={question.question_id} question={question} />;
+      case "code":
+         return <CodeComponent key={question.question_id} question={question} />;
       default:
         return <p key={question.question_id}>Unknown question type</p>;
     }
