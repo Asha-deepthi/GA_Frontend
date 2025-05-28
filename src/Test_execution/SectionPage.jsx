@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import SectionComponent from "./components/SectionComponent";
 
-const apiurl = "http://localhost:8000/api/test-creation";
+const testCreationApiUrl = "http://127.0.0.1:8000/api/test-creation";
+const testExecutionApiUrl = "http://127.0.0.1:8000/test-execution/answers";
+
 
 const sections = [
   { id: 1, name: "Section 1" },
@@ -11,6 +13,9 @@ const sections = [
 const SectionPage = () => {
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [fullscreenGranted, setFullscreenGranted] = useState(false);
+  
+  // ✅ Keep this inside the component (DO NOT declare it twice)
+  const [sessionId] = useState(1);
 
   const enterFullScreen = async () => {
     const el = document.documentElement;
@@ -54,7 +59,13 @@ const SectionPage = () => {
             >
               ← Back to Sections
             </button>
-            <SectionComponent section_id={selectedSectionId} apiurl={apiurl} />
+            <SectionComponent
+              section_id={selectedSectionId}
+              apiurl={testCreationApiUrl}
+              answerApiUrl={testExecutionApiUrl}
+              sessionId={sessionId}
+              onComplete={handleExitTest}
+            />
           </>
         ) : (
           <div className="text-center">
