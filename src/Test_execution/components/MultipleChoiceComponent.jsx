@@ -1,65 +1,37 @@
-import React, { useState } from "react";
+import { useState } from 'react';
 
-const MultipleChoiceComponent = ({ question, onNext }) => {
-  const [selectedOption, setSelectedOption] = useState(null);
+const MultipleChoiceComponent = ({ question }) => {
+  const [selectedOption, setSelectedOption] = useState('');
 
-  const handleOptionChange = (value) => {
-    setSelectedOption(value);
-  };
-
-  const handleSubmit = async (isReview = false) => {
-    await fetch("http://localhost:8000/api/submit-answer/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await fetch('http://127.0.0.1:8000/test-execution/answers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         question_id: question.question_id,
-        selected_answer: selectedOption || null,
-        is_marked_for_review: isReview,
-      }),
+        question_type: question.question_type,
+        answer: selectedOption
+      })
     });
-
-    onNext(); // Move to the next question
   };
 
   return (
-    <div className="p-4 border rounded-xl shadow-md max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">{question.question}</h2>
-
-      <div className="space-y-2">
-        {question.options?.map((opt) => (
-          <label
-            key={opt.option}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <input
-              type="radio"
-              name="mcq"
-              value={opt.value}
-              onChange={() => handleOptionChange(opt.value)}
-              checked={selectedOption === opt.value}
-            />
-            <span>{opt.option}. {opt.value}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="mt-6 flex gap-4">
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={() => handleSubmit(false)}
-        >
-          Save & Next
-        </button>
-        <button
-          className="bg-yellow-500 text-white px-4 py-2 rounded"
-          onClick={() => handleSubmit(true)}
-        >
-          Mark for Review
-        </button>
-      </div>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <h3>{question.question}</h3>
+      {question.options.map((opt) => (
+        <label key={opt.option}>
+          <input
+            type="radio"
+            name="option"
+            value={opt.value}
+            onChange={(e) => setSelectedOption(e.target.value)}
+          />
+          {opt.option}. {opt.value}
+        </label>
+      ))}
+      <button type="submit">Submit</button>
+    </form>
   );
 };
 
