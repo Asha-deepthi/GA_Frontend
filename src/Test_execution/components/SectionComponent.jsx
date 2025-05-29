@@ -76,7 +76,7 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
 
       console.log("Submitting answer payload:", payload);
 
-      const response = await fetch(`${answerApiUrl}`, {
+      const response = await fetch(`${answerApiUrl}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
