@@ -1,65 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React from 'react';
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
-/*import { jwtDecode } from "jwt-decode";*/
 import SignupPage from "./Test_creation/pages/signup";
 import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
 import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import PrivateRoute from "./Test_creation/components/PrivateRoute";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { StreamProvider } from './Test_execution/StreamContext';
+import SectionPage from "./Test_execution/SectionPage";
+import InstructionScreen from './Test_execution/InstructionScreen';
+import TutorialScreen from './Test_execution/TutorialScreen';
+import ConnectionStrength from './Test_execution/ConnectionStrength';
+import VideoQuestion from './Test_execution/VideoQuestion';
+import CodingQuestion from './Test_execution/CodingQuestion';
+import McqQuestion from './Test_execution/McqQuestion';
+import FullScreen from './Test_execution/FullScreen';
+import WelcomeScreen from './Test_execution/WelcomeScreen';
+import BasicDetails from './Test_execution/BasicDetails';
+import PermissionScreen from './Test_execution/PermissionScreen';
+import AudioQuestion from './Test_execution/AudioQuestion';
+import DemoQuestion from './Test_execution/DemoQuestion';
+import ResultScreen from './Test_execution/ResultScreen';
 
-/*const getStoredTokens = () => {
-  const localTokens = localStorage.getItem("authTokens");
-  const sessionTokens = sessionStorage.getItem("authTokens");
-
-  return JSON.parse(localTokens || sessionTokens || null);
-};
-
-const isTokenValid = (token) => {
-  if (!token) return false;
-  try {
-    const decoded = jwtDecode(token);
-    return decoded.exp > Date.now() / 1000;
-  } catch {
-    return false;
-  }
-};
-
-function App() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // ✅ Run this only once when the app loads
-  useEffect(() => {
-    const tokens = getStoredTokens();
-
-    if (tokens?.access && isTokenValid(tokens.access)) {
-      setIsAuthenticated(true);
-
-      const isRemembered = !!localStorage.getItem("authTokens");
-      const isOnPublicRoute = ["/", "/login", "/signup", "/verify-email"].some(
-        (path) => location.pathname.startsWith(path)
-      );
-
-      if (isRemembered && isOnPublicRoute) {
-        navigate("/dashboard", { replace: true });
-      }
-    } else {
-      setIsAuthenticated(false);
-      localStorage.removeItem("authTokens");
-      sessionStorage.removeItem("authTokens");
-    }
-
-    setLoading(false);
-  }, []); // ✅ Only run once
-
-  // ✅ Optional: Prevent blink with a basic loading screen (or return null if you prefer)
-  if (loading) return <div className="text-center p-10">Loading...</div>;*/
 function App() {
   return (
+    <StreamProvider>
+    <Router>
     <Routes>
       <Route path="/" element={<SignupPage />} />
       <Route path="/signup" element={<SignupPage />} />
@@ -81,7 +48,23 @@ function App() {
           </PrivateRoute>
         }
       />
+      <Route path="/instructionscreen" element={<InstructionScreen />} />
+          <Route path="/tutorialscreen" element={<TutorialScreen />} />
+          <Route path="/connectionstrength" element={<ConnectionStrength />} />
+          <Route path="/videoquestion" element={<VideoQuestion />} />
+          <Route path="/codingquestion" element={<CodingQuestion />} />
+          <Route path="/mcqquestion" element={<McqQuestion />} />
+          <Route path="/fullscreen" element={<FullScreen />} />
+          <Route path="/welcome" element={<WelcomeScreen />} />
+          <Route path="/basic-details" element={<BasicDetails />} />
+          <Route path="/permission" element={<PermissionScreen />} />
+          <Route path="/audioquestion" element={<AudioQuestion />} />
+          <Route path="/demoquestion" element={<DemoQuestion />} />
+          <Route path="/result" element={<ResultScreen />} />
+          <Route path="/sectionpage" element={<SectionPage />} />
     </Routes>
+    </Router>
+    </StreamProvider>
   );
 }
 export default App;
