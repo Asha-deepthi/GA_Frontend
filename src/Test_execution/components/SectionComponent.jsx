@@ -1,38 +1,29 @@
-// SectionComponent.jsx
 import React, { useState, useEffect } from "react";
 import MultipleChoiceComponent from "./MultipleChoiceComponent";
 import FillInTheBlankComponent from "./FillInTheBlankComponent";
 import IntegerComponent from "./IntegerComponent";
-import SubjectiveComponent from "./SubjectiveComponent";
+ import SubjectiveComponent from "./SubjectiveComponent";
 import AudioComponent from "./AudioComponent";
-import VideoComponent from "./VideoComponent";
+ import VideoComponent from "./VideoComponent";
+// import CodeComponent from "./CodeComponent";
 
-const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onComplete }) => {
+const SectionComponent = ({ section_id, apiurl }) => {
   const [sectionData, setSectionData] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
 
   useEffect(() => {
     const fetchSectionQuestions = async () => {
       try {
         const response = await fetch(`${apiurl}/fetch-section-questions/${section_id}/`);
+        console.log("API response status:", response.status);
         if (!response.ok) throw new Error("Section not found");
 
         const data = await response.json();
+        console.log("Fetched section data:", data);
         setSectionData(data);
-        setTimeLeft(data.timer || 0);
-
-        // Initialize answers state with empty answers and review flags
-        const initialAnswers = {};
-        data.questions.forEach((q) => {
-          initialAnswers[q.question_id] = {
-            answer: "",
-            is_marked_for_review: false,
-          };
-        });
-        setAnswers(initialAnswers);
+        setTimeLeft(data.timer || 0);  // <-- Use 'timer' key here
       } catch (error) {
         console.error("Failed to fetch section questions:", error);
       }
@@ -41,7 +32,6 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
     fetchSectionQuestions();
   }, [section_id, apiurl]);
 
-  // Timer countdown and auto submit on 0
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || submitted) return;
 
@@ -49,7 +39,7 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timerInterval);
-          handleSubmit();
+          handleAutoSubmit();
           return 0;
         }
         return prevTime - 1;
@@ -59,43 +49,27 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
     return () => clearInterval(timerInterval);
   }, [timeLeft, submitted]);
 
-  console.log("sessionId in SectionComponent:", sessionId, typeof sessionId);
+  const handleAutoSubmit = async () => {
+    setSubmitted(true);
+    console.log("Auto-submitting answers...");
 
-  const handleSubmit = async () => {
-  if (submitted) return;
-  setSubmitted(true);
-
-  try {
-    for (const [question_id, ansObj] of Object.entries(answers)) {
-      const payload = {
-        session: Number(sessionId),
-        question: Number(question_id),
-        answer_text: ansObj.answer || "",
-        marked_for_review: ansObj.is_marked_for_review ?? false
-      };
-
-      console.log("Submitting answer payload:", payload);
-
-      const response = await fetch(`${answerApiUrl}/`, {
+    try {
+      const response = await fetch(`${apiurl}/submit-section/${section_id}/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: "Auto-submitted by timer" }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`Error submitting answer for Q${question_id}:`, errorData);
-        setSubmitted(false);
-        return;
-      }
-    }
+      if (!response.ok) throw new Error("Submission failed");
 
-    if (onComplete) onComplete();
-  } catch (err) {
-    console.error("Bulk submit failed:", err);
-    setSubmitted(false);
-  }
-};
+      const result = await response.json();
+      console.log("Submission successful:", result);
+    } catch (error) {
+      console.error("Auto-submission failed:", error);
+    }
+  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -103,61 +77,31 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const handleSaveAnswer = (question_id, answer, marked_for_review = false) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [question_id]: { answer, is_marked_for_review: marked_for_review },
-    }));
-  };
-
-
-  const currentQuestion = sectionData?.questions[currentQuestionIndex];
-
-  const handleNextQuestion = () => {
-    setCurrentQuestionIndex((prev) =>
-      prev < sectionData.questions.length - 1 ? prev + 1 : prev
-    );
-  };
-
   const renderQuestion = (question) => {
-    const savedAnswer = answers[question.question_id]?.answer || "";
-    const savedMark = answers[question.question_id]?.is_marked_for_review || false;
-
-    const commonProps = {
-      question,
-      savedAnswer,
-      isMarkedForReview: savedMark,
-      onSaveAnswer: handleSaveAnswer,
-      onNext: handleNextQuestion,
-    };
-
     switch (question.question_type) {
       case "multiple_choice":
-        return <MultipleChoiceComponent key={question.question_id} {...commonProps} />;
+        return <MultipleChoiceComponent key={question.question_id} question={question} />;
       case "fill_in_the_blank":
-        return <FillInTheBlankComponent key={question.question_id} {...commonProps} />;
+        return <FillInTheBlankComponent key={question.question_id} question={question} />;
       case "integer":
-        return <IntegerComponent key={question.question_id} {...commonProps} />;
-      case "subjective":
-        return <SubjectiveComponent key={question.question_id} {...commonProps} />;
-      case "audio":
-        return <AudioComponent key={question.question_id} {...commonProps} />;
-      case "video":
-        return <VideoComponent key={question.question_id} {...commonProps} />;
+        return <IntegerComponent key={question.question_id} question={question} />;
+       case "subjective":
+         return <SubjectiveComponent key={question.question_id} question={question} />;
+       case "audio":
+         return <AudioComponent key={question.question_id} question={question} />;
+       case "video":
+         return <VideoComponent key={question.question_id} question={question} />;
+      // case "code":
+      //   return <CodeComponent key={question.question_id} question={question} />;
       default:
         return <p key={question.question_id}>Unknown question type</p>;
     }
   };
 
   if (!sectionData) return <div>Loading section questions...</div>;
+  if (submitted) return <div>Time's up! Your answers have been submitted.</div>;
 
-  if (submitted)
-    return (
-      <div className="text-center p-8">
-        <h3 className="text-xl font-semibold mb-4">Your answers have been submitted.</h3>
-        <p>Thank you! Moving to the next section...</p>
-      </div>
-    );
+  const currentQuestion = sectionData.questions[currentQuestionIndex];
 
   return (
     <div className="min-h-screen bg-white text-black p-8">
@@ -166,6 +110,7 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
         <p className="text-lg">Time Left: {formatTime(timeLeft)}</p>
       </div>
 
+      {/* Question box with padding, border, rounded corners, shadow */}
       <div className="mb-6 p-6 border border-gray-300 rounded-lg shadow-sm max-w-3xl mx-auto">
         {renderQuestion(currentQuestion)}
       </div>
@@ -175,15 +120,18 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
           <button
             key={index}
             onClick={() => setCurrentQuestionIndex(index)}
-            className={`px-4 py-2 rounded-full border ${index === currentQuestionIndex ? "bg-black text-white" : "bg-gray-200 text-black"
-              }`}
+            className={`px-4 py-2 rounded-full border ${
+              index === currentQuestionIndex
+                ? "bg-black text-white"
+                : "bg-gray-200 text-black"
+            }`}
           >
             {index + 1}
           </button>
         ))}
       </div>
 
-      <div className="flex justify-between max-w-3xl mx-auto mb-6">
+      <div className="flex justify-between max-w-3xl mx-auto">
         <button
           onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
           disabled={currentQuestionIndex === 0}
@@ -202,17 +150,6 @@ const SectionComponent = ({ section_id, sessionId, apiurl, answerApiUrl, onCompl
           className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
         >
           Next
-        </button>
-      </div>
-
-      <div className="max-w-3xl mx-auto text-center">
-        <button
-          onClick={handleSubmit}
-          disabled={submitted}
-          className={`px-6 py-3 rounded text-white ${submitted ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-            }`}
-        >
-          Submit Section
         </button>
       </div>
     </div>
