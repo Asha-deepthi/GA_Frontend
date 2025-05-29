@@ -1,76 +1,36 @@
-import React, { useState, useEffect } from "react";
+import { useState } from 'react';
 
-const MultipleChoiceComponent = ({
-  question,
-  savedAnswer,
-  isMarkedForReview,
-  onSaveAnswer,
-  onNext,
-}) => {
-  const [selectedOption, setSelectedOption] = useState(savedAnswer || null);
-  const [marked, setMarked] = useState(isMarkedForReview || false);
+const MultipleChoiceComponent = ({ question }) => {
+  const [selectedOption, setSelectedOption] = useState('');
 
-  useEffect(() => {
-    setSelectedOption(savedAnswer || null);
-  }, [savedAnswer]);
-
-  useEffect(() => {
-    setMarked(isMarkedForReview || false);
-  }, [isMarkedForReview]);
-
-  const handleOptionChange = (value) => {
-    setSelectedOption(value);
-  };
-
-  const handleMarkForReviewToggle = () => {
-    const newMarked = !marked;
-    setMarked(newMarked);
-    onSaveAnswer(question.question_id, selectedOption, newMarked);
-  };
-
-  const handleSaveAndNext = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSaveAnswer(question.question_id, selectedOption, marked);
-    onNext();
+    await fetch('http://127.0.0.1:8000/test-execution/answers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question_id: question.question_id,
+        question_type: question.question_type,
+        answer: selectedOption
+      })
+    });
   };
 
   return (
-    <form onSubmit={handleSaveAndNext} className="p-4 border rounded-xl shadow-md max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">{question.question}</h2>
-
-      <div className="space-y-2">
-        {question.options?.map((opt) => (
-          <label
-            key={opt.option}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <input
-              type="radio"
-              name="mcq"
-              value={opt.value}
-              onChange={() => handleOptionChange(opt.value)}
-              checked={selectedOption === opt.value}
-            />
-            <span>{opt.option}. {opt.value}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="mt-6 flex gap-4">
-        <button
-          type="button"
-          className={`px-4 py-2 rounded ${marked ? "bg-yellow-400 text-black" : "bg-gray-300 text-black"}`}
-          onClick={handleMarkForReviewToggle}
-        >
-          {marked ? "Marked for Review" : "Mark for Review"}
-        </button>
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Save & Next
-        </button>
-      </div>
+    <form onSubmit={handleSubmit}>
+      <h3>{question.question}</h3>
+      {question.options.map((opt) => (
+        <label key={opt.option}>
+          <input
+            type="radio"
+            name="option"
+            value={opt.value}
+            onChange={(e) => setSelectedOption(e.target.value)}
+          />
+          {opt.option}. {opt.value}
+        </label>
+      ))}
+      <button type="submit">Submit</button>
     </form>
   );
 };
