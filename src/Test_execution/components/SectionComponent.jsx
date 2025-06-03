@@ -1,156 +1,278 @@
-import React, { useState, useEffect } from "react";
-import MultipleChoiceComponent from "./MultipleChoiceComponent";
-import FillInTheBlankComponent from "./FillInTheBlankComponent";
-import IntegerComponent from "./IntegerComponent";
- import SubjectiveComponent from "./SubjectiveComponent";
-import AudioComponent from "./AudioComponent";
- import VideoComponent from "./VideoComponent";
-// import CodeComponent from "./CodeComponent";
+import { useEffect, useState } from 'react';
+import MultipleChoiceComponent from './MultipleChoiceComponent';
+import FillInTheBlankComponent from './FillInTheBlankComponent';
+import IntegerComponent from './IntegerComponent';
+import SubjectiveComponent from './SubjectiveComponent';
+import AudioComponent from './AudioComponent';
+import VideoComponent from './VideoComponent';
+import useProctoring from './useProctoring';
 
-const SectionComponent = ({ section_id, apiurl }) => {
-  const [sectionData, setSectionData] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+const session_id = 12345;
+const SECTION_DURATION = 5 * 60;
 
+const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
+  const { violationCount } = useProctoring({ sessionId: session_id, answerApiUrl });
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answersStatus, setAnswersStatus] = useState({});
+  const [sectionType, setSectionType] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
+  const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
   useEffect(() => {
-    const fetchSectionQuestions = async () => {
+    const exitFullscreenOnUnload = () => {
+      const exit =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen;
+      if (exit) exit.call(document).catch(() => {});
+    };
+    window.addEventListener("beforeunload", exitFullscreenOnUnload);
+    return () => window.removeEventListener("beforeunload", exitFullscreenOnUnload);
+  }, []);
+  // Restore from backend
+  useEffect(() => {
+    const fetchSectionData = async () => {
       try {
-        const response = await fetch(`${apiurl}/fetch-section-questions/${section_id}/`);
-        console.log("API response status:", response.status);
-        if (!response.ok) throw new Error("Section not found");
+        const res = await fetch(`http://127.0.0.1:8000/api/test-creation/fetch-section-questions/${section_id}/?session_id=${session_id}`);
+        const data = await res.json();
+        setQuestions(data.questions);
+        setSectionType(data.section_type);
+        setDefaultTime(data.section_duration); // <- New line
+        // Fetch saved answers from backend
+        const answersRes = await fetch(`http://127.0.0.1:8000/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`);
+        const answerData = await answersRes.json();
+        const backendAnswers = {};
+        answerData.forEach(ans => {
+          backendAnswers[ans.question_id] = {
+            answer: ans.answer_text || null,
+            markedForReview: ans.marked_for_review,
+            status: ans.status
+          };
+        });
 
-        const data = await response.json();
-        console.log("Fetched section data:", data);
-        setSectionData(data);
-        setTimeLeft(data.timer || 0);  // <-- Use 'timer' key here
-      } catch (error) {
-        console.error("Failed to fetch section questions:", error);
+        // Restore local answers (if any)
+        const local = JSON.parse(localStorage.getItem(`answers_${section_id}`) || '{}');
+        const merged = { ...backendAnswers, ...local };
+        setAnswersStatus(merged);
+        localStorage.setItem(`answers_${section_id}`, JSON.stringify(merged));
+      } catch (err) {
+        console.error('Error fetching section data:', err);
       }
     };
 
-    fetchSectionQuestions();
-  }, [section_id, apiurl]);
+    const fetchTimer = async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/test-creation/get-timer/?session_id=${session_id}&section_id=${section_id}`);
+        const data = await res.json();
+        const backendTime = data.remaining_time;
+
+        const local = localStorage.getItem(`timer_${section_id}`);
+        const timeToUse = backendTime != null
+  ? backendTime
+  : (local ? parseInt(local) : defaultTime);
+
+        setTimeLeft(timeToUse);
+        localStorage.setItem(`timer_${section_id}`, timeToUse);
+      } catch (err) {
+        console.error('Error fetching timer:', err);
+        const local = localStorage.getItem(`timer_${section_id}`);
+        setTimeLeft(local ? parseInt(local) : SECTION_DURATION);
+      }
+    };
+
+    fetchSectionData();
+    fetchTimer();
+  }, [section_id, defaultTime]);
 
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0 || submitted) return;
+    if (timeLeft <= 0) {
+      handleFinalSubmit();
+      return;
+    }
 
-    const timerInterval = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timerInterval);
-          handleAutoSubmit();
-          return 0;
-        }
-        return prevTime - 1;
+    const timer = setInterval(() => {
+      setTimeLeft(t => {
+        const newTime = t - 1;
+        localStorage.setItem(`timer_${section_id}`, newTime);
+        // Save to backend every 10 seconds
+      if (newTime % 10 === 0) {
+        console.log("Saving timer with:", { session_id, section_id, newTime });
+        fetch('http://127.0.0.1:8000/api/test-creation/save-timer/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: session_id,
+            section_id: section_id,
+            remaining_time: newTime
+          })
+        }).catch(err => console.error('Failed to save timer:', err));
+      }
+        return newTime;
       });
     }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
 
-    return () => clearInterval(timerInterval);
-  }, [timeLeft, submitted]);
+  const updateAnswer = async (question_id, payload) => {
+    const hasAnswer = payload.answer && payload.answer !== '';
+    const status = payload.markedForReview
+      ? (hasAnswer ? 'reviewed_with_answer' : 'reviewed')
+      : (hasAnswer ? 'answered' : 'skipped');
 
-  const handleAutoSubmit = async () => {
-    setSubmitted(true);
-    console.log("Auto-submitting answers...");
+    const newStatus = {
+      ...answersStatus,
+      [question_id]: {
+        answer: hasAnswer ? payload.answer : null,
+        markedForReview: payload.markedForReview,
+        status
+      }
+    };
+
+    setAnswersStatus(newStatus);
+    localStorage.setItem(`answers_${section_id}`, JSON.stringify(newStatus));
+
+    const question = questions.find(q => q.question_id === question_id);
+    const body = new FormData();
+    body.append('session_id', session_id);
+    body.append('question_id', question_id);
+    body.append('question_type', sectionType);
+    if (hasAnswer) {
+      if (typeof payload.answer === 'object' && payload.answer.type === 'audio') {
+        body.append('audio_file', payload.answer.blob, payload.answer.filename);
+      } else if (typeof payload.answer === 'object' && payload.answer.type === 'video') {
+        body.append('video_file', payload.answer.blob, payload.answer.filename);
+      } else {
+        body.append('answer_text', payload.answer);
+      }
+    }
+    body.append('marked_for_review', payload.markedForReview);
 
     try {
-      const response = await fetch(`${apiurl}/submit-section/${section_id}/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: "Auto-submitted by timer" }),
+      await fetch('http://127.0.0.1:8000/test-execution/answers/', {
+        method: 'POST',
+        body
       });
-
-      if (!response.ok) throw new Error("Submission failed");
-
-      const result = await response.json();
-      console.log("Submission successful:", result);
-    } catch (error) {
-      console.error("Auto-submission failed:", error);
+    } catch (err) {
+      console.error('Failed to send answer:', err);
     }
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  const handleFinalSubmit = async () => {
+    for (const question of questions) {
+      const existing = answersStatus[question.question_id];
+      if (!existing || !existing.answer) {
+        const body = new FormData();
+        body.append('session_id', session_id);
+        body.append('question_id', question.question_id);
+        body.append('question_type', sectionType);
+        body.append('marked_for_review', false);
+
+        answersStatus[question.question_id] = {
+          answer: null,
+          markedForReview: false,
+          status: 'skipped'
+        };
+
+        try {
+          await fetch('http://127.0.0.1:8000/test-execution/answers/', {
+            method: 'POST',
+            body
+          });
+        } catch (err) {
+          console.error('Failed to submit empty answer:', err);
+        }
+      }
+    }
+
+    setAnswersStatus({});
+    localStorage.removeItem(`answers_${section_id}`);
+    localStorage.removeItem(`timer_${section_id}`);
+    alert("Section submitted!");
+    if (onSectionComplete) onSectionComplete(section_id);
   };
 
-  const renderQuestion = (question) => {
-    switch (question.question_type) {
-      case "multiple_choice":
-        return <MultipleChoiceComponent key={question.question_id} question={question} />;
-      case "fill_in_the_blank":
-        return <FillInTheBlankComponent key={question.question_id} question={question} />;
-      case "integer":
-        return <IntegerComponent key={question.question_id} question={question} />;
-       case "subjective":
-         return <SubjectiveComponent key={question.question_id} question={question} />;
-       case "audio":
-         return <AudioComponent key={question.question_id} question={question} />;
-       case "video":
-         return <VideoComponent key={question.question_id} question={question} />;
-      // case "code":
-      //   return <CodeComponent key={question.question_id} question={question} />;
-      default:
-        return <p key={question.question_id}>Unknown question type</p>;
+  const getStatusColor = (question_id) => {
+    const data = answersStatus[question_id];
+    if (!data) return 'bg-gray-300';
+    if (data.status === 'answered') return 'bg-green-500';
+    if (data.status === 'reviewed_with_answer') return 'bg-orange-500';
+    if (data.status === 'reviewed') return 'bg-violet-500';
+    if (data.status === 'skipped') return 'bg-red-500';
+    return 'bg-gray-300';
+  };
+
+  const renderQuestionComponent = () => {
+    const question = questions[currentIndex];
+    if (!question) return null;
+    const props = {
+      question,
+      onAnswerUpdate: updateAnswer,
+      currentStatus: answersStatus[question.question_id] || {},
+      onNext: () => {
+        if (currentIndex < questions.length - 1) {
+          setCurrentIndex(currentIndex + 1);
+        }
+      }
+    };
+
+    switch (sectionType) {
+      case 'multiple_choice': return <MultipleChoiceComponent {...props} />;
+      case 'fill_in_the_blank': return <FillInTheBlankComponent {...props} />;
+      case 'integer': return <IntegerComponent {...props} />;
+      case 'subjective': return <SubjectiveComponent {...props} />;
+      case 'audio': return <AudioComponent {...props} />;
+      case 'video': return <VideoComponent {...props} />;
+      default: return <div>Unsupported question type</div>;
     }
   };
-
-  if (!sectionData) return <div>Loading section questions...</div>;
-  if (submitted) return <div>Time's up! Your answers have been submitted.</div>;
-
-  const currentQuestion = sectionData.questions[currentQuestionIndex];
 
   return (
-    <div className="min-h-screen bg-white text-black p-8">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold">{sectionData.section_name}</h2>
-        <p className="text-lg">Time Left: {formatTime(timeLeft)}</p>
+    <div className="p-6">
+      <div className="text-right text-lg font-bold mb-4">
+        <p className="text-sm text-red-600">Violations Detected: {violationCount}</p>
+        Time Left: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
       </div>
 
-      {/* Question box with padding, border, rounded corners, shadow */}
-      <div className="mb-6 p-6 border border-gray-300 rounded-lg shadow-sm max-w-3xl mx-auto">
-        {renderQuestion(currentQuestion)}
-      </div>
-
-      <div className="flex justify-center gap-2 flex-wrap mb-4">
-        {sectionData.questions.map((_, index) => (
+      <div className="mb-4 flex flex-wrap gap-2">
+        {questions.map((q, index) => (
           <button
-            key={index}
-            onClick={() => setCurrentQuestionIndex(index)}
-            className={`px-4 py-2 rounded-full border ${
-              index === currentQuestionIndex
-                ? "bg-black text-white"
-                : "bg-gray-200 text-black"
-            }`}
+            key={q.question_id}
+            className={`w-8 h-8 rounded-full text-white ${getStatusColor(q.question_id)}`}
+            onClick={() => setCurrentIndex(index)}
           >
             {index + 1}
           </button>
         ))}
       </div>
 
-      <div className="flex justify-between max-w-3xl mx-auto">
+      <div className="border p-4 rounded shadow">{renderQuestionComponent()}</div>
+
+      <div className="mt-4 flex justify-between">
         <button
-          onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
-          disabled={currentQuestionIndex === 0}
-          className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+          onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Previous
         </button>
 
-        <button
-          onClick={() =>
-            setCurrentQuestionIndex((prev) =>
-              Math.min(prev + 1, sectionData.questions.length - 1)
-            )
-          }
-          disabled={currentQuestionIndex === sectionData.questions.length - 1}
-          className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-        >
-          Next
-        </button>
+        {currentIndex < questions.length - 1 ? (
+          <button
+            onClick={() => setCurrentIndex(currentIndex + 1)}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Next
+          </button>
+        ) : (
+          <button
+            onClick={handleFinalSubmit}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Submit Section
+          </button>
+        )}
       </div>
     </div>
   );

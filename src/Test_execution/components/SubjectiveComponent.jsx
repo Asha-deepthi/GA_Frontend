@@ -1,31 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-const SubjectiveComponent = ({ question }) => {
-  const [answer, setAnswer] = useState('');
+const SubjectiveComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+  const [text, setText] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await fetch('http://127.0.0.1:8000/test-execution/answers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question_id: question.question_id,
-        question_type: question.question_type,
-        answer
-      })
+  useEffect(() => {
+    if (currentStatus?.answer) {
+      setText(currentStatus.answer);
+    } else {
+      setText('');
+    }
+  }, [question.question_id]);
+
+  const handleAction = (markForReview = false) => {
+    const trimmedText = text.trim();
+    const hasAnswer = trimmedText !== '';
+    const status = markForReview
+      ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
+      : hasAnswer ? 'answered' : 'skipped';
+
+    onAnswerUpdate(question.question_id, {
+      answer: hasAnswer ? trimmedText : null,
+      markedForReview: markForReview,
+      status
     });
+    onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>{question.question}</h3>
+    <div className="p-4">
+      <h3 className="text-lg font-semibold mb-4">{question.question}</h3>
       <textarea
-        rows="5"
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
+        rows={6}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="border p-2 w-full mb-4 rounded"
       />
-      <button className="bg-white" type="submit">Submit</button>
-    </form>
+      <div className="flex gap-4">
+        <button onClick={() => handleAction(false)} className="bg-green-600 text-white px-4 py-2 rounded">
+          Save & Next
+        </button>
+        <button onClick={() => handleAction(true)} className="bg-purple-600 text-white px-4 py-2 rounded">
+          Mark for Review & Next
+        </button>
+      </div>
+    </div>
   );
 };
 
