@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const AudioComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
   const [blobUrl, setBlobUrl] = useState(null);
