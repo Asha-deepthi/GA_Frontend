@@ -21,6 +21,7 @@ import PermissionScreen from './Test_execution/PermissionScreen';
 import AudioQuestion from './Test_execution/AudioQuestion';
 import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
+import CandidateEvaluation from './Test_execution/CandidateEvaluation';
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
           <Route path="/demoquestion" element={<DemoQuestion />} />
           <Route path="/result" element={<ResultScreen />} />
           <Route path="/sectionpage" element={<SectionPage />} />
+           <Route path="/evaluation" element={<CandidateEvaluation />} />
         </Routes>
     </StreamProvider>
   );
