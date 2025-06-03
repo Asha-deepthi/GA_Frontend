@@ -141,6 +141,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     body.append('session_id', session_id);
     body.append('question_id', question_id);
     body.append('question_type', sectionType);
+    body.append('section_id', section_id); // 🔥 Add this line
     if (hasAnswer) {
       if (typeof payload.answer === 'object' && payload.answer.type === 'audio') {
         body.append('audio_file', payload.answer.blob, payload.answer.filename);
@@ -151,6 +152,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       }
     }
     body.append('marked_for_review', payload.markedForReview);
+    body.append('status', status); // 🔥 add this line
 
     try {
       await fetch('http://127.0.0.1:8000/test-execution/answers/', {
@@ -171,12 +173,14 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         body.append('question_id', question.question_id);
         body.append('question_type', sectionType);
         body.append('marked_for_review', false);
+        body.append('section_id', section_id); // 🔥 Add this line
 
         answersStatus[question.question_id] = {
           answer: null,
           markedForReview: false,
           status: 'skipped'
         };
+        body.append('status', 'skipped'); // 🔥 Add this line
 
         try {
           await fetch('http://127.0.0.1:8000/test-execution/answers/', {
