@@ -119,7 +119,7 @@ const useProctoring = ({ sessionId, answerApiUrl }) => {
         formData.append("session", sessionId);
         formData.append("screenshot", imageBlob, `screenshot_${Date.now()}.jpg`);
 
-        await fetch(`http://127.0.0.1:8000/test-execution//proctoring-screenshots/`, {
+        await fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/`, {
           method: "POST",
           body: formData,
         });
