@@ -60,7 +60,9 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         console.error('Error fetching section data:', err);
       }
     };
-
+    fetchSectionData();
+}, [section_id]);
+  useEffect(() => {
     const fetchTimer = async () => {
       try {
         const res = await fetch(`http://127.0.0.1:8000/api/test-creation/get-timer/?session_id=${session_id}&section_id=${section_id}`);
@@ -69,22 +71,22 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
 
         const local = localStorage.getItem(`timer_${section_id}`);
         const timeToUse = backendTime != null
-  ? backendTime
-  : (local ? parseInt(local) : defaultTime);
+         ? backendTime
+         : (local ? parseInt(local) : defaultTime);
 
         setTimeLeft(timeToUse);
         localStorage.setItem(`timer_${section_id}`, timeToUse);
       } catch (err) {
         console.error('Error fetching timer:', err);
         const local = localStorage.getItem(`timer_${section_id}`);
-        setTimeLeft(local ? parseInt(local) : SECTION_DURATION);
+        setTimeLeft(local ? parseInt(local) : defaultTime);
       }
     };
 
-    fetchSectionData();
+    if (defaultTime !== null) {
     fetchTimer();
-  }, [section_id, defaultTime]);
-
+  }
+}, [defaultTime, section_id]);
   useEffect(() => {
     if (timeLeft <= 0) {
       handleFinalSubmit();
