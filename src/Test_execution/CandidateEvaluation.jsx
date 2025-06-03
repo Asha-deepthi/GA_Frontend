@@ -3,7 +3,7 @@ import Sidebar from "./components/Sidebar";
 import VideoSection from "./components/VideoSection";
 import AIComment from "./components/AIComment";
 import InterviewFeedback from "./components/InterviewFeedback";
-
+import Header from "./components/Header";
 
 
 // ✅ Consistent mock data
@@ -97,6 +97,10 @@ const CandidateEvaluation = () => {
     };
 
     return (
+         <div className="flex flex-col h-screen">
+            {/* Header */}
+            <Header />
+
         <div className="flex h-screen overflow-hidden">
             {/* Sidebar */}
             <Sidebar candidates={mockCandidates} onSelect={setSelectedCandidate} />
@@ -185,6 +189,7 @@ const CandidateEvaluation = () => {
                     <p className="text-gray-500 mt-10 text-center">Select a candidate to start evaluation.</p>
                 )}
             </div>
+        </div>
         </div>
     );
 };
