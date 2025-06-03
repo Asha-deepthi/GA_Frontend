@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React,{ useEffect, useState } from 'react';
 import MultipleChoiceComponent from './MultipleChoiceComponent';
 import FillInTheBlankComponent from './FillInTheBlankComponent';
 import IntegerComponent from './IntegerComponent';
