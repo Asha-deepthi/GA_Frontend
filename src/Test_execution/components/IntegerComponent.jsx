@@ -1,31 +1,49 @@
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-const IntegerComponent = ({ question }) => {
-  const [answer, setAnswer] = useState('');
+const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+  const [value, setValue] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await fetch('http://127.0.0.1:8000/test-execution/answers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question_id: question.question_id,
-        question_type: question.question_type,
-        answer: parseInt(answer)
-      })
+  useEffect(() => {
+    if (currentStatus?.answer !== undefined && currentStatus?.answer !== null) {
+      setValue(currentStatus.answer);
+    } else {
+      setValue('');
+    }
+  }, [question.question_id]);
+
+  const handleAction = (markForReview = false) => {
+    const trimmedValue = value.trim();
+    const hasAnswer = trimmedValue !== '';
+    const status = markForReview
+      ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
+      : hasAnswer ? 'answered' : 'skipped';
+
+    onAnswerUpdate(question.question_id, {
+      answer: hasAnswer ? trimmedValue : null,
+      markedForReview: markForReview,
+      status
     });
+    onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>{question.question}</h3>
+    <div className="p-4">
+      <h3 className="text-lg font-semibold mb-4">{question.question}</h3>
       <input
         type="number"
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="border p-2 w-full mb-4 rounded"
       />
-      <button type="submit">Submit</button>
-    </form>
+      <div className="flex gap-4">
+        <button onClick={() => handleAction(false)} className="bg-green-600 text-white px-4 py-2 rounded">
+          Save & Next
+        </button>
+        <button onClick={() => handleAction(true)} className="bg-purple-600 text-white px-4 py-2 rounded">
+          Mark for Review & Next
+        </button>
+      </div>
+    </div>
   );
 };
 

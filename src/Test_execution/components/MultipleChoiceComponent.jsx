@@ -1,37 +1,67 @@
-import { useState } from 'react';
+import React,{ useState, useEffect } from 'react';
 
-const MultipleChoiceComponent = ({ question }) => {
-  const [selectedOption, setSelectedOption] = useState('');
+const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+  const [selectedAnswer, setSelectedAnswer] = useState(currentStatus?.answer || '');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await fetch('http://127.0.0.1:8000/test-execution/answers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question_id: question.question_id,
-        question_type: question.question_type,
-        answer: selectedOption
-      })
+  useEffect(() => {
+    // Set the answer if returning to a previously answered question
+    setSelectedAnswer(currentStatus?.answer || '');
+  }, [question.question_id]);
+
+  const handleOptionClick = (option) => {
+    setSelectedAnswer((prev) => (prev === option ? '' : option));
+  };
+
+  const handleSaveAndNext = () => {
+    onAnswerUpdate(question.question_id, {
+      answer: selectedAnswer,
+      markedForReview: false,
     });
+    if (onNext) onNext();
+  };
+
+  const handleMarkForReview = () => {
+    onAnswerUpdate(question.question_id, {
+      answer: selectedAnswer,
+      markedForReview: true,
+    });
+    if (onNext) onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>{question.question}</h3>
-      {question.options.map((opt) => (
-        <label key={opt.option}>
-          <input
-            type="radio"
-            name="option"
-            value={opt.value}
-            onChange={(e) => setSelectedOption(e.target.value)}
-          />
-          {opt.option}. {opt.value}
-        </label>
-      ))}
-      <button type="submit">Submit</button>
-    </form>
+    <div>
+      <p className="mb-4 font-semibold">{question.question}</p>
+      <div className="flex flex-col gap-2">
+        {question.options.map((opt, index) => (
+          <div
+            key={index}
+            onClick={() => handleOptionClick(opt)}
+            className={`border rounded px-4 py-2 cursor-pointer transition ${
+              selectedAnswer === opt
+                ? 'bg-blue-500 text-white'
+                : 'bg-white hover:bg-gray-100'
+            }`}
+          >
+            {opt}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex gap-4">
+        <button
+          onClick={handleSaveAndNext}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Save and Next
+        </button>
+        <button
+          onClick={handleMarkForReview}
+          className="bg-violet-600 text-white px-4 py-2 rounded hover:bg-violet-700"
+        >
+          Mark for Review
+        </button>
+      </div>
+    </div>
   );
 };
 
