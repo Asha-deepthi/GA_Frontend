@@ -9,7 +9,7 @@ import InterviewQuestions from "./Test_creation/pages/interviewquestions";
 import PrivateRoute from "./Test_creation/components/PrivateRoute";
 import { StreamProvider } from './Test_execution/StreamContext';
 
-/*import SectionPage from "./Test_execution/SectionPage";
+import SectionPage from "./Test_execution/SectionPage";
 import InstructionScreen from './Test_execution/InstructionScreen';
 import TutorialScreen from './Test_execution/TutorialScreen';
 import ConnectionStrength from './Test_execution/ConnectionStrength';
@@ -23,35 +23,35 @@ import PermissionScreen from './Test_execution/PermissionScreen';
 import AudioQuestion from './Test_execution/AudioQuestion';
 import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
-import ResultScreen from './Test_execution/ResultScreen';
-import CandidateEvaluation from './Test_execution/CandidateEvaluation';*/
+import CandidateEvaluation from './Test_execution/CandidateEvaluation';
 
 function App() {
   return (
     <StreamProvider>
-    <Routes>
-      <Route path="/" element={<SignupPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/verify-email/:uuid" element={<VerifyEmail />} />
-      <Route path="/login" element={<LoginPage />} />
-     <Route path="/interviewquestions" element={<InterviewQuestions />} />
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <InterviewDashboard />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/importform"
-        element={
-          <PrivateRoute>
-            <JobImportForm />
-          </PrivateRoute>
-        }
-      />
-     {/*<Route path="/instructionscreen" element={<InstructionScreen />} />
+      <Routes>
+        <Route path="/" element={<SignupPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify-email/:uuid" element={<VerifyEmail />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/interviewquestions" element={<InterviewQuestions />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <InterviewDashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/importform"
+          element={
+            <PrivateRoute>
+              <JobImportForm />
+            </PrivateRoute>
+          }
+        />
+
+        {/*<Route path="/instructionscreen" element={<InstructionScreen />} />
         <Routes>
           <Route path="/" element={<SignupPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -72,24 +72,24 @@ function App() {
                 <JobImportForm />
               </PrivateRoute>
             }
-          />
-          <Route path="/instructionscreen" element={<InstructionScreen />} />
-          <Route path="/tutorialscreen" element={<TutorialScreen />} />
-          <Route path="/connectionstrength" element={<ConnectionStrength />} />
-          <Route path="/videoquestion" element={<VideoQuestion />} />
-          <Route path="/codingquestion" element={<CodingQuestion />} />
-          <Route path="/mcqquestion" element={<McqQuestion />} />
-          <Route path="/fullscreen" element={<FullScreen />} />
-          <Route path="/welcome" element={<WelcomeScreen />} />
-          <Route path="/basic-details" element={<BasicDetails />} />
-          <Route path="/permission" element={<PermissionScreen />} />
-          <Route path="/audioquestion" element={<AudioQuestion />} />
-          <Route path="/demoquestion" element={<DemoQuestion />} />
-          <Route path="/result" element={<ResultScreen />} />
-          <Route path="/sectionpage" element={<SectionPage />} />
-          <Route path="/sectionpage" element={<SectionPage />} />
-          <Route path="/evaluation" element={<CandidateEvaluation />} />*/}
-        </Routes>
+          />*/}
+
+        <Route path="/instructionscreen" element={<InstructionScreen />} />
+        <Route path="/tutorialscreen" element={<TutorialScreen />} />
+        <Route path="/connectionstrength" element={<ConnectionStrength />} />
+        <Route path="/videoquestion" element={<VideoQuestion />} />
+        <Route path="/codingquestion" element={<CodingQuestion />} />
+        <Route path="/mcqquestion" element={<McqQuestion />} />
+        <Route path="/fullscreen" element={<FullScreen />} />
+        <Route path="/welcome" element={<WelcomeScreen />} />
+        <Route path="/basic-details" element={<BasicDetails />} />
+        <Route path="/permission" element={<PermissionScreen />} />
+        <Route path="/audioquestion" element={<AudioQuestion />} />
+        <Route path="/demoquestion" element={<DemoQuestion />} />
+        <Route path="/result" element={<ResultScreen />} />
+        <Route path="/sectionpage" element={<SectionPage />} />
+        <Route path="/evaluation" element={<CandidateEvaluation />} />
+      </Routes>
     </StreamProvider>
   );
 }

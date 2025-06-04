@@ -97,99 +97,112 @@ const CandidateEvaluation = () => {
     };
 
     return (
-         <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-screen">
             {/* Header */}
             <Header />
 
-        <div className="flex h-screen overflow-hidden">
-            {/* Sidebar */}
-            <Sidebar candidates={mockCandidates} onSelect={setSelectedCandidate} />
+            <div className="flex h-screen overflow-hidden">
+                {/* Sidebar */}
+                <Sidebar candidates={mockCandidates} onSelect={setSelectedCandidate} />
 
-            {/* Main Content */}
-            <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                {selectedCandidate ? (
-                    <>
+                {/* Main Content */}
+                <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                    {selectedCandidate ? (
+                        <>
 
-                        {/* Candidate Details */}
-                        <div className="mb-6 bg-white">
-                            {/* Top Row with Photo + Basic Info + Share */}
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-4">
-                                    <img
-                                        src="/images/photo.png"
-                                        alt={selectedCandidate.name}
-                                        className="w-20 h-20 rounded-full object-cover"
-                                    />
-                                    <div>
-                                        <h2 className="text-xl font-semibold">{selectedCandidate.name}</h2>
-                                        <div className="flex flex-wrap gap-x-4 text-sm text-black mt-1">
-                                            <span>{selectedCandidate.gender}</span>
-                                            <span>Age {selectedCandidate.age}</span>
-                                            <span>{selectedCandidate.experience?.length || 0} Years EXP</span>
-                                            <span>{selectedCandidate.degree}</span>
-                                            <span>ctc {selectedCandidate.ctc}</span>
-                                            <span>Tel {selectedCandidate.contact}</span>
+                            <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
+                                {/* Top Row: Photo + Info + Share */}
+                                <div className="flex justify-between items-start">
+                                    <div className="flex gap-4">
+                                        {/* Profile Photo */}
+                                        <img
+                                            src={selectedCandidate.avatar || "/images/photo.png"}
+                                            alt={selectedCandidate.name}
+                                            className="w-20 h-20 rounded-full object-cover"
+                                        />
+
+                                        {/* Name + Inline Info */}
+                                        <div>
+                                            <h2 className="text-xl font-semibold">{selectedCandidate.name}</h2>
+                                            <p className="text-sm text-gray-700 mt-1 flex flex-wrap gap-2">
+                                                <span>{selectedCandidate.gender}</span>
+                                                <span>|</span>
+                                                <span>Age {selectedCandidate.age}</span>
+                                                <span>|</span>
+                                                <span>{selectedCandidate.experience?.length || 0} Years EXP</span>
+                                                <span>|</span>
+                                                <span>{selectedCandidate.degree}</span>
+                                                <span>|</span>
+                                                <span>ctc {selectedCandidate.ctc}</span>
+                                                <span>|</span>
+                                                <span>Tel {selectedCandidate.contact}</span>
+                                            </p>
                                         </div>
                                     </div>
+
+                                    {/* Share Button */}
+                                    <div className="text-teal-600 font-semibold cursor-pointer flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 100-6 3 3 0 000 6zM9 12a3 3 0 100-6 3 3 0 000 6zm6 0a3 3 0 100-6 3 3 0 000 6zM9 16a3 3 0 100 6 3 3 0 000-6zm6 0a3 3 0 100 6 3 3 0 000-6z" />
+                                        </svg>
+                                        SHARE
+                                    </div>
                                 </div>
-                                <div className="flex items-center text-teal-500 font-semibold cursor-pointer gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 100-6 3 3 0 000 6zM9 12a3 3 0 100-6 3 3 0 000 6zm6 0a3 3 0 100-6 3 3 0 000 6zM9 16a3 3 0 100 6 3 3 0 000-6zm6 0a3 3 0 100 6 3 3 0 000-6z" /></svg>
-                                    SHARE
+
+                                {/* Grid Details Below */}
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-8 mt-6 text-sm">
+                                    {/* Experience */}
+                                    <div>
+                                        <p className="text-gray-400 font-medium">Experience</p>
+                                        {selectedCandidate.experience?.map((item, idx) => (
+                                            <p key={idx} className="text-black">{item.role} · {item.duration}</p>
+                                        ))}
+                                    </div>
+
+                                    {/* Education */}
+                                    <div>
+                                        <p className="text-gray-400 font-medium">Education</p>
+                                        <p className="text-black">{selectedCandidate.education}</p>
+                                    </div>
+
+                                    {/* Resume */}
+                                    <div>
+                                        <p className="text-gray-400 font-medium">Resume</p>
+                                        <a
+                                            href={`/${selectedCandidate.resume}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-teal-600 underline"
+                                        >
+                                            {selectedCandidate.resume}
+                                        </a>
+                                    </div>
+
+                                    {/* Preference */}
+                                    <div>
+                                        <p className="text-gray-400 font-medium">Preference</p>
+                                        <p className="text-black">{selectedCandidate.preference}</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* 2-Column Info Layout */}
-                            <div className="grid grid-cols-2 gap-y-2 gap-x-6 mt-4 text-sm">
-                                <div>
-                                    <p className="text-gray-400">Experience</p>
-                                    {selectedCandidate.experience?.map((item, idx) => (
-                                        <p key={idx} className="text-black">
-                                            {item.role} · {item.duration}
-                                        </p>
-                                    ))}
+
+                            {/* Video + AI Feedback */}
+                            <div className="flex space-x-6 mb-6">
+                                <div className="w-2/3">
+                                    <VideoSection responses={responses} />
                                 </div>
 
-                                <div>
-                                    <p className="text-gray-400">Education</p>
-                                    <p className="text-black">{selectedCandidate.education}</p>
-                                </div>
-
-                                <div>
-                                    <p className="text-gray-400">Resume</p>
-                                    <a
-                                        href={`/${selectedCandidate.resume}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-black underline"
-                                    >
-                                        {selectedCandidate.resume}
-                                    </a>
-                                </div>
-
-                                <div>
-                                    <p className="text-gray-400">Preference</p>
-                                    <p className="text-black">{selectedCandidate.preference}</p>
+                                <div className="w-1/3 flex flex-col space-y-4">
+                                    <InterviewFeedback onSubmit={handleEvaluationSubmit} />
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Video + AI Feedback */}
-                        <div className="flex space-x-6 mb-6">
-                            <div className="w-2/3">
-                                <VideoSection responses={responses} />
-                            </div>
-
-                            <div className="w-1/3 flex flex-col space-y-4">
-                                <AIComment comment={aiComment} />
-                                <InterviewFeedback onSubmit={handleEvaluationSubmit} />
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <p className="text-gray-500 mt-10 text-center">Select a candidate to start evaluation.</p>
-                )}
+                        </>
+                    ) : (
+                        <p className="text-gray-500 mt-10 text-center">Select a candidate to start evaluation.</p>
+                    )}
+                </div>
             </div>
-        </div>
         </div>
     );
 };
