@@ -16,13 +16,9 @@ const Header = () => {
                 {/* Evaluations with Underline */}
                 <div className="relative w-[120px] h-[52.88px] flex flex-col items-center justify-center">
                     <div className="w-[120px] h-[32px]  text-[#00A398] text-[21px] font-lato font-black leading-[32px] flex items-center justify-center">
-                        Evaluations
+                        Positions
                     </div>
                     <div className="w-[35px] h-[5px] bg-[#00A398] rounded-[10px] mt-[10px]" />
-                </div>
-                {/* Positions */}
-                <div className="w-[120px] h-[32px] text-[#101010] text-[21px] font-lato font-normal leading-[32px] text-center flex items-center justify-center">
-                    Positions
                 </div>
             </div>
 
