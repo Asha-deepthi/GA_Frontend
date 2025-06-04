@@ -1,15 +1,16 @@
 /*frontend/src/Test_creation/components/PrivateRoute.jsx*/
-import React from "react";
-import { Navigate } from "react-router-dom";
+// PrivateRoute.jsx
+// src/test-creation/components/PrivateRoute.jsx
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({ children }) => {
-  const token =
-    localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-
-  return token ? children : <Navigate to="/login" />;
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  return token ? children : <Navigate to="/login" replace />;
 };
 
 export default PrivateRoute;
+
 
 /*import React from "react";
 import { Navigate } from "react-router-dom";

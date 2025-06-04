@@ -6,28 +6,30 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email_or_phone: '',
-    password: '',
+    identifier: "", // changed from email_or_phone
+    password: "",
   });
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await axios.post("http://localhost:8000/api/token/", {
-      email: formData.email_or_phone,
-      password: formData.password,
-    });
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:8000/api/login/", {
+        identifier: formData.identifier,  // ✅ match backend key
+        password: formData.password,
+        remember_me: rememberMe,
+      });
 
-    // ✅ Correct token storage
-    sessionStorage.setItem("access_token", res.data.access);
-    sessionStorage.setItem("refresh_token", res.data.refresh);
+      // ✅ Use sessionStorage or localStorage depending on rememberMe
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("access_token", res.data.access);
+      storage.setItem("refresh_token", res.data.refresh);
 
-    navigate("/dashboard", { replace: true });
-  } catch (error) {
-    console.error(error);
-    alert("Invalid credentials");
-  }
-};
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.error(error);
+      alert("Invalid credentials");
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -58,9 +60,9 @@ const handleLogin = async (e) => {
               <input
                 type="text"
                 placeholder="Enter email or phone number"
-                value={formData.email_or_phone}
+                value={formData.identifier}
                 onChange={(e) =>
-                  setFormData({ ...formData, email_or_phone: e.target.value })
+                  setFormData({ ...formData, identifier : e.target.value })
                 }
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required

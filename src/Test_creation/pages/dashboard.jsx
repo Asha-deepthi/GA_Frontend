@@ -282,6 +282,16 @@ const InterviewDashboard = () => {
   setShowProfileMenu(false);
   navigate("/login");
 };*/
+const handleLogout = () => {
+    // Clear auth tokens or user context
+localStorage.removeItem('access_token');
+localStorage.removeItem('refresh_token');
+sessionStorage.removeItem('access_token');
+sessionStorage.removeItem('refresh_token');
+
+    // Navigate to login
+    window.location.href = '/login';
+  };
  return (
     <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
       {/* Header */}

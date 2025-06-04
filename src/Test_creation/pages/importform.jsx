@@ -42,7 +42,7 @@ const handleSubmit = async (e) => {
       alert("Test created successfully!");
       const data = await res.json();
       console.log("Test created:", data);
-      navigate("/interviewquestions");
+      navigate("/interviewquestions", { state: { testId: data.id } });
     } else {
       const errorData = await res.json();
       console.error("Error:", errorData);
