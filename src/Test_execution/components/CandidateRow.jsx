@@ -1,5 +1,5 @@
 import React from "react";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { Eye, Pencil, Trash } from "lucide-react";
 
 const CandidateRow = ({ candidate }) => {
   return (
@@ -19,14 +19,14 @@ const CandidateRow = ({ candidate }) => {
       <td className="px-4 py-3">{candidate.mobile}</td>
       <td className="px-4 py-3">{candidate.interviewDate}</td>
       <td className="px-4 py-3 space-x-2 text-lg">
-        <button className="text-blue-500 hover:text-blue-700">
-          <FaEye />
+        <button className="p-2 rounded-md bg-purple-100 text-purple-600">
+        <Eye className="w-3 h-3" />
         </button>
-        <button className="text-green-500 hover:text-green-700">
-          <FaEdit />
+        <button className="p-2 rounded-md bg-green-100 text-green-600">
+        <Pencil className="w-3 h-3" />
         </button>
-        <button className="text-red-500 hover:text-red-700">
-          <FaTrash />
+        <button className="p-2 rounded-md bg-red-100 text-red-600">
+        <Trash className="w-3 h-3" />
         </button>
       </td>
     </tr>
