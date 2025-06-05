@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import VideoSection from "./components/VideoSection";
-import AIComment from "./components/AIComment";
 import InterviewFeedback from "./components/InterviewFeedback";
 import Header from "./components/Header";
 
-
-// ✅ Consistent mock data
 const mockCandidates = [
     {
         id: 1,
+        session_id: 12345,
         name: "Pavan",
         gender: "Male",
         age: 24,
@@ -29,6 +27,7 @@ const mockCandidates = [
     },
     {
         id: 2,
+        session_id: 1234,
         name: "Renuka",
         gender: "Female",
         age: 23,
@@ -47,6 +46,7 @@ const mockCandidates = [
     },
     {
         id: 3,
+        session_id: 123,
         name: "Kalki",
         gender: "Male",
         age: 25,
@@ -65,63 +65,125 @@ const mockCandidates = [
     }
 ];
 
-const mockResponses = [
-    {
-        question: "What professional skills do you have for Sales Executive positions?",
-        videoUrl: "/sample1.mp4",
-    },
-    {
-        question: "Which of the following roles related work experience do you have?",
-        videoUrl: "/sample2.mp4",
-    },
-];
-
 const mockAIComment =
     "The candidate demonstrates strong interpersonal and problem-solving skills. Suitable for customer-facing roles. Work experience aligns with position requirements.";
 
 const CandidateEvaluation = () => {
     const [selectedCandidate, setSelectedCandidate] = useState(null);
-    const [responses, setResponses] = useState([]);
+    const [sessionId, setSessionId] = useState(null);
+    const [responses, setResponses] = useState(null);
+    const [screenshots, setScreenshots] = useState([]);
     const [aiComment, setAiComment] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (selectedCandidate) {
-            setResponses(mockResponses);
-            setAiComment(mockAIComment);
+        if (selectedCandidate?.session_id) {
+            setSessionId(selectedCandidate.session_id);
+        } else {
+            setSessionId(null);
         }
     }, [selectedCandidate]);
 
+    useEffect(() => {
+        if (!sessionId) {
+            setResponses(null);
+            setScreenshots([]);
+            setAiComment("");
+            setLoading(false);
+            setError(null);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        const sections = [1, 2, 3, 4, 5, 6, 7]; // All 7 sections
+
+        Promise.all([
+            Promise.all(
+                sections.map(sectionId =>
+                    Promise.all([
+                        fetch(`http://127.0.0.1:8000/api/test-creation/fetch-section-questions/${sectionId}/?session_id=${sessionId}`)
+                            .then(res => {
+                                if (!res.ok) throw new Error(`Failed to fetch questions for section ${sectionId}`);
+                                return res.json();
+                            }),
+                        fetch(`http://127.0.0.1:8000/test-execution/get-answers/?session_id=${sessionId}&section_id=${sectionId}`)
+                            .then(res => {
+                                if (!res.ok) throw new Error(`Failed to fetch answers for section ${sectionId}`);
+                                return res.json();
+                            }),
+                    ])
+                )
+            ),
+            fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/?session_id=${sessionId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to fetch screenshots");
+                    return res.json();
+                })
+        ])
+            .then(([[...sectionsResults], screenshotsData]) => {
+                // Merge questions and answers from all sections
+                const allMerged = [];
+
+                sectionsResults.forEach(([questionsData, answersData], idx) => {
+                    const questionsArray = questionsData.questions || [];
+
+                    const merged = questionsArray.map(q => {
+                        //console.log("Matching question:", q.question_id);
+                        answersData.forEach(a => console.log("Answer question_id:", a.question_id));
+                        const matchedAnswer = answersData.find(a => String(a.question_id) === String(q.question_id));
+                       // console.log("Matched answer:", matchedAnswer);
+                        return {
+                            ...q,
+                            answer: matchedAnswer?.answer_text || matchedAnswer?.answer || null,
+                            question_type: q.question_type || matchedAnswer?.question_type || "unknown",
+                            section_id: sections[idx],
+                            answer_id: matchedAnswer?.id || null,
+                        };
+                    });
+
+
+                    allMerged.push(...merged);
+                });
+
+                //console.log("Merged questions+answers:", allMerged);
+
+                setResponses(allMerged);
+                setScreenshots(screenshotsData);
+                setAiComment(mockAIComment);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
+
+    }, [sessionId]);
+
     const handleEvaluationSubmit = (evaluation) => {
         console.log("Submitted evaluation:", evaluation);
-        // TODO: POST to backend
+        // TODO: POST evaluation to backend
     };
 
     return (
         <div className="flex flex-col h-screen">
-            {/* Header */}
             <Header />
-
-            <div className="flex h-screen overflow-hidden">
-                {/* Sidebar */}
+            <div className="flex flex-1 overflow-hidden">
                 <Sidebar candidates={mockCandidates} onSelect={setSelectedCandidate} />
-
-                {/* Main Content */}
                 <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
                     {selectedCandidate ? (
                         <>
-
+                            {/* Candidate Info Section */}
                             <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
-                                {/* Top Row: Photo + Info + Share */}
                                 <div className="flex justify-between items-start">
                                     <div className="flex gap-4">
-                                        {/* Profile Photo */}
                                         <img
                                             src={selectedCandidate.avatar || "/images/photo.png"}
                                             alt={selectedCandidate.name}
                                             className="w-20 h-20 rounded-full object-cover"
                                         />
-
-                                        {/* Name + Inline Info */}
                                         <div>
                                             <h2 className="text-xl font-semibold">{selectedCandidate.name}</h2>
                                             <p className="text-sm text-gray-700 mt-1 flex flex-wrap gap-2">
@@ -140,8 +202,8 @@ const CandidateEvaluation = () => {
                                         </div>
                                     </div>
 
-                                    {/* Share Button */}
                                     <div className="text-teal-600 font-semibold cursor-pointer flex items-center gap-1">
+                                        {/* Share icon */}
                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 100-6 3 3 0 000 6zM9 12a3 3 0 100-6 3 3 0 000 6zm6 0a3 3 0 100-6 3 3 0 000 6zM9 16a3 3 0 100 6 3 3 0 000-6zm6 0a3 3 0 100 6 3 3 0 000-6z" />
                                         </svg>
@@ -149,9 +211,7 @@ const CandidateEvaluation = () => {
                                     </div>
                                 </div>
 
-                                {/* Grid Details Below */}
                                 <div className="grid grid-cols-2 gap-y-3 gap-x-8 mt-6 text-sm">
-                                    {/* Experience */}
                                     <div>
                                         <p className="text-gray-400 font-medium">Experience</p>
                                         {selectedCandidate.experience?.map((item, idx) => (
@@ -159,13 +219,11 @@ const CandidateEvaluation = () => {
                                         ))}
                                     </div>
 
-                                    {/* Education */}
                                     <div>
                                         <p className="text-gray-400 font-medium">Education</p>
                                         <p className="text-black">{selectedCandidate.education}</p>
                                     </div>
 
-                                    {/* Resume */}
                                     <div>
                                         <p className="text-gray-400 font-medium">Resume</p>
                                         <a
@@ -178,7 +236,6 @@ const CandidateEvaluation = () => {
                                         </a>
                                     </div>
 
-                                    {/* Preference */}
                                     <div>
                                         <p className="text-gray-400 font-medium">Preference</p>
                                         <p className="text-black">{selectedCandidate.preference}</p>
@@ -186,17 +243,22 @@ const CandidateEvaluation = () => {
                                 </div>
                             </div>
 
+                            {/* Loading & Error */}
+                            {loading && <p className="text-center text-gray-500">Loading candidate responses...</p>}
+                            {error && <p className="text-center text-red-500">{error}</p>}
 
-                            {/* Video + AI Feedback */}
-                            <div className="flex space-x-6 mb-6">
-                                <div className="w-2/3">
-                                    <VideoSection responses={responses} />
-                                </div>
+                            {/* Responses + Feedback */}
+                            {responses && !loading && !error && (
+                                <div className="flex space-x-6 mb-6">
+                                    <div className="w-full">
+                                        <VideoSection screenshots={screenshots} responses={responses} />
+                                    </div>
 
-                                <div className="w-1/3 flex flex-col space-y-4">
-                                    <InterviewFeedback onSubmit={handleEvaluationSubmit} />
+                                    <div className="w-1/3 flex flex-col space-y-4">
+                                        <InterviewFeedback onSubmit={handleEvaluationSubmit} aiComment={aiComment} />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </>
                     ) : (
                         <p className="text-gray-500 mt-10 text-center">Select a candidate to start evaluation.</p>

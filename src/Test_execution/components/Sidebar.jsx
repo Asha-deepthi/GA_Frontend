@@ -9,10 +9,25 @@ const Sidebar = ({ candidates, onSelect }) => {
   const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [evaluationFilter, setEvaluationFilter] = useState("all");
 
-  const getExperienceYears = (expStr) => {
-    const match = expStr.match(/(\d{4})\s*-\s*(\d{4})/);
-    return match ? parseInt(match[2]) - parseInt(match[1]) : 0;
-  };
+  const getExperienceYears = (experienceArray) => {
+  if (!Array.isArray(experienceArray)) return 0;
+
+  let totalYears = 0;
+
+  experienceArray.forEach(exp => {
+    const match = exp.duration.match(/(\d{4})\s*-\s*(\d{4})/);
+    if (match) {
+      const start = parseInt(match[1]);
+      const end = parseInt(match[2]);
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        totalYears += end - start;
+      }
+    }
+  });
+
+  return totalYears;
+};
+
 
   const filteredAndSortedCandidates = [...candidates]
     .filter((candidate) => {
@@ -27,10 +42,15 @@ const Sidebar = ({ candidates, onSelect }) => {
     .sort((a, b) => {
       if (sortBy === "rating") return b.rating - a.rating;
       if (sortBy === "experience")
-        return getExperienceYears(b.experience) - getExperienceYears(a.experience);
+       return getExperienceYears(b.experience) - getExperienceYears(a.experience);
       if (sortBy === "age") return a.age - b.age;
+      if (sortBy === "evaluation") {
+        const order = { completed: 1, pending: 2, rejected: 3 };
+        return (order[a.evaluationStatus] || 4) - (order[b.evaluationStatus] || 4);
+      }
       return 0;
     });
+
 
   return (
     <div className="w-72 bg-white border-r p-4 overflow-y-auto relative">
@@ -86,7 +106,7 @@ const Sidebar = ({ candidates, onSelect }) => {
 
           {showSortOptions && (
             <div className="absolute top-12 left-0 z-10 bg-white border shadow rounded-md w-40">
-              {["age", "rating", "experience"].map((option) => (
+              {["age", "rating", "experience", "evaluation"].map((option) => (
                 <button
                   key={option}
                   onClick={() => {
