@@ -7,8 +7,8 @@ import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import InterviewQuestions from "./Test_creation/pages/interviewquestions";
 import PrivateRoute from "./Test_creation/components/PrivateRoute";
-import { StreamProvider } from './Test_execution/StreamContext';
 
+import { StreamProvider } from './Test_execution/StreamContext';
 import SectionPage from "./Test_execution/SectionPage";
 import InstructionScreen from './Test_execution/InstructionScreen';
 import TutorialScreen from './Test_execution/TutorialScreen';
@@ -24,6 +24,7 @@ import AudioQuestion from './Test_execution/AudioQuestion';
 import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
 import CandidateEvaluation from './Test_execution/CandidateEvaluation';
+import CandidatePage from './Test_execution/CandidatePage';
 
 function App() {
   return (
@@ -89,6 +90,7 @@ function App() {
         <Route path="/result" element={<ResultScreen />} />
         <Route path="/sectionpage" element={<SectionPage />} />
         <Route path="/evaluation" element={<CandidateEvaluation />} />
+        <Route path="/candidates" element={<CandidatePage />} />
       </Routes>
     </StreamProvider>
   );

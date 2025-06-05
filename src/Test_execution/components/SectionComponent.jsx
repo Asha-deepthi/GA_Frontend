@@ -174,6 +174,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         body.append('question_type', sectionType);
         body.append('marked_for_review', false);
         body.append('section_id', section_id); // 🔥 Add this line
+        body.append('answer_text', ''); // 🔥 Add this line
 
         answersStatus[question.question_id] = {
           answer: null,
