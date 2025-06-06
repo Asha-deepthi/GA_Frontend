@@ -1,43 +1,56 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ProfileDropdown from "./ProfileDropdown";
+import { Bell } from "lucide-react";
 
 const Header = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Define nav items and their target paths
+  const navItems = [
+    { label: "Dashboard", path: "/dashboard", width: "w-[74px]" },
+    { label: "Tests", path: "/tets", width: "w-[37px]" },
+    { label: "Candidates", path: "/candidates", width: "w-[77px]" },
+    { label: "Create test", path: "/importform", width: "w-[78px]" },
+  ];
 
   return (
-    <div className="relative w-[1440px] h-[75px] bg-white">
-      {/* Gray Box (Left) */}
-      <div className="absolute top-[15px] left-[36px] w-[144.78px] h-[50px] bg-[#00000033]" />
-
-      {/* Navigation Center */}
-      <div className="absolute top-[25px] left-[243px] flex gap-[42px]">
-        <div
-          onClick={() => navigate("/dashboard")}
-          className="w-[120px] h-[32px] cursor-pointer text-black text-[21px] font-lato font-normal leading-[32px] text-center flex items-center justify-center"
-        >
-          Home
-        </div>
-
-        {/* Evaluations (active) */}
-        <div className="relative w-[120px] h-[52.88px] flex flex-col items-center justify-center">
-          <div className="w-[120px] h-[32px] cursor-pointer text-[#00A398] text-[21px] font-lato font-black leading-[32px] flex items-center justify-center">
-            Evaluations
-          </div>
-          <div className="w-[35px] h-[5px] bg-[#00A398] rounded-[10px] mt-[10px]" />
-        </div>
-
-        {/* Positions */}
-        <div
-         onClick={() => navigate("/importform")}
-         className="w-[120px] h-[32px] cursor-pointer text-black text-[21px] font-lato font-normal leading-[32px] text-center flex items-center justify-center">
-          Positions
-        </div>
+    <div className="w-[1440px] h-[65px] bg-white flex items-center px-6 justify-between">
+      {/* Left: Logo / Name */}
+      <div className="w-[193px] text-[#00A398] text-[18px] font-bold leading-[23px] font-inter">
+        GA Proctored Test
       </div>
 
-      {/* Profile Section (Right) */}
-      <div className="absolute top-[28px] left-[1250px] w-[130px] h-[30px] flex items-center justify-end">
-        <ProfileDropdown />
+      {/* Right: Nav + Notification + Profile */}
+      <div className="flex items-center gap-[36px]">
+        {/* Navigation */}
+        <div className="flex gap-[32px] font-inter text-[14px] font-medium leading-[21px] text-[#121417]">
+          {navItems.map(({ label, path, width }) => {
+            const isActive = location.pathname === path;
+            return (
+              <div
+                key={label}
+                onClick={() => navigate(path)}
+                className={`cursor-pointer flex flex-col items-center justify-center ${width} ${
+                  isActive ? "text-[#00A398] font-semibold border-b border-[#00A398]" : "text-[#121417]"
+                }`}
+              >
+                {label}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Notification icon */}
+        <div className="w-[40px] h-[40px] rounded-full bg-[#F5F5F5] flex items-center justify-center px-[10px]">
+          <Bell size={18} color="#555" />
+        </div>
+
+        {/* Profile Dropdown */}
+        <div className="w-[130px] h-[30px]">
+          <ProfileDropdown />
+        </div>
       </div>
     </div>
   );
