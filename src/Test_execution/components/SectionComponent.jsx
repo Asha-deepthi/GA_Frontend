@@ -1,4 +1,4 @@
-import React,{ useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MultipleChoiceComponent from './MultipleChoiceComponent';
 import FillInTheBlankComponent from './FillInTheBlankComponent';
 import IntegerComponent from './IntegerComponent';
@@ -6,18 +6,20 @@ import SubjectiveComponent from './SubjectiveComponent';
 import AudioComponent from './AudioComponent';
 import VideoComponent from './VideoComponent';
 import useProctoring from './useProctoring';
+import Webcam from "react-webcam";
 
 const session_id = 12345;
 const SECTION_DURATION = 5 * 60;
 
 const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
-  const { violationCount } = useProctoring({ sessionId: session_id, answerApiUrl });
+  const { violationCount, webcamRef } = useProctoring({ sessionId: session_id, answerApiUrl });
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answersStatus, setAnswersStatus] = useState({});
   const [sectionType, setSectionType] = useState(null);
   const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
   const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
+  
   useEffect(() => {
     const exitFullscreenOnUnload = () => {
       const exit =
@@ -25,7 +27,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         document.webkitExitFullscreen ||
         document.mozCancelFullScreen ||
         document.msExitFullscreen;
-      if (exit) exit.call(document).catch(() => {});
+      if (exit) exit.call(document).catch(() => { });
     };
     window.addEventListener("beforeunload", exitFullscreenOnUnload);
     return () => window.removeEventListener("beforeunload", exitFullscreenOnUnload);
@@ -61,7 +63,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       }
     };
     fetchSectionData();
-}, [section_id]);
+  }, [section_id]);
   useEffect(() => {
     const fetchTimer = async () => {
       try {
@@ -71,8 +73,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
 
         const local = localStorage.getItem(`timer_${section_id}`);
         const timeToUse = backendTime != null
-         ? backendTime
-         : (local ? parseInt(local) : defaultTime);
+          ? backendTime
+          : (local ? parseInt(local) : defaultTime);
 
         setTimeLeft(timeToUse);
         localStorage.setItem(`timer_${section_id}`, timeToUse);
@@ -84,9 +86,9 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     };
 
     if (defaultTime !== null) {
-    fetchTimer();
-  }
-}, [defaultTime, section_id]);
+      fetchTimer();
+    }
+  }, [defaultTime, section_id]);
   useEffect(() => {
     if (timeLeft <= 0) {
       handleFinalSubmit();
@@ -98,20 +100,20 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         const newTime = t - 1;
         localStorage.setItem(`timer_${section_id}`, newTime);
         // Save to backend every 10 seconds
-      if (newTime % 10 === 0) {
-        console.log("Saving timer with:", { session_id, section_id, newTime });
-        fetch('http://127.0.0.1:8000/api/test-creation/save-timer/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            session_id: session_id,
-            section_id: section_id,
-            remaining_time: newTime
-          })
-        }).catch(err => console.error('Failed to save timer:', err));
-      }
+        if (newTime % 10 === 0) {
+          console.log("Saving timer with:", { session_id, section_id, newTime });
+          fetch('http://127.0.0.1:8000/api/test-creation/save-timer/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              session_id: session_id,
+              section_id: section_id,
+              remaining_time: newTime
+            })
+          }).catch(err => console.error('Failed to save timer:', err));
+        }
         return newTime;
       });
     }, 1000);
@@ -256,7 +258,14 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       </div>
 
       <div className="border p-4 rounded shadow">{renderQuestionComponent()}</div>
-
+      <Webcam
+        ref={webcamRef}
+        audio={false}
+        screenshotFormat="image/jpeg"
+        width={200}
+        height={150}
+        style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}
+      />
       <div className="mt-4 flex justify-between">
         <button
           onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
@@ -281,6 +290,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
           </button>
         )}
       </div>
+      
     </div>
   );
 };

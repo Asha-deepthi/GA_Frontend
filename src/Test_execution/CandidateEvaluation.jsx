@@ -125,6 +125,9 @@ const CandidateEvaluation = () => {
         ])
             .then(([[...sectionsResults], screenshotsData]) => {
                 // Merge questions and answers from all sections
+                const filteredScreenshots = screenshotsData.filter(
+        screenshot => screenshot.session === sessionId
+    );
                 const allMerged = [];
 
                 sectionsResults.forEach(([questionsData, answersData], idx) => {
@@ -141,6 +144,7 @@ const CandidateEvaluation = () => {
                             question_type: q.question_type || matchedAnswer?.question_type || "unknown",
                             section_id: sections[idx],
                             answer_id: matchedAnswer?.id || null,
+                            marks_allotted: matchedAnswer?.marks_allotted ?? null,  // ✅ Add this line
                         };
                     });
 
@@ -151,7 +155,7 @@ const CandidateEvaluation = () => {
                 //console.log("Merged questions+answers:", allMerged);
 
                 setResponses(allMerged);
-                setScreenshots(screenshotsData);
+                setScreenshots(filteredScreenshots);
                 setAiComment(mockAIComment);
                 setLoading(false);
             })

@@ -15,6 +15,7 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
   const [marks, setMarks] = useState({});
   const debounceTimeout = useRef(null);
 
+  
   useEffect(() => {
     const initialMarks = {};
     responses.forEach((resp, i) => {
@@ -56,17 +57,20 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
   );
 
   // On marks input change
-  const handleMarkChange = (index, value) => {
-    // Accept only digits, or empty string for clearing input
-    if (value === '' || /^\d{0,2}$/.test(value)) {
-      setMarks(prev => ({ ...prev, [index]: value }));
+ const handleMarkChange = (index, value) => {
+  if (
+    value === '' || 
+    (/^\d{0,2}$/.test(value) && Number(value) <= 10)
+  ) {
+    setMarks(prev => ({ ...prev, [index]: value }));
 
-      const answerId = responses[index]?.answer_id;
-      if (answerId) {
-        debounceSaveMarks(answerId, value);
-      }
+    const answerId = responses[index]?.answer_id;
+    if (answerId) {
+      debounceSaveMarks(answerId, value);
     }
-  };
+  }
+};
+
 
   const renderAnswer = (item) => {
     const { question_type, answer } = item;
@@ -118,22 +122,43 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
   return (
     <div className="space-y-6">
       {/* Proctoring Screenshots Section */}
-      {screenshots.length > 0 && (
-        <div className="border rounded-lg p-4 shadow-sm bg-white">
-          <h4 className="font-medium text-gray-700 mb-2">Proctoring Screenshots:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[...screenshots]
-              .sort(() => 0.5 - Math.random())
-              .slice(0, 4)
-              .map((screenshot, i) => (
-                <img
-                  key={screenshot.id || i}
-                  src={screenshot.screenshot ? `http://127.0.0.1:8000${screenshot.screenshot}` : `/images/photo.png`}
-                  alt={`Screenshot ${i + 1}`}
-                  className="w-full h-auto border rounded"
-                />
-              ))}
-          </div>
+      {screenshots.length > 0 ? (
+        (() => {
+          const webcamShots = screenshots
+            .filter(s => s.screenshot && s.screenshot.includes('webcam_'))
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+          const filledShots = webcamShots.concat(Array(3).fill(null)).slice(0, 3);
+
+          return webcamShots.length > 0 ? (
+            <div className="border rounded-lg p-4 shadow-sm bg-white">
+              <h4 className="font-medium text-gray-700 mb-4">Proctoring Screenshots:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {filledShots.map((screenshot, i) => (
+                  <div key={screenshot?.id || i} className="text-center">
+                    <img
+                      src={screenshot?.screenshot ? `http://127.0.0.1:8000${screenshot.screenshot}` : `/images/photo.png`}
+                      alt={`Screenshot ${i + 1}`}
+                      className="w-full h-auto border rounded mb-1"
+                    />
+                    <p className="text-xs text-gray-500">
+                      {screenshot?.timestamp
+                        ? new Date(screenshot.timestamp).toLocaleString()
+                        : "No Timestamp"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 italic p-4 bg-white rounded shadow">
+              No proctoring screenshots available for this candidate.
+            </div>
+          );
+        })()
+      ) : (
+        <div className="text-center text-gray-500 italic p-4 bg-white rounded shadow">
+          No proctoring screenshots available for this candidate.
         </div>
       )}
 
@@ -152,11 +177,10 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
 
           {/* Show marks for all question types */}
           <div
-            className={`mt-2 font-semibold ${
-              (marks[index] === undefined || marks[index] === '' || Number(marks[index]) === 0)
+            className={`mt-2 font-semibold ${(marks[index] === undefined || marks[index] === '' || Number(marks[index]) === 0)
                 ? 'text-red-600'
                 : 'text-green-600'
-            }`}
+              }`}
           >
             Marks: {marks[index] !== undefined && marks[index] !== '' ? marks[index] : 'Not evaluated'}
           </div>
