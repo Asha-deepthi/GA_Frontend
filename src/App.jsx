@@ -24,7 +24,7 @@ import AudioQuestion from './Test_execution/AudioQuestion';
 import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
 import CandidateEvaluation from './Test_execution/CandidateEvaluation';
-import CandidatePage from './Test_execution/CandidatePage';
+import Test_CandidatePage from './Test_execution/Test_CandidatePage';
 
 function App() {
   return (
@@ -90,7 +90,7 @@ function App() {
         <Route path="/result" element={<ResultScreen />} />
         <Route path="/sectionpage" element={<SectionPage />} />
         <Route path="/evaluation" element={<CandidateEvaluation />} />
-        <Route path="/candidates" element={<CandidatePage />} />
+        <Route path="/test-candidates" element={<Test_CandidatePage />} />
       </Routes>
     </StreamProvider>
   );
