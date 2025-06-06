@@ -1,5 +1,5 @@
-import React,{ useEffect, useRef, useState, useCallback } from "react";
-import html2canvas from "html2canvas";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import Webcam from "react-webcam";
 
 const isFullscreenActive = () =>
   !!(
@@ -12,13 +12,12 @@ const isFullscreenActive = () =>
 const useProctoring = ({ sessionId, answerApiUrl }) => {
   const [violationCount, setViolationCount] = useState(0);
   const lastViolationTimeRef = useRef(0);
+  const webcamRef = useRef(null);
   const violationCooldownMs = 1000;
 
-  // Log violation to backend
   const logViolation = useCallback(
     async ({ eventType, confidence = 1.0, remarks = "" }) => {
       if (!sessionId) return;
-
       try {
         const response = await fetch(`http://127.0.0.1:8000/test-execution/proctoring-logs/`, {
           method: "POST",
@@ -33,18 +32,15 @@ const useProctoring = ({ sessionId, answerApiUrl }) => {
 
         if (!response.ok) {
           const errorJson = await response.json().catch(() => null);
-          const errorText = errorJson?.detail || `HTTP ${response.status}`;
-          console.error("Failed to log violation:", errorText);
+          console.error("Failed to log violation:", errorJson?.detail || `HTTP ${response.status}`);
         } else {
-          const successJson = await response.json().catch(() => null);
-          const successText = successJson?.detail || "Violation logged successfully";
-          console.log(successText);
+          console.log("Violation logged successfully");
         }
       } catch (error) {
         console.error("Error logging violation:", error.message);
       }
     },
-    [sessionId, answerApiUrl]
+    [sessionId]
   );
 
   const logWithCooldown = (eventType, remarks = "") => {
@@ -104,36 +100,32 @@ const useProctoring = ({ sessionId, answerApiUrl }) => {
     }
   }, [violationCount]);
 
-  // 🔄 Screenshot 
+  // 🎥 Take webcam screenshot every 8 seconds
   useEffect(() => {
-    const takeScreenshot = async () => {
-      try {
-        const canvas = await html2canvas(document.body);
-        const imageBlob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/jpeg", 0.6)
-        );
+    const takeWebcamScreenshot = async () => {
+      if (webcamRef.current) {
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (imageSrc) {
+          const blob = await fetch(imageSrc).then((res) => res.blob());
+          const formData = new FormData();
+          formData.append("session", sessionId);
+          formData.append("screenshot", blob, `webcam_${Date.now()}.jpg`);
 
-        if (!imageBlob) return;
-
-        const formData = new FormData();
-        formData.append("session", sessionId);
-        formData.append("screenshot", imageBlob, `screenshot_${Date.now()}.jpg`);
-
-        await fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/`, {
-          method: "POST",
-          body: formData,
-        });
-        console.log("📸 Screenshot uploaded.");
-      } catch (error) {
-        console.error("Failed to take/upload screenshot:", error);
+          await fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/`, {
+            method: "POST",
+            body: formData,
+          });
+          console.log("📸 Webcam screenshot uploaded.");
+        }
       }
     };
 
-    const interval = setInterval(takeScreenshot, 8000); 
+    const interval = setInterval(takeWebcamScreenshot, 8000);
     return () => clearInterval(interval);
-  }, [sessionId, answerApiUrl]);
+  }, [sessionId]);
 
-  return { violationCount, isFullscreenActive };
+  // Return webcamRef for use in parent component
+  return { violationCount, isFullscreenActive, webcamRef };
 };
 
 export default useProctoring;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; 
 function Positions() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   console.log("Positions component is rendering") // Debug log
 
   const positions = [
