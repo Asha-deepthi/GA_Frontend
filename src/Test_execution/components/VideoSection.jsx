@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-
 // Debounce utility
 function debounce(func, delay) {
   let timer;
@@ -12,22 +11,22 @@ function debounce(func, delay) {
   };
 }
 
-
 const VideoSection = ({ screenshots = [], responses = [] }) => {
   const [marks, setMarks] = useState({});
   const debounceTimeout = useRef(null);
 
   useEffect(() => {
-  const initialMarks = {};
-  responses.forEach((resp, i) => {
-    if (resp.marks !== undefined && resp.marks !== null) {
-      initialMarks[i] = resp.marks.toString();
-    } else if (requiresManualEvaluation(resp.question_type)) {
-      initialMarks[i] = ''; // show empty input for manual questions
-    }
-  });
-  setMarks(initialMarks);
-}, [responses]);
+    const initialMarks = {};
+    responses.forEach((resp, i) => {
+      // Use resp.marks_allotted (backend response field) instead of resp.marks
+      if (resp.marks_allotted !== undefined && resp.marks_allotted !== null) {
+        initialMarks[i] = resp.marks_allotted.toString();
+      } else if (requiresManualEvaluation(resp.question_type)) {
+        initialMarks[i] = ''; // show empty input for manual questions
+      }
+    });
+    setMarks(initialMarks);
+  }, [responses]);
 
   // Actual API call to save marks
   const saveMarksToBackend = async (answerId, marksValue) => {
@@ -68,6 +67,7 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
       }
     }
   };
+
   const renderAnswer = (item) => {
     const { question_type, answer } = item;
 
@@ -109,11 +109,11 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
     }
   };
 
- const requiresManualEvaluation = (type) => {
-  if (!type || type === "unknown") return true;
-  const lowerType = type.toLowerCase();
-  return ["subjective", "audio", "video"].includes(lowerType);
-};
+  const requiresManualEvaluation = (type) => {
+    if (!type || type === "unknown") return true;
+    const lowerType = type.toLowerCase();
+    return ["subjective", "audio", "video"].includes(lowerType);
+  };
 
   return (
     <div className="space-y-6">
@@ -150,11 +150,22 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
             <span className="font-semibold">Answer:</span> {renderAnswer(item)}
           </div>
 
-          {/* Marks input if needed */}
+          {/* Show marks for all question types */}
+          <div
+            className={`mt-2 font-semibold ${
+              (marks[index] === undefined || marks[index] === '' || Number(marks[index]) === 0)
+                ? 'text-red-600'
+                : 'text-green-600'
+            }`}
+          >
+            Marks: {marks[index] !== undefined && marks[index] !== '' ? marks[index] : 'Not evaluated'}
+          </div>
+
+          {/* Show input only for manual eval questions */}
           {requiresManualEvaluation(item.question_type) && (
             <div className="mt-2">
               <label htmlFor={`marks-input-${index}`} className="text-sm font-medium text-gray-600">
-                Marks:
+                Update Marks:
               </label>
               <input
                 id={`marks-input-${index}`}
