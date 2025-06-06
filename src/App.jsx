@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import SignupPage from "./Test_creation/pages/signup";
 import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
+import Positions from "./Test_creation/pages/positions";
 import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import InterviewQuestions from "./Test_creation/pages/interviewquestions";
@@ -34,6 +35,7 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email/:uuid" element={<VerifyEmail />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/positions" element={<Positions />} />
      <Route path="/interviewquestions" element={<InterviewQuestions />} />
       <Route
         path="/dashboard"

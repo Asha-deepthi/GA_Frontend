@@ -323,7 +323,7 @@ sessionStorage.removeItem('refresh_token');
   className={`pb-1 ${activeNav === 'positions' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-600'}`}
   onClick={() => {
     setActiveNav('positions');
-    navigate('/importform'); // ✅ navigates to ImportFormPage
+    navigate('/positions'); // ✅ navigates to ImportFormPage
   }}
 >
   Positions

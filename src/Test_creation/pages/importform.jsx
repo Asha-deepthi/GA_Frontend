@@ -39,7 +39,7 @@ const handleSubmit = async (e) => {
     });
 
     if (res.ok) {
-      alert("Test created successfully!");
+      /*alert("Test created successfully!");*/
       const data = await res.json();
       console.log("Test created:", data);
       navigate("/interviewquestions", { state: { testId: data.id } });
