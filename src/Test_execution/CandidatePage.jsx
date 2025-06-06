@@ -6,9 +6,9 @@ const CandidatePage = () => {
     return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Header />
-      <div className="flex-grow">
-        <CandidateTable />
-      </div>
+      <div className="flex justify-center">
+          <CandidateTable />
+        </div>
     </div>
   );
 };

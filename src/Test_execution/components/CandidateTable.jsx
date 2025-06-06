@@ -74,7 +74,7 @@ const CandidateTable = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl w-[95%] mx-auto mt-10 px-6 py-4 space-y-4">
+    <div className="bg-white rounded-xl shadow-xl w-[95%] mt-10 px-6 py-4 space-y-4 mx-auto translate-x-28 translate-y-2">
       {/* Top Bar */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <input
