@@ -14,8 +14,9 @@ function debounce(func, delay) {
 const VideoSection = ({ screenshots = [], responses = [] }) => {
   const [marks, setMarks] = useState({});
   const debounceTimeout = useRef(null);
+  const [showAllScreenshots, setShowAllScreenshots] = useState(false);
 
-  
+
   useEffect(() => {
     const initialMarks = {};
     responses.forEach((resp, i) => {
@@ -57,19 +58,19 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
   );
 
   // On marks input change
- const handleMarkChange = (index, value) => {
-  if (
-    value === '' || 
-    (/^\d{0,2}$/.test(value) && Number(value) <= 10)
-  ) {
-    setMarks(prev => ({ ...prev, [index]: value }));
+  const handleMarkChange = (index, value) => {
+    if (
+      value === '' ||
+      (/^\d{0,2}$/.test(value) && Number(value) <= 10)
+    ) {
+      setMarks(prev => ({ ...prev, [index]: value }));
 
-    const answerId = responses[index]?.answer_id;
-    if (answerId) {
-      debounceSaveMarks(answerId, value);
+      const answerId = responses[index]?.answer_id;
+      if (answerId) {
+        debounceSaveMarks(answerId, value);
+      }
     }
-  }
-};
+  };
 
 
   const renderAnswer = (item) => {
@@ -128,27 +129,39 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
             .filter(s => s.screenshot && s.screenshot.includes('webcam_'))
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-          const filledShots = webcamShots.concat(Array(3).fill(null)).slice(0, 3);
+          const shotsToShow = showAllScreenshots
+            ? webcamShots
+            : webcamShots.slice(0, 3);
 
           return webcamShots.length > 0 ? (
             <div className="border rounded-lg p-4 shadow-sm bg-white">
               <h4 className="font-medium text-gray-700 mb-4">Proctoring Screenshots:</h4>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {filledShots.map((screenshot, i) => (
+                {shotsToShow.map((screenshot, i) => (
                   <div key={screenshot?.id || i} className="text-center">
                     <img
-                      src={screenshot?.screenshot ? `http://127.0.0.1:8000${screenshot.screenshot}` : `/images/photo.png`}
+                      src={`http://127.0.0.1:8000${screenshot.screenshot}`}
                       alt={`Screenshot ${i + 1}`}
                       className="w-full h-auto border rounded mb-1"
                     />
                     <p className="text-xs text-gray-500">
-                      {screenshot?.timestamp
-                        ? new Date(screenshot.timestamp).toLocaleString()
-                        : "No Timestamp"}
+                      {new Date(screenshot.timestamp).toLocaleString()}
                     </p>
                   </div>
                 ))}
               </div>
+
+              {webcamShots.length > 3 && (
+                <div className="text-center mt-4">
+                  <button
+                    onClick={() => setShowAllScreenshots(prev => !prev)}
+                    className="px-4 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  >
+                    {showAllScreenshots ? "Hide Extra Screenshots" : "View All Screenshots"}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center text-gray-500 italic p-4 bg-white rounded shadow">
@@ -178,8 +191,8 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
           {/* Show marks for all question types */}
           <div
             className={`mt-2 font-semibold ${(marks[index] === undefined || marks[index] === '' || Number(marks[index]) === 0)
-                ? 'text-red-600'
-                : 'text-green-600'
+              ? 'text-red-600'
+              : 'text-green-600'
               }`}
           >
             Marks: {marks[index] !== undefined && marks[index] !== '' ? marks[index] : 'Not evaluated'}
