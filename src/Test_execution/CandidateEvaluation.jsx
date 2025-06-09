@@ -104,7 +104,7 @@ const CandidateEvaluation = () => {
             Promise.all(
                 sections.map(sectionId =>
                     Promise.all([
-                        fetch(`http://127.0.0.1:8000/api/test-creation/fetch-section-questions/${sectionId}/?session_id=${sessionId}`)
+                        fetch(`http://127.0.0.1:8000/api/test-creation/sections/${sectionId}/questions/`)
                             .then(res => {
                                 if (!res.ok) throw new Error(`Failed to fetch questions for section ${sectionId}`);
                                 return res.json();

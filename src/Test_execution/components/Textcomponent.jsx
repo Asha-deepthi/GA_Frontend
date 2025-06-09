@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
-const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
-  const [selectedAnswer, setSelectedAnswer] = useState(currentStatus?.answer || '');
+const TextQuestionComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+  const [answer, setAnswer] = useState(currentStatus?.answer || '');
 
   useEffect(() => {
-    setSelectedAnswer(currentStatus?.answer || '');
+    setAnswer(currentStatus?.answer || '');
   }, [question.id, currentStatus?.answer]);
 
-  const handleOptionClick = (option) => {
-    setSelectedAnswer((prev) => (prev === option.id ? '' : option.id));
+  const handleChange = (e) => {
+    setAnswer(e.target.value);
   };
 
   const handleSaveAndNext = () => {
     onAnswerUpdate(question.id, {
-      answer: selectedAnswer,
+      answer: answer,
       markedForReview: false,
     });
     if (onNext) onNext();
@@ -21,7 +21,7 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
 
   const handleMarkForReview = () => {
     onAnswerUpdate(question.id, {
-      answer: selectedAnswer,
+      answer: answer,
       markedForReview: true,
     });
     if (onNext) onNext();
@@ -30,21 +30,13 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
   return (
     <div>
       <p className="mb-4 font-semibold">{question.text}</p>
-      <div className="flex flex-col gap-2">
-        {question.options.map((opt, index) => (
-          <div
-            key={opt.id || index}
-            onClick={() => handleOptionClick(opt)}
-            className={`border rounded px-4 py-2 cursor-pointer transition ${
-              selectedAnswer === opt.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-white hover:bg-gray-100'
-            }`}
-          >
-            {opt.text}
-          </div>
-        ))}
-      </div>
+      <textarea
+        value={answer}
+        onChange={handleChange}
+        rows={5}
+        className="w-full border rounded p-2"
+        placeholder="Type your answer here..."
+      />
 
       <div className="mt-4 flex gap-4">
         <button
@@ -63,4 +55,5 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
     </div>
   );
 };
-export default MultipleChoiceComponent;
+
+export default TextQuestionComponent;

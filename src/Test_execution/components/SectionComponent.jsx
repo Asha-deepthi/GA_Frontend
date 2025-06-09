@@ -6,6 +6,7 @@ import SubjectiveComponent from './SubjectiveComponent';
 import AudioComponent from './AudioComponent';
 import VideoComponent from './VideoComponent';
 import useProctoring from './useProctoring';
+import Textcomponent from './Textcomponent';
 import Webcam from "react-webcam";
 
 const session_id = 12345;
@@ -21,11 +22,9 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
   const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
   const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
 
-  // Request queue refs to avoid DB lock by sending one request at a time
   const requestQueue = useRef([]);
   const isProcessingQueue = useRef(false);
 
-  // Function to process request queue sequentially
   const processQueue = async () => {
     if (isProcessingQueue.current) return;
     isProcessingQueue.current = true;
@@ -42,7 +41,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     isProcessingQueue.current = false;
   };
 
-  // Add request to queue and start processing if needed
   const enqueueRequest = (url, options) => {
     requestQueue.current.push({ url, options });
     processQueue();
@@ -61,15 +59,18 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     return () => window.removeEventListener("beforeunload", exitFullscreenOnUnload);
   }, []);
 
-  // Fetch section questions and saved answers on mount
   useEffect(() => {
     const fetchSectionData = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/test-creation/fetch-section-questions/${section_id}/?session_id=${session_id}`);
+        const res = await fetch(`http://127.0.0.1:8000/api/test-creation/sections/${section_id}/questions/`);
         const data = await res.json();
-        setQuestions(data.questions);
-        setSectionType(data.section_type);
-        setDefaultTime(data.section_duration);
+
+        // Set questions directly, do NOT normalize or override again
+        setQuestions(data);
+        console.log('Fetched questions:', data);
+
+        setSectionType(data[0]?.type || '');
+        setDefaultTime((data[0]?.section?.time_limit || 5) * 60);
 
         // Fetch saved answers from backend
         const answersRes = await fetch(`http://127.0.0.1:8000/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`);
@@ -96,7 +97,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     fetchSectionData();
   }, [section_id]);
 
-  // Fetch timer from backend or local storage
   useEffect(() => {
     const fetchTimer = async () => {
       try {
@@ -123,7 +123,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     }
   }, [defaultTime, section_id]);
 
-  // Timer countdown & saving timer every 10s
   useEffect(() => {
     if (timeLeft <= 0) {
       handleFinalSubmit();
@@ -134,7 +133,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       setTimeLeft(t => {
         const newTime = t - 1;
         localStorage.setItem(`timer_${section_id}`, newTime);
-        // Save timer every 10 seconds
         if (newTime % 10 === 0) {
           enqueueRequest('http://127.0.0.1:8000/api/test-creation/save-timer/', {
             method: 'POST',
@@ -153,7 +151,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Debounced answer update - only sends one request at a time, debounced
   const debounceTimeout = useRef(null);
   const latestAnswerPayload = useRef(null);
 
@@ -174,7 +171,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     debounceTimeout.current = setTimeout(sendAnswer, 500);
   };
 
-  // Update answer state locally and queue network save
   const updateAnswer = (question_id, payload) => {
     const hasAnswer = payload.answer && payload.answer !== '';
     const status = payload.markedForReview
@@ -214,14 +210,13 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     debouncedSendAnswer();
   };
 
-  // Final submit sends empty/skipped answers for unanswered questions
   const handleFinalSubmit = async () => {
     for (const question of questions) {
-      const existing = answersStatus[question.question_id];
+      const existing = answersStatus[question.id];
       if (!existing || !existing.answer) {
         const body = new FormData();
         body.append('session_id', session_id);
-        body.append('question_id', question.question_id);
+        body.append('question_id', question.id);
         body.append('question_type', sectionType);
         body.append('marked_for_review', false);
         body.append('section_id', section_id);
@@ -233,7 +228,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
           body,
         });
 
-        answersStatus[question.question_id] = {
+        answersStatus[question.id] = {
           answer: null,
           markedForReview: false,
           status: 'skipped'
@@ -260,11 +255,12 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
 
   const renderQuestionComponent = () => {
     const question = questions[currentIndex];
-    if (!question) return null;
+    if (!question) return <div>Loading question...</div>;
+
     const props = {
       question,
       onAnswerUpdate: updateAnswer,
-      currentStatus: answersStatus[question.question_id] || {},
+      currentStatus: answersStatus[question.id] || {},
       onNext: () => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex(currentIndex + 1);
@@ -272,14 +268,23 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       }
     };
 
-    switch (sectionType) {
-      case 'multiple_choice': return <MultipleChoiceComponent {...props} />;
-      case 'fill_in_the_blank': return <FillInTheBlankComponent {...props} />;
-      case 'integer': return <IntegerComponent {...props} />;
-      case 'subjective': return <SubjectiveComponent {...props} />;
-      case 'audio': return <AudioComponent {...props} />;
-      case 'video': return <VideoComponent {...props} />;
-      default: return <div>Unsupported question type</div>;
+    switch (question.type) {
+      case 'multiple-choice':
+        return <MultipleChoiceComponent {...props} />;
+      case 'fill-in-the-blank':
+        return <FillInTheBlankComponent {...props} />;
+      case 'integer':
+        return <IntegerComponent {...props} />;
+      case 'subjective':
+        return <SubjectiveComponent {...props} />;
+      case 'audio':
+        return <AudioComponent {...props} />;
+      case 'video':
+        return <VideoComponent {...props} />;
+      case 'text':
+        return <Textcomponent {...props} />;
+      default:
+        return <div>Unsupported question type: {question.type}</div>;
     }
   };
 
@@ -293,8 +298,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       <div className="mb-4 flex flex-wrap gap-2">
         {questions.map((q, index) => (
           <button
-            key={q.question_id}
-            className={`w-8 h-8 rounded-full text-white ${getStatusColor(q.question_id)}`}
+            key={q.id}
+            className={`w-8 h-8 rounded-full text-white ${getStatusColor(q.id)}`}
             onClick={() => setCurrentIndex(index)}
           >
             {index + 1}
