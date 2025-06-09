@@ -35,7 +35,7 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
     if (!answerId || marksValue === '' || isNaN(marksValue)) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/test-execution/manual-evaluate/", {
+      const res = await fetch(`http://127.0.0.1:8000/test-execution/manual-evaluate/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer_id: answerId, marks: Number(marksValue) }),
@@ -59,18 +59,20 @@ const VideoSection = ({ screenshots = [], responses = [] }) => {
 
   // On marks input change
   const handleMarkChange = (index, value) => {
-    if (
-      value === '' ||
-      (/^\d{0,2}$/.test(value) && Number(value) <= 10)
-    ) {
-      setMarks(prev => ({ ...prev, [index]: value }));
+  console.log("Mark changed for index", index, "value", value);
+  if (
+    value === '' ||
+    (/^\d{0,2}$/.test(value) && Number(value) <= 10)
+  ) {
+    setMarks(prev => ({ ...prev, [index]: value }));
+   const answerId = responses[index]?.answer_id;
 
-      const answerId = responses[index]?.answer_id;
-      if (answerId) {
-        debounceSaveMarks(answerId, value);
-      }
+    console.log("Answer ID for this mark:", answerId);
+    if (answerId) {
+      debounceSaveMarks(answerId, value);
     }
-  };
+  }
+};
 
 
   const renderAnswer = (item) => {

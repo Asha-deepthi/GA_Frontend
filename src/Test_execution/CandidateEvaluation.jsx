@@ -134,20 +134,21 @@ const CandidateEvaluation = () => {
                     const questionsArray = questionsData.questions || [];
 
                     const merged = questionsArray.map(q => {
-                        //console.log("Matching question:", q.question_id);
-                        answersData.forEach(a => console.log("Answer question_id:", a.question_id));
-                        const matchedAnswer = answersData.find(a => String(a.question_id) === String(q.question_id));
-                       // console.log("Matched answer:", matchedAnswer);
-                        return {
-                            ...q,
-                            answer: matchedAnswer?.answer_text || matchedAnswer?.answer || null,
-                            question_type: q.question_type || matchedAnswer?.question_type || "unknown",
-                            section_id: sections[idx],
-                            answer_id: matchedAnswer?.id || null,
-                            marks_allotted: matchedAnswer?.marks_allotted ?? null,  // ✅ Add this line
-                        };
-                    });
+    const matchedAnswer = answersData.find(a => String(a.question_id) === String(q.question_id));
 
+    console.log("Question ID:", q.question_id);
+    console.log("Matching Answer Found:", matchedAnswer);
+    console.log("Answer ID:", matchedAnswer?.answer_id || matchedAnswer?.id); // Support both keys
+
+    return {
+        ...q,
+        answer: matchedAnswer?.answer_text || matchedAnswer?.answer || null,
+        question_type: q.question_type || matchedAnswer?.question_type || "unknown",
+        section_id: sections[idx],
+        answer_id: matchedAnswer?.answer_id || matchedAnswer?.id || null,  // ✅ Safe fallback for both keys
+        marks_allotted: matchedAnswer?.marks_allotted ?? null,
+    };
+});
 
                     allMerged.push(...merged);
                 });

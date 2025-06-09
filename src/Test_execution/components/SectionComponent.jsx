@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import MultipleChoiceComponent from './MultipleChoiceComponent';
 import FillInTheBlankComponent from './FillInTheBlankComponent';
 import IntegerComponent from './IntegerComponent';
@@ -13,13 +13,41 @@ const SECTION_DURATION = 5 * 60;
 
 const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
   const { violationCount, webcamRef } = useProctoring({ sessionId: session_id, answerApiUrl });
+
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answersStatus, setAnswersStatus] = useState({});
   const [sectionType, setSectionType] = useState(null);
   const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
   const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
-  
+
+  // Request queue refs to avoid DB lock by sending one request at a time
+  const requestQueue = useRef([]);
+  const isProcessingQueue = useRef(false);
+
+  // Function to process request queue sequentially
+  const processQueue = async () => {
+    if (isProcessingQueue.current) return;
+    isProcessingQueue.current = true;
+
+    while (requestQueue.current.length > 0) {
+      const { url, options } = requestQueue.current.shift();
+      try {
+        await fetch(url, options);
+      } catch (err) {
+        console.error('Request failed:', err);
+      }
+    }
+
+    isProcessingQueue.current = false;
+  };
+
+  // Add request to queue and start processing if needed
+  const enqueueRequest = (url, options) => {
+    requestQueue.current.push({ url, options });
+    processQueue();
+  };
+
   useEffect(() => {
     const exitFullscreenOnUnload = () => {
       const exit =
@@ -32,7 +60,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     window.addEventListener("beforeunload", exitFullscreenOnUnload);
     return () => window.removeEventListener("beforeunload", exitFullscreenOnUnload);
   }, []);
-  // Restore from backend
+
+  // Fetch section questions and saved answers on mount
   useEffect(() => {
     const fetchSectionData = async () => {
       try {
@@ -40,10 +69,12 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         const data = await res.json();
         setQuestions(data.questions);
         setSectionType(data.section_type);
-        setDefaultTime(data.section_duration); // <- New line
+        setDefaultTime(data.section_duration);
+
         // Fetch saved answers from backend
         const answersRes = await fetch(`http://127.0.0.1:8000/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`);
         const answerData = await answersRes.json();
+
         const backendAnswers = {};
         answerData.forEach(ans => {
           backendAnswers[ans.question_id] = {
@@ -53,7 +84,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
           };
         });
 
-        // Restore local answers (if any)
+        // Merge with local answers if any
         const local = JSON.parse(localStorage.getItem(`answers_${section_id}`) || '{}');
         const merged = { ...backendAnswers, ...local };
         setAnswersStatus(merged);
@@ -64,6 +95,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     };
     fetchSectionData();
   }, [section_id]);
+
+  // Fetch timer from backend or local storage
   useEffect(() => {
     const fetchTimer = async () => {
       try {
@@ -89,6 +122,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       fetchTimer();
     }
   }, [defaultTime, section_id]);
+
+  // Timer countdown & saving timer every 10s
   useEffect(() => {
     if (timeLeft <= 0) {
       handleFinalSubmit();
@@ -99,28 +134,48 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       setTimeLeft(t => {
         const newTime = t - 1;
         localStorage.setItem(`timer_${section_id}`, newTime);
-        // Save to backend every 10 seconds
+        // Save timer every 10 seconds
         if (newTime % 10 === 0) {
-          console.log("Saving timer with:", { session_id, section_id, newTime });
-          fetch('http://127.0.0.1:8000/api/test-creation/save-timer/', {
+          enqueueRequest('http://127.0.0.1:8000/api/test-creation/save-timer/', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               session_id: session_id,
               section_id: section_id,
               remaining_time: newTime
             })
-          }).catch(err => console.error('Failed to save timer:', err));
+          });
         }
         return newTime;
       });
     }, 1000);
+
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const updateAnswer = async (question_id, payload) => {
+  // Debounced answer update - only sends one request at a time, debounced
+  const debounceTimeout = useRef(null);
+  const latestAnswerPayload = useRef(null);
+
+  const sendAnswer = () => {
+    if (!latestAnswerPayload.current) return;
+
+    const { question_id, body } = latestAnswerPayload.current;
+    latestAnswerPayload.current = null;
+
+    enqueueRequest('http://127.0.0.1:8000/test-execution/answers/', {
+      method: 'POST',
+      body,
+    });
+  };
+
+  const debouncedSendAnswer = () => {
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    debounceTimeout.current = setTimeout(sendAnswer, 500);
+  };
+
+  // Update answer state locally and queue network save
+  const updateAnswer = (question_id, payload) => {
     const hasAnswer = payload.answer && payload.answer !== '';
     const status = payload.markedForReview
       ? (hasAnswer ? 'reviewed_with_answer' : 'reviewed')
@@ -138,12 +193,11 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     setAnswersStatus(newStatus);
     localStorage.setItem(`answers_${section_id}`, JSON.stringify(newStatus));
 
-    const question = questions.find(q => q.question_id === question_id);
     const body = new FormData();
     body.append('session_id', session_id);
     body.append('question_id', question_id);
     body.append('question_type', sectionType);
-    body.append('section_id', section_id); // 🔥 Add this line
+    body.append('section_id', section_id);
     if (hasAnswer) {
       if (typeof payload.answer === 'object' && payload.answer.type === 'audio') {
         body.append('audio_file', payload.answer.blob, payload.answer.filename);
@@ -154,18 +208,13 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       }
     }
     body.append('marked_for_review', payload.markedForReview);
-    body.append('status', status); // 🔥 add this line
+    body.append('status', status);
 
-    try {
-      await fetch('http://127.0.0.1:8000/test-execution/answers/', {
-        method: 'POST',
-        body
-      });
-    } catch (err) {
-      console.error('Failed to send answer:', err);
-    }
+    latestAnswerPayload.current = { question_id, body };
+    debouncedSendAnswer();
   };
 
+  // Final submit sends empty/skipped answers for unanswered questions
   const handleFinalSubmit = async () => {
     for (const question of questions) {
       const existing = answersStatus[question.question_id];
@@ -175,24 +224,20 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         body.append('question_id', question.question_id);
         body.append('question_type', sectionType);
         body.append('marked_for_review', false);
-        body.append('section_id', section_id); // 🔥 Add this line
-        body.append('answer_text', ''); // 🔥 Add this line
+        body.append('section_id', section_id);
+        body.append('answer_text', '');
+        body.append('status', 'skipped');
+
+        enqueueRequest('http://127.0.0.1:8000/test-execution/answers/', {
+          method: 'POST',
+          body,
+        });
 
         answersStatus[question.question_id] = {
           answer: null,
           markedForReview: false,
           status: 'skipped'
         };
-        body.append('status', 'skipped'); // 🔥 Add this line
-
-        try {
-          await fetch('http://127.0.0.1:8000/test-execution/answers/', {
-            method: 'POST',
-            body
-          });
-        } catch (err) {
-          console.error('Failed to submit empty answer:', err);
-        }
       }
     }
 
@@ -258,6 +303,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       </div>
 
       <div className="border p-4 rounded shadow">{renderQuestionComponent()}</div>
+
       <Webcam
         ref={webcamRef}
         audio={false}
@@ -266,6 +312,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         height={150}
         style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}
       />
+
       <div className="mt-4 flex justify-between">
         <button
           onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
@@ -290,7 +337,6 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
           </button>
         )}
       </div>
-      
     </div>
   );
 };
