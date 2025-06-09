@@ -25,6 +25,11 @@ import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
 import CandidateEvaluation from './Test_execution/CandidateEvaluation';
 import Test_CandidatePage from './Test_execution/Test_CandidatePage';
+import Popupalert_1 from './Test_execution/TabSwitchAlert';
+import Popupalert_2 from './Test_execution/CameraOffAlert';
+import Popupalert_3 from './Test_execution/LowNetworkAlert';
+import Popupalert_4 from './Test_execution/AudioAlert';
+import Popupalert_5 from './Test_execution/VideoAlert';
 
 function App() {
   return (
@@ -68,6 +73,7 @@ function App() {
         <Route path="/sectionpage" element={<SectionPage />} />
         <Route path="/evaluation" element={<CandidateEvaluation />} />
         <Route path="/test-candidates" element={<Test_CandidatePage />} />
+        <Route path="/popup" element={<Popupalert_5 />} />
       </Routes>
     </StreamProvider>
   );
