@@ -7,12 +7,31 @@ import AudioComponent from './AudioComponent';
 import VideoComponent from './VideoComponent';
 import useProctoring from './useProctoring';
 import Webcam from "react-webcam";
+import TabSwitchAlert   from '../TabSwitchAlert';
+import CameraOffAlert   from '../CameraOffAlert';
+import LowNetworkAlert  from '../LowNetworkAlert';
+import AudioAlert       from '../AudioAlert';
+import VideoAlert       from '../VideoAlert';
 
 const session_id = 12345;
 const SECTION_DURATION = 5 * 60;
 
 const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
-  const { violationCount, webcamRef } = useProctoring({ sessionId: session_id, answerApiUrl });
+  const [showTabSwitchAlert,   setShowTabSwitchAlert]   = useState(false);
+  const [showLowNetworkAlert,  setShowLowNetworkAlert]  = useState(false);
+  const [showLowAudioAlert,    setShowLowAudioAlert]    = useState(false);
+  const [showLowVideoAlert,    setShowLowVideoAlert]    = useState(false);
+  const [showCameraOffAlert,   setShowCameraOffAlert]   = useState(false);
+ const { violationCount, webcamRef } = useProctoring({
+    sessionId:          session_id,
+    answerApiUrl,
+    onTabSwitch:        () => setShowTabSwitchAlert(true),
+    onFullscreenExit:   () => setShowTabSwitchAlert(true),
+    onLowNetwork:       () => setShowLowNetworkAlert(true),
+    onLowAudioQuality:  () => setShowLowAudioAlert(true),
+    onLowVideoQuality:  () => setShowLowVideoAlert(true),
+    onCameraOff:        () => setShowCameraOffAlert(true),
+  });
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -313,6 +332,41 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}
       />
 
+ {/* -------------- Alerts -------------- */}
+      {showTabSwitchAlert && (
+        <TabSwitchAlert
+          onDismiss ={() => setShowTabSwitchAlert(false)}
+          onContinue={()=> setShowTabSwitchAlert(false)}
+        />
+      )}
+
+      {showLowNetworkAlert && (
+        <LowNetworkAlert
+          onDismiss     ={() => setShowLowNetworkAlert(false)}
+          onReconnecting={()=> setShowLowNetworkAlert(false)}
+        />
+      )}
+
+      {showLowAudioAlert && (
+        <AudioAlert
+          onDismiss={() => setShowLowAudioAlert(false)}
+          onCheck  ={() => setShowLowAudioAlert(false)}
+        />
+      )}
+
+      {showLowVideoAlert && (
+        <VideoAlert
+          onDismiss={()=> setShowLowVideoAlert(false)}
+          onRestart={()=> setShowLowVideoAlert(false)}
+        />
+      )}
+
+      {showCameraOffAlert && (
+        <CameraOffAlert
+          onDismiss={() => setShowCameraOffAlert(false)}
+          onEnable ={() => setShowCameraOffAlert(false)}
+        />
+      )}
       <div className="mt-4 flex justify-between">
         <button
           onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
