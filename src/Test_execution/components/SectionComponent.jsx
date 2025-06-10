@@ -344,6 +344,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       {showTabSwitchAlert && (
         <TabSwitchAlert
           onDismiss ={() => setShowTabSwitchAlert(false)}
+           onContinue={()=> setShowTabSwitchAlert(false)}
         />
       )}
 
@@ -368,6 +369,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       {showCameraOffAlert && (
         <CameraOffAlert
           onDismiss={() => setShowCameraOffAlert(false)}
+           onEnable ={() => setShowCameraOffAlert(false)}
         />
       )}
       <div className="mt-4 flex justify-between">
