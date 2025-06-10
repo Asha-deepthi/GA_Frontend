@@ -63,9 +63,9 @@ const SectionPage = () => {
   }, []);
 
   const handleSectionComplete = (sectionId) => {
-    //  const updated = [...completedSections, sectionId];
-    //  localStorage.setItem("completedSections", JSON.stringify(updated));
-    //  setCompletedSections(updated);
+    // const updated = [...completedSections, sectionId];
+    // localStorage.setItem("completedSections", JSON.stringify(updated));
+    // setCompletedSections(updated);
     setSelectedSectionId(null); // Go back to section page
   };
 
@@ -117,7 +117,7 @@ const SectionPage = () => {
                   !completedSections.includes(section.id) &&
                   setSelectedSectionId(section.id)
                 }
-                // disabled={completedSections.includes(section.id)}
+                //disabled={completedSections.includes(section.id)}
                 disabled={false}
               >
                 {section.name}
