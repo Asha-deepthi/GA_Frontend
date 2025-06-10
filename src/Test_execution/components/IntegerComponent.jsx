@@ -9,7 +9,7 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) =
     } else {
       setValue('');
     }
-  }, [question.question_id]);
+  }, [question.id]);
 
   const handleAction = (markForReview = false) => {
     const trimmedValue = value.trim();
@@ -18,7 +18,7 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) =
       ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
       : hasAnswer ? 'answered' : 'skipped';
 
-    onAnswerUpdate(question.question_id, {
+    onAnswerUpdate(question.id, {
       answer: hasAnswer ? trimmedValue : null,
       markedForReview: markForReview,
       status
@@ -28,7 +28,7 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) =
 
   return (
     <div className="p-4">
-      <h3 className="text-lg font-semibold mb-4">{question.question}</h3>
+      <h3 className="text-lg font-semibold mb-4">{question.text}</h3>
       <input
         type="number"
         value={value}

@@ -7,6 +7,7 @@ import AudioComponent from './AudioComponent';
 import VideoComponent from './VideoComponent';
 import useProctoring from './useProctoring';
 import Textcomponent from './Textcomponent';
+import Passagecomponent from './Passagecomponent';
 import Webcam from "react-webcam";
 import TabSwitchAlert   from '../TabSwitchAlert';
 import CameraOffAlert   from '../CameraOffAlert';
@@ -290,7 +291,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
     switch (question.type) {
       case 'multiple-choice':
         return <MultipleChoiceComponent {...props} />;
-      case 'fill-in-the-blank':
+      case 'fill-in-blanks':
         return <FillInTheBlankComponent {...props} />;
       case 'integer':
         return <IntegerComponent {...props} />;
@@ -302,6 +303,8 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
         return <VideoComponent {...props} />;
       case 'text':
         return <Textcomponent {...props} />;
+      case 'passage':
+      return <Passagecomponent {...props} />;
       default:
         return <div>Unsupported question type: {question.type}</div>;
     }
