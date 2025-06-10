@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import './PositionsDashboard.css'; 
+import './positions.css'; 
 
-const PositionsDashboard = () => {
+const positions = () => {
     const [currentUser, setCurrentUser] = useState('Arjun Patel');
     const [profileInitial, setProfileInitial] = useState('AP');
     const [activeNav, setActiveNav] = useState('Positions'); 
@@ -133,4 +133,4 @@ const PositionsDashboard = () => {
     );
 };
 
-export default PositionsDashboard;
+export default positions

@@ -1,206 +1,233 @@
-/* PositionsDashboard.css */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-
+/* General Body Resets and Basic Styling */
 body {
-    background-color: #f9f9f9;
-    color: #555;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6f8; /* A light background for the whole page */
+  color: #333;
+  line-height: 1.6;
 }
 
+/* Container to center content */
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 15px;
+  width: 90%; /* Or your preferred percentage */
+  max-width: 1200px; /* Maximum width for larger screens */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 15px; /* Gutters */
+  padding-right: 15px; /* Gutters */
 }
 
-/* Header styles */
+/* Header Styling */
 header {
-    background-color: white;
-    padding: 15px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background-color: #ffffff; /* White background for header */
+  padding: 15px 0;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
-    width: 80px;
-    height: 30px;
-    background-color: #ddd; 
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #007bff; /* Example logo color */
+  /* If you have an image logo, style it here */
+  /* background-image: url('path/to/your/logo.png'); */
+  /* width: 150px; */
+  /* height: 40px; */
+  /* background-size: contain; */
+  /* background-repeat: no-repeat; */
+}
+.logo::before { /* Placeholder if you don't have a logo image */
+    content: "MyHR";
 }
 
+
 .nav-links {
-    display: flex;
-    gap: 30px;
-   
-    margin-left: -200px; 
+  display: flex;
+  gap: 20px;
 }
 
 .nav-link {
-    text-decoration: none;
-    color: #555;
-    padding: 5px 0;
-    font-size: 14px;
-    cursor: pointer;
+  text-decoration: none;
+  color: #555;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  background-color: #f0f0f0;
+  color: #007bff;
 }
 
 .nav-link.active {
-    color: #00a389;
-    border-bottom: 2px solid #00a389;
+  background-color: #007bff;
+  color: #ffffff;
+  font-weight: bold;
 }
 
 .profile {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .profile-img {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: #3498db; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9em;
 }
 
 .username {
-    font-size: 14px;
-    color: #555;
+  font-weight: 500;
+  color: #333;
 }
 
-
+/* Create Test Banner Styling */
 .create-test-banner {
-    background-color: #e6f7f5;
-    padding: 12px 0;
-    text-align: center;
-    margin-bottom: 20px;
+  background-color: #e9ecef; /* A slightly different background for the banner */
+  padding: 20px 0;
+  text-align: center; /* Centers the link if the container is full width */
+  margin-top: 20px;
+  margin-bottom: 30px;
 }
 
 .create-test-link {
-    color: #00a389;
-    text-decoration: none;
-    font-size: 14px;
-    cursor: pointer;
+  display: inline-block;
+  background-color: #28a745; /* Green for "create" action */
+  color: #ffffff;
+  padding: 12px 25px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out;
 }
 
+.create-test-link:hover {
+  background-color: #218838; /* Darker green on hover */
+}
 
+/* Position Card Styling */
 .position-card {
-    background-color: white;
-    border-radius: 4px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    cursor: pointer; 
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.07);
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.position-card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
 }
 
 .position-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
+  font-size: 1.4em;
+  color: #007bff;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .position-description {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 15px;
-    line-height: 1.4;
+  font-size: 0.95em;
+  color: #555;
+  margin-bottom: 15px;
+  line-height: 1.5;
 }
 
 .position-date {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 15px;
+  font-size: 0.85em;
+  color: #777;
+  margin-bottom: 15px;
+  text-align: right;
 }
 
 .position-stats {
-    display: flex;
-    justify-content: space-between;
-    text-align: center;
+  display: flex;
+  flex-wrap: wrap; /* Allow stats to wrap on smaller screens */
+  gap: 15px; /* Spacing between stat items */
+  border-top: 1px solid #f0f0f0;
+  padding-top: 15px;
 }
 
 .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 20%; 
+  text-align: center;
+  flex: 1; /* Distribute space, but consider min-width if too many */
+  min-width: 80px; /* Prevent stats from becoming too narrow */
 }
 
 .stat-number {
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #333;
+  display: block; /* Make it take its own line */
+  margin-bottom: 2px;
 }
 
 .stat-label {
-    font-size: 12px;
-    color: #888;
+  font-size: 0.8em;
+  color: #666;
+  text-transform: uppercase;
 }
 
-
+/* Responsive adjustments (optional but recommended) */
 @media (max-width: 768px) {
-    .nav-links {
-        margin-left: 0;
-        gap: 15px;
-    }
-    
-    .position-stats {
-        flex-wrap: wrap; 
-        justify-content: flex-start; 
-    }
-    
-    .stat {
-        width: calc(33.33% - 10px); 
-        margin-bottom: 15px; 
-        margin-right: 10px; 
-    }
-    .stat:nth-child(3n) { 
-        margin-right: 0;
-    }
+  .header-content {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .nav-links {
+    order: 1; /* Move nav below logo/profile on small screens */
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile {
+    order: 0;
+  }
+
+  .position-stats {
+    justify-content: space-around; /* Better distribution on small screens */
+  }
+
+  .stat {
+    flex-basis: calc(50% - 10px); /* Two stats per row, accounting for gap */
+  }
 }
 
 @media (max-width: 480px) {
-    .header-content {
-        flex-direction: column;
-        align-items: stretch; 
-        gap: 10px;
-    }
-    
-    .logo {
-        align-self: flex-start; 
-    }
+  .container {
+    width: 95%;
+  }
 
-    .nav-links {
-        width: 100%;
-        justify-content: space-around; 
-        padding: 10px 0; 
-        order: 2; 
-    }
-    
-    .profile {
-        align-self: flex-end; 
-        order: 1; 
-    }
-    
-    .stat {
-        width: calc(50% - 5px); 
-        margin-right: 5px;
-    }
-    .stat:nth-child(2n) {
-        margin-right: 0;
-    }
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 0.9em;
+  }
+
+  .position-title {
+    font-size: 1.2em;
+  }
+
+  .stat {
+    flex-basis: 100%; /* One stat per row on very small screens */
+  }
 }
