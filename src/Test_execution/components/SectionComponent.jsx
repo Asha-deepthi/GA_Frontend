@@ -344,35 +344,30 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       {showTabSwitchAlert && (
         <TabSwitchAlert
           onDismiss ={() => setShowTabSwitchAlert(false)}
-          onContinue={()=> setShowTabSwitchAlert(false)}
         />
       )}
 
       {showLowNetworkAlert && (
         <LowNetworkAlert
           onDismiss     ={() => setShowLowNetworkAlert(false)}
-          onReconnecting={()=> setShowLowNetworkAlert(false)}
         />
       )}
 
       {showLowAudioAlert && (
         <AudioAlert
           onDismiss={() => setShowLowAudioAlert(false)}
-          onCheck  ={() => setShowLowAudioAlert(false)}
         />
       )}
 
       {showLowVideoAlert && (
         <VideoAlert
           onDismiss={()=> setShowLowVideoAlert(false)}
-          onRestart={()=> setShowLowVideoAlert(false)}
         />
       )}
 
       {showCameraOffAlert && (
         <CameraOffAlert
           onDismiss={() => setShowCameraOffAlert(false)}
-          onEnable ={() => setShowCameraOffAlert(false)}
         />
       )}
       <div className="mt-4 flex justify-between">
