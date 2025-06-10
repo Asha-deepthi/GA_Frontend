@@ -1,16 +1,16 @@
 import React from "react";
 
-const CameraOffAlert = ({ onDismiss, onEnable }) => {
+const CameraOffAlert = ({ onDismiss }) => {
   return (
-    <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 pointer-events-none">
-      <div className="bg-white w-[804px] h-[415px] rounded-[24px] flex flex-col items-center justify-center">
+    <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 pointer-events-auto">
+      <div className="bg-white w-[400px] h-[250px] rounded-[24px] flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-evenly w-full h-full">
           {/* Icon */}
-          <div className="w-[150px] h-[150px] rounded-full bg-[#00A3981A] flex items-center justify-center">
+          <div className="w-[64px] h-[64px] rounded-full bg-[#00A3981A] flex items-center justify-center">
             <img
               src="images/camoff.png"
               alt="Camera off"
-              className="w-[72px] h-[72px] object-contain"
+              className="w-[36px] h-[36px] object-contain"
             />
           </div>
 
@@ -21,18 +21,12 @@ const CameraOffAlert = ({ onDismiss, onEnable }) => {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-6">
+          <div className="flex justify-center">
             <button
-              className="w-[348px] h-[40px] rounded-[8px] bg-[#ED3237] text-white font-semibold text-[14px]"
+              className="w-[100px] h-[40px] rounded-[8px] bg-[#ED3237] text-white font-semibold text-[14px]"
               onClick={onDismiss}
             >
               Dismiss
-            </button>
-            <button
-              className="w-[348px] h-[40px] rounded-[8px] bg-[#00A398] text-white font-semibold text-[14px]"
-              onClick={onEnable}
-            >
-              Enable camera
             </button>
           </div>
         </div>
