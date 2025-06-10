@@ -30,7 +30,8 @@ import Popupalert_2 from './Test_execution/CameraOffAlert';
 import Popupalert_3 from './Test_execution/LowNetworkAlert';
 import Popupalert_4 from './Test_execution/AudioAlert';
 import Popupalert_5 from './Test_execution/VideoAlert';
-
+import TestSubmission from './Test_execution/TestSubmission';
+import Timeupscreen from './Test_execution/TimeupScreen';
 function App() {
   return (
     <StreamProvider>
@@ -74,6 +75,8 @@ function App() {
         <Route path="/evaluation" element={<CandidateEvaluation />} />
         <Route path="/test-candidates" element={<Test_CandidatePage />} />
         <Route path="/popup" element={<Popupalert_5 />} />
+        <Route path="/submission" element={<TestSubmission/>}/>
+        <Route path="/timeupscreen" element={<Timeupscreen/>}/>
       </Routes>
     </StreamProvider>
   );
