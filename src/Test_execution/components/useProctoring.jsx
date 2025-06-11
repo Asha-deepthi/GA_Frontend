@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import Webcam from "react-webcam";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const isFullscreenActive = () =>
   !!(
@@ -12,60 +11,65 @@ const isFullscreenActive = () =>
 const useProctoring = ({
   sessionId,
   answerApiUrl,
-  onTabSwitch       = () => {},
-  onFullscreenExit  = () => {},
-  onLowNetwork      = () => {},
-  onLowAudioQuality = () => {},
-  onLowVideoQuality = () => {},
-  onCameraOff       = () => {}
+  onTabSwitch = () => { },
+  onFullscreenExit = () => { },
+  onLowNetwork = () => { },
+  onLowAudioQuality = () => { },
+  onLowVideoQuality = () => { },
+  onCameraOff = () => { },
 }) => {
   const [violationCount, setViolationCount] = useState(0);
-  const lastViolationTimeRef = useRef(0);
-  const webcamRef = useRef(null);
+  const lastViolationTimeRef = useRef({}); // ✅ an object to hold keys like 'low_audio'
   const audioContextRef = useRef(null);
   const micAnalyserRef = useRef(null);
   const videoStreamRef = useRef(null);
-  const violationCooldownMs = 1000;
+  const violationCooldownMs = 60000;
 
+  const logViolation = useCallback(
+    async ({ eventType, remarks = "", confidence = 0.0 }) => {
+      if (!sessionId) return;
 
-  const logViolation = useCallback(async ({ eventType, remarks = "", confidence = 0.0 }) => {
-  if (!sessionId) return;
+      const payload = {
+        session_id: sessionId,
+        event_type: eventType,
+        confidence,
+        remarks,
+      };
+      console.log("Logging violation with payload:", payload);
 
-  const payload = {
-    session_id: sessionId,            // field name corrected
-    event_type: eventType,            // must be one of allowed choices
-    confidence: confidence,           // must send some float (required)
-    remarks,
-  };
-  console.log("Logging violation with payload:", payload);
+      try {
+        const res = await fetch(`${answerApiUrl}/proctoring-logs/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-  try {
-    const res = await fetch(`${answerApiUrl}/proctoring-logs/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      let errText = await res.text();
-      console.error("Violation log failed:", res.status, res.statusText, errText);
-    } else {
-      console.log("Violation logged successfully");
-    }
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
-}, [sessionId, answerApiUrl]);
-
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Violation log failed:", res.status, res.statusText, errText);
+        } else {
+          console.log("Violation logged successfully");
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      }
+    },
+    [sessionId, answerApiUrl]
+  );
 
   const logWithCooldown = (eventType, remarks = "") => {
     const now = Date.now();
-    if (now - lastViolationTimeRef.current > violationCooldownMs) {
+    const lastTime = lastViolationTimeRef.current[eventType] || 0;
+
+    if (now - lastTime > violationCooldownMs) {
       setViolationCount((v) => v + 1);
       logViolation({ eventType, remarks });
-      lastViolationTimeRef.current = now;
+      lastViolationTimeRef.current[eventType] = now;
+    } else {
+      console.log(`Skipped ${eventType} due to cooldown`);
     }
   };
+
 
   useEffect(() => {
     if (!sessionId) return;
@@ -119,65 +123,67 @@ const useProctoring = ({
   }, [sessionId, logViolation, onTabSwitch, onFullscreenExit, onLowNetwork]);
 
   useEffect(() => {
-  if (!sessionId) return;
+    if (!sessionId) return;
 
-  let audioCheck, videoCheck;
+    let audioCheck, videoCheck;
 
-  const startStreams = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+    const startStreams = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
 
-      videoStreamRef.current = stream;
-      if (webcamRef.current) webcamRef.current.srcObject = stream;
+        videoStreamRef.current = stream;
 
-      const ac = new AudioContext();
-      const mic = ac.createMediaStreamSource(stream);
-      const analyser = ac.createAnalyser();
-      mic.connect(analyser);
+        const ac = new AudioContext();
+        const mic = ac.createMediaStreamSource(stream);
+        const analyser = ac.createAnalyser();
+        mic.connect(analyser);
 
-      audioContextRef.current = ac;
-      micAnalyserRef.current = analyser;
+        audioContextRef.current = ac;
+        micAnalyserRef.current = analyser;
 
-      audioCheck = setInterval(() => {
-        const data = new Uint8Array(analyser.fftSize);
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i of data) sum += (i - 128) * (i - 128);
-        const rms = Math.sqrt(sum / data.length);
-        if (rms < 10) {
-          logWithCooldown("low_audio", "Audio signal too low");
-          onLowAudioQuality();
-        }
-      }, 5000);
+        audioCheck = setInterval(() => {
+          const data = new Uint8Array(analyser.fftSize);
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i of data) sum += (i - 128) * (i - 128);
+          const rms = Math.sqrt(sum / data.length);
+          if (rms < 10) {
+            logWithCooldown("low_audio", "Audio signal too low");
+            onLowAudioQuality();
+          }
+        }, 5000);
 
-      videoCheck = setInterval(() => {
-        const track = stream.getVideoTracks()[0];
-        const settings = track.getSettings();
-        if (settings.frameRate && settings.frameRate < 10) {
-          logWithCooldown("low_video", "Video frame rate too low");
-          onLowVideoQuality();
-        }
-      }, 5000);
+        videoCheck = setInterval(() => {
+          const track = stream.getVideoTracks()[0];
+          const settings = track.getSettings();
+          if (settings.frameRate && settings.frameRate < 10) {
+            logWithCooldown("low_video", "Video frame rate too low");
+            onLowVideoQuality();
+          }
+        }, 5000);
+      } catch (err) {
+        logWithCooldown("camera_off", "Camera unavailable");
+        onCameraOff();
+      }
+    };
 
-    } catch (err) {
-      logWithCooldown("camera_off", "Camera unavailable");
-      onCameraOff();
-    }
-  };
+    startStreams();
 
-  startStreams();
+    return () => {
+      videoStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (audioContextRef.current && audioContextRef.current.state === "running") {
+        audioContextRef.current.close().catch((err) => {
+          console.warn("Error closing AudioContext:", err);
+        });
+      }
 
-  return () => {
-    videoStreamRef.current?.getTracks().forEach((t) => t.stop());
-    audioContextRef.current?.close();
-    clearInterval(audioCheck);
-    clearInterval(videoCheck);
-  };
-}, [sessionId, logViolation, onLowAudioQuality, onLowVideoQuality, onCameraOff]);
-
+      clearInterval(audioCheck);
+      clearInterval(videoCheck);
+    };
+  }, [sessionId, logViolation, onLowAudioQuality, onLowVideoQuality, onCameraOff]);
 
   useEffect(() => {
     if (violationCount === 2) {
@@ -185,30 +191,7 @@ const useProctoring = ({
     }
   }, [violationCount]);
 
-  useEffect(() => {
-    const takeWebcamScreenshot = async () => {
-      if (webcamRef.current) {
-        const imageSrc = webcamRef.current.getScreenshot();
-        if (imageSrc) {
-          const blob = await fetch(imageSrc).then((res) => res.blob());
-          const formData = new FormData();
-          formData.append("session", sessionId);
-          formData.append("screenshot", blob, `webcam_${Date.now()}.jpg`);
-
-          await fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/`, {
-            method: "POST",
-            body: formData,
-          });
-          console.log("📸 Webcam screenshot uploaded.");
-        }
-      }
-    };
-
-    const interval = setInterval(takeWebcamScreenshot, 8000);
-    return () => clearInterval(interval);
-  }, [sessionId]);
-
-  return { violationCount, isFullscreenActive, webcamRef };
+  return { violationCount, isFullscreenActive };
 };
 
 export default useProctoring;

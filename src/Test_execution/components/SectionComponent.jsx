@@ -8,31 +8,31 @@ import VideoComponent from './VideoComponent';
 import useProctoring from './useProctoring';
 import Textcomponent from './Textcomponent';
 import Passagecomponent from './Passagecomponent';
-import Webcam from "react-webcam";
-import TabSwitchAlert   from '../TabSwitchAlert';
-import CameraOffAlert   from '../CameraOffAlert';
-import LowNetworkAlert  from '../LowNetworkAlert';
-import AudioAlert       from '../AudioAlert';
-import VideoAlert       from '../VideoAlert';
+import TabSwitchAlert from '../TabSwitchAlert';
+import CameraOffAlert from '../CameraOffAlert';
+import LowNetworkAlert from '../LowNetworkAlert';
+import AudioAlert from '../AudioAlert';
+import VideoAlert from '../VideoAlert';
 
-const session_id = 12345;
+
+//const session_id = 12345;
 const SECTION_DURATION = 5 * 60;
 
-const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
-  const [showTabSwitchAlert,   setShowTabSwitchAlert]   = useState(false);
-  const [showLowNetworkAlert,  setShowLowNetworkAlert]  = useState(false);
-  const [showLowAudioAlert,    setShowLowAudioAlert]    = useState(false);
-  const [showLowVideoAlert,    setShowLowVideoAlert]    = useState(false);
-  const [showCameraOffAlert,   setShowCameraOffAlert]   = useState(false);
- const { violationCount, webcamRef } = useProctoring({
-    sessionId:          session_id,
+const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl, session_id }) => {
+  const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
+  const [showLowNetworkAlert, setShowLowNetworkAlert] = useState(false);
+  const [showLowAudioAlert, setShowLowAudioAlert] = useState(false);
+  const [showLowVideoAlert, setShowLowVideoAlert] = useState(false);
+  const [showCameraOffAlert, setShowCameraOffAlert] = useState(false);
+  const { violationCount} = useProctoring({
+    sessionId: session_id,
     answerApiUrl,
-    onTabSwitch:        () => setShowTabSwitchAlert(true),
-    onFullscreenExit:   () => setShowTabSwitchAlert(true),
-    onLowNetwork:       () => setShowLowNetworkAlert(true),
-    onLowAudioQuality:  () => setShowLowAudioAlert(true),
-    onLowVideoQuality:  () => setShowLowVideoAlert(true),
-    onCameraOff:        () => setShowCameraOffAlert(true),
+    onTabSwitch: () => setShowTabSwitchAlert(true),
+    onFullscreenExit: () => setShowTabSwitchAlert(true),
+    onLowNetwork: () => setShowLowNetworkAlert(true),
+    onLowAudioQuality: () => setShowLowAudioAlert(true),
+    onLowVideoQuality: () => setShowLowVideoAlert(true),
+    onCameraOff: () => setShowCameraOffAlert(true),
   });
 
   const [questions, setQuestions] = useState([]);
@@ -304,7 +304,7 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
       case 'text':
         return <Textcomponent {...props} />;
       case 'passage':
-      return <Passagecomponent {...props} />;
+        return <Passagecomponent {...props} />;
       default:
         return <div>Unsupported question type: {question.type}</div>;
     }
@@ -331,26 +331,17 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
 
       <div className="border p-4 rounded shadow">{renderQuestionComponent()}</div>
 
-      <Webcam
-        ref={webcamRef}
-        audio={false}
-        screenshotFormat="image/jpeg"
-        width={200}
-        height={150}
-        style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}
-      />
-
- {/* -------------- Alerts -------------- */}
+      {/* -------------- Alerts -------------- */}
       {showTabSwitchAlert && (
         <TabSwitchAlert
-          onDismiss ={() => setShowTabSwitchAlert(false)}
-           onContinue={()=> setShowTabSwitchAlert(false)}
+          onDismiss={() => setShowTabSwitchAlert(false)}
+          onContinue={() => setShowTabSwitchAlert(false)}
         />
       )}
 
       {showLowNetworkAlert && (
         <LowNetworkAlert
-          onDismiss     ={() => setShowLowNetworkAlert(false)}
+          onDismiss={() => setShowLowNetworkAlert(false)}
         />
       )}
 
@@ -362,14 +353,14 @@ const SectionComponent = ({ section_id, onSectionComplete, answerApiUrl }) => {
 
       {showLowVideoAlert && (
         <VideoAlert
-          onDismiss={()=> setShowLowVideoAlert(false)}
+          onDismiss={() => setShowLowVideoAlert(false)}
         />
       )}
 
       {showCameraOffAlert && (
         <CameraOffAlert
           onDismiss={() => setShowCameraOffAlert(false)}
-           onEnable ={() => setShowCameraOffAlert(false)}
+          onEnable={() => setShowCameraOffAlert(false)}
         />
       )}
       <div className="mt-4 flex justify-between">
