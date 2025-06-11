@@ -8,6 +8,8 @@ export default {
     extend: {
       fontFamily: {
         overpass: ["'Overpass'", "sans-serif"],
+        publicSans: ["'Public Sans'", "sans-serif"],
+        lexend: ["Lexend", "sans-serif"],
       },
       animation: {
         'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',

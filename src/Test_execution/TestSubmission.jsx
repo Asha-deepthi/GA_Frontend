@@ -16,32 +16,11 @@ const TestSubmission = ({ onSubmit, onBack }) => {
                         className="w-[643px] h-[450px] max-w-full"
                     />
 
-                    <h2
-                        className="text-center text-[#0F1417]"
-                        style={{
-                            fontFamily: 'Public Sans, sans-serif',
-                            fontWeight: 700,
-                            fontSize: '28px',
-                            lineHeight: '35px',
-                            width: '928px',
-                            height: '35px',
-                        }}
-                    >
+                    <h2 className="text-center text-[#0F1417] font-bold text-[28px] leading-[35px] w-[928px] h-[35px] font-['Public_Sans']">
                         Submit Your Test?
                     </h2>
 
-                    <p
-                        style={{
-                            fontFamily: 'Public Sans, sans-serif',
-                            fontWeight: 400,
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            textAlign: 'center',
-                            width: '928px',
-                            height: '24px',
-                            color: '#0F1417',
-                        }}
-                    >
+                    <p className="text-center text-[#0F1417] font-normal text-[16px] leading-[24px] w-[928px] h-[24px] font-['Public_Sans']">
                         Are you sure you want to submit your test? You won’t be able to make changes after this.
                     </p>
 
