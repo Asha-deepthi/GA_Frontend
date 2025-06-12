@@ -67,111 +67,120 @@ const mockAIComment =
 const CandidateEvaluation = () => {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [sessionId, setSessionId] = useState(null);
-  const [responses, setResponses] = useState(null);
+  const [marks, setMarks] = useState({});
+  const [sections, setSections] = useState([]);
+  const [responses, setResponses] = useState([]);
   const [screenshots, setScreenshots] = useState([]);
   const [aiComment, setAiComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [evaluatedMarks, setEvaluatedMarks] = useState({}); // { answer_id: marks }
+
   useEffect(() => {
     if (selectedCandidate?.session_id) {
       setSessionId(selectedCandidate.session_id);
+      setCurrentSectionIndex(0);
+      setEvaluatedMarks({});
     } else {
       setSessionId(null);
+      setSections([]);
+      setResponses([]);
+      setScreenshots([]);
+      setAiComment("");
+      setError(null);
     }
   }, [selectedCandidate]);
 
   useEffect(() => {
-    if (!sessionId) {
-      setResponses(null);
-      setScreenshots([]);
-      setAiComment("");
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (!sessionId) return;
 
     setLoading(true);
     setError(null);
 
-    const sections = [1, 2, 3, 4, 5, 6, 7]; // All 7 sections
+    // Fetch sections first
+    fetch("http://127.0.0.1:8000/api/test-creation/sections/")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch sections");
+        return res.json();
+      })
+      .then((sectionList) => {
+        setSections(sectionList);
 
-    Promise.all([
-      Promise.all(
-        sections.map((sectionId) =>
-          Promise.all([
-            fetch(
-              `http://127.0.0.1:8000/api/test-creation/sections/${sectionId}/questions/`
-            )
-              .then((res) => {
+        // Fetch questions & answers for each section
+        return Promise.all(
+          sectionList.map((section) =>
+            Promise.all([
+              fetch(
+                `http://127.0.0.1:8000/api/test-creation/sections/${section.id}/questions/`
+              ).then((res) => {
                 if (!res.ok)
-                  throw new Error(`Failed to fetch questions for section ${sectionId}`);
-                return res.json();
-              })
-              .then((data) => {
-                console.log(`Section ${sectionId} questions raw data:`, data);
-                return data;
-              }),
-            fetch(
-              `http://127.0.0.1:8000/test-execution/get-answers/?session_id=${sessionId}&section_id=${sectionId}`
-            )
-              .then((res) => {
-                if (!res.ok)
-                  throw new Error(`Failed to fetch answers for section ${sectionId}`);
+                  throw new Error(
+                    `Failed to fetch questions for section ${section.id}`
+                  );
                 return res.json();
               }),
-          ])
-        )
-      ),
-      fetch(`http://127.0.0.1:8000/test-execution/proctoring-screenshots/?session_id=${sessionId}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch screenshots");
-          return res.json();
-        }),
-    ])
-      .then(([[...sectionsResults], screenshotsData]) => {
-        // Merge questions and answers from all sections
-        const filteredScreenshots = screenshotsData.filter(
-          (screenshot) => screenshot.session === sessionId
-        );
-        const allMerged = [];
+              fetch(
+                `http://127.0.0.1:8000/test-execution/get-answers/?session_id=${sessionId}&section_id=${section.id}`
+              ).then((res) => {
+                if (!res.ok)
+                  throw new Error(
+                    `Failed to fetch answers for section ${section.id}`
+                  );
+                return res.json();
+              }),
+            ])
+          )
+        ).then((sectionsResults) => {
+          // Fetch screenshots after questions & answers
+          return fetch(
+            `http://127.0.0.1:8000/test-execution/proctoring-screenshots/?session_id=${sessionId}`
+          )
+            .then((res) => {
+              if (!res.ok) throw new Error("Failed to fetch screenshots");
+              return res.json();
+            })
+            .then((screenshotsData) => {
+              const filteredScreenshots = screenshotsData.filter(
+                (s) => s.session === sessionId
+              );
 
-        sectionsResults.forEach(([questionsData, answersData], idx) => {
-          const questionsArray = Array.isArray(questionsData)
-            ? questionsData
-            : questionsData.questions || [];
+              // Merge all questions + answers
+              const allMerged = [];
+              sectionsResults.forEach(([questionsData, answersData], idx) => {
+                const section = sectionList[idx];
+                const questionsArray = Array.isArray(questionsData)
+                  ? questionsData
+                  : questionsData.questions || [];
 
-          console.log(`Section ${sections[idx]} — questionsData:`, questionsArray);
-          console.log(`Section ${sections[idx]} — answersData:`, answersData);
+                const merged = questionsArray.map((q) => {
+                  const matchedAnswer = answersData.find(
+                    (a) => String(a.question_id) === String(q.id)
+                  );
+                  return {
+                    ...q,
+                    answer:
+                      matchedAnswer?.answer_text ||
+                      matchedAnswer?.answer ||
+                      null,
+                    question_type:
+                      q.type || matchedAnswer?.question_type || "unknown",
+                    section_id: section.id,
+                    answer_id: matchedAnswer?.answer_id || matchedAnswer?.id || null,
+                    marks_allotted: matchedAnswer?.marks_allotted ?? null,
+                    marks_per_question: q.marks_per_question || 1,
+                  };
+                });
+                allMerged.push(...merged);
+              });
 
-          const merged = questionsArray.map((q) => {
-            console.log("Question ID:", q.id);
-            answersData.forEach((a) => console.log("Answer question_id:", a.question_id));
-
-            const matchedAnswer = answersData.find(
-              (a) => String(a.question_id) === String(q.id)
-            );
-            console.log("Matched Answer for question", q.id, ":", matchedAnswer);
-
-            return {
-              ...q,
-              answer: matchedAnswer?.answer_text || matchedAnswer?.answer || null,
-              question_type: q.type || matchedAnswer?.question_type || "unknown",
-              section_id: sections[idx],
-              answer_id: matchedAnswer?.answer_id || matchedAnswer?.id || null,
-              marks_allotted: matchedAnswer?.marks_allotted ?? null,
-            };
-          });
-
-          allMerged.push(...merged);
+              setResponses(allMerged);
+              setScreenshots(filteredScreenshots);
+              setAiComment(mockAIComment);
+              setLoading(false);
+            });
         });
-
-        console.log("Merged questions+answers:", allMerged);
-
-        setResponses(allMerged);
-        setScreenshots(filteredScreenshots);
-        setAiComment(mockAIComment);
-        setLoading(false);
       })
       .catch((err) => {
         setError(err.message);
@@ -179,16 +188,23 @@ const CandidateEvaluation = () => {
       });
   }, [sessionId]);
 
+  // Filter questions for current section
+  const currentSection = sections[currentSectionIndex];
+  const currentSectionQuestions = responses.filter(
+    (r) => r.section_id === currentSection?.id
+  );
+
+  const handleMarkChange = (answerId, marks) => {
+    setEvaluatedMarks((prev) => ({
+      ...prev,
+      [answerId]: marks,
+    }));
+  };
+
   const handleEvaluationSubmit = (evaluation) => {
     console.log("Submitted evaluation:", evaluation);
     // TODO: POST evaluation to backend
   };
-
-  useEffect(() => {
-    if (responses) {
-      console.log("Data passed to VideoSection:", responses);
-    }
-  }, [responses]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -286,20 +302,76 @@ const CandidateEvaluation = () => {
               {error && <p className="text-center text-red-500">{error}</p>}
 
               {/* Responses + Feedback */}
-              {responses && !loading && !error && (
-                <div className="flex space-x-6 mb-6">
-                  <div className="w-full">
-                    <VideoSection screenshots={screenshots} responses={responses} />
+              {!loading && !error && responses.length > 0 && sections.length > 0 && (
+                <>
+                  {/* Section name & marks */}
+                  <div className="mb-4 text-center font-semibold text-lg">
+                    Section Name: {currentSection?.section_name || "Unknown"} &nbsp; 
+                  </div>
+                  {/* Section Marks */}
+{currentSection && (
+  <div className="mb-4 text-center text-sm text-gray-700">
+    Section Marks:{" "}
+    <span
+      className={
+        currentSectionQuestions.every(
+          (q) => (evaluatedMarks[q.answer_id] ?? 0) === 0
+        )
+          ? "text-red-500 font-semibold"
+          : "text-green-600 font-semibold"
+      }
+    >
+      {currentSectionQuestions.reduce((sum, q) => {
+        return sum + Number(evaluatedMarks[q.answer_id] ?? 0);
+      }, 0)}
+    </span>{" "}
+    out of{" "}
+    {currentSection?.marks_per_question * currentSectionQuestions.length}
+  </div>
+)}
+
+
+                  {/* Questions and answers for this section */}
+                  {console.log("✅ Sending responses to VideoSection:", responses)}
+                  <VideoSection
+                    screenshots={screenshots}
+                    responses={currentSectionQuestions}
+                    onMarkChange={handleMarkChange}
+                    evaluatedMarks={evaluatedMarks}
+                    section={currentSection}
+                  />
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-center gap-4 mt-6 mb-6">
+                    <button
+                      disabled={currentSectionIndex === 0}
+                      onClick={() => setCurrentSectionIndex((idx) => Math.max(idx - 1, 0))}
+                      className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+                    >
+                      Previous Section
+                    </button>
+
+                    <button
+                      disabled={currentSectionIndex === sections.length - 1}
+                      onClick={() => setCurrentSectionIndex((idx) => Math.min(idx + 1, sections.length - 1))}
+                      className="px-4 py-2 bg-teal-600 text-white rounded disabled:opacity-50"
+                    >
+                      Next Section
+                    </button>
                   </div>
 
-                  <div className="w-1/3 flex flex-col space-y-4">
-                    <InterviewFeedback onSubmit={handleEvaluationSubmit} aiComment={aiComment} />
-                  </div>
-                </div>
+                  <InterviewFeedback onSubmit={handleEvaluationSubmit} aiComment={aiComment} />
+                </>
+              )}
+
+              {!loading && !error && responses.length === 0 && (
+                <p>No responses available for this candidate.</p>
               )}
             </>
           ) : (
-            <p className="text-gray-500 mt-10 text-center">Select a candidate to start evaluation.</p>
+            <p className="text-gray-500 mt-10 text-center">
+              Select a candidate to start evaluation.
+            </p>
           )}
         </div>
       </div>
