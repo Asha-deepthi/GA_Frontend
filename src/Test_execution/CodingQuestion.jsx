@@ -121,7 +121,7 @@ const CodingQuestionScreen = () => {
 
   const handleBack = () => navigate("/mcqquestion");
   const handleFullscreen = () => navigate("/fullscreen");
-  const handleSubmit = () => navigate("/result");
+  const handleSubmit = () => navigate("/sectionpage");
 
   const renderBars = (level, color) => (
     <div className="flex items-end gap-1">
