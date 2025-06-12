@@ -14,7 +14,7 @@ import LowNetworkAlert from "../LowNetworkAlert";
 //import AudioAlert from "../AudioAlert";
 import VideoAlert from "../VideoAlert";
 
-const SECTION_DURATION = 5 * 60; // default in seconds
+//const SECTION_DURATION = 5 * 60; // default in seconds
 
 export default function SectionComponent({
   section_id,
@@ -51,8 +51,8 @@ export default function SectionComponent({
   });
 
   // --- Timer State ---
-  const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
-  const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
+ // const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
+  //const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
 
   // --- Answer Save Queue ---
   const requestQueue = useRef([]);
@@ -89,9 +89,9 @@ export default function SectionComponent({
         setQuestions(numbered);
         setCurrentQuestionId(numbered[0]?.id || null);
         // set default timer from API metadata if available
-        setDefaultTime(
-          (data[0]?.section?.time_limit || SECTION_DURATION / 60) * 60
-        );
+        //setDefaultTime(
+          //(data[0]?.section?.time_limit || SECTION_DURATION / 60) * 60
+        //);
         // 2) Fetch saved answers
         const ansRes = await fetch(
           `${answerApiUrl}/get-answers/?session_id=${session_id}&section_id=${section_id}`
@@ -114,7 +114,7 @@ export default function SectionComponent({
   }, [section_id]);
 
   // --- Sync Timer from Backend or Local ---
-  useEffect(() => {
+ {/* useEffect(() => {
     const fetchTimer = async () => {
       try {
         const res = await fetch(
@@ -135,15 +135,15 @@ export default function SectionComponent({
       }
     };
     fetchTimer();
-  }, [defaultTime, section_id]);
+  }, [defaultTime, section_id]); */}
 
   // --- Countdown ---
-  useEffect(() => {
+  //useEffect(() => {
     // if (timeLeft <= 0) {
     //   handleFinalSubmit();
     //   return;
     // }
-    const timerId = setInterval(() => {
+    {/*const timerId = setInterval(() => {
       setTimeLeft((t) => {
         const next = t - 1;
         localStorage.setItem(`timer_${section_id}`, next);
@@ -162,7 +162,7 @@ export default function SectionComponent({
       });
     }, 1000);
     return () => clearInterval(timerId);
-  }, [timeLeft]);
+  }, [timeLeft]);*/}
 
   // --- Debounced Answer Saving ---
   const latestAnswer = useRef(null);
@@ -271,10 +271,10 @@ export default function SectionComponent({
         <p className="text-sm text-red-600">
           Violations: {violationCount}
         </p>
-        <p>
+       {/* <p>
           Time Left: {Math.floor(timeLeft / 60)}:
           {String(timeLeft % 60).padStart(2, "0")}
-        </p>
+        </p>*/}
       </div>
 
       {/* Question */}
@@ -374,9 +374,6 @@ export default function SectionComponent({
           </button>
         )}
       </div>
-
-      {/* Webcam Feed */}
-      
     </div>
   );
 }

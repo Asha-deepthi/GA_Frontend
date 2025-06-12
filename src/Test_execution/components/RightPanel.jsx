@@ -4,11 +4,18 @@ import QuestionPalette from "./QuestionPalette";
 import LegendBar       from "./LegendBar";
 
 export default function RightPanel({
-  questions, currentQuestionId, onQuestionClick, getColor
+  questions,
+  currentQuestionId,
+  onQuestionClick,
+  getColor,
+  stopTimer,
+   initialSeconds// <- accept prop
 }) {
   return (
     <div className="flex flex-col items-center bg-white">
-      <TimerDisplay />
+      {/* Pass stopTimer to TimerDisplay */}
+      <TimerDisplay stopTimer={stopTimer}
+      initialSeconds={initialSeconds} />
       <QuestionPalette
         questions={questions}
         currentQuestionId={currentQuestionId}

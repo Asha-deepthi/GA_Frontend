@@ -120,17 +120,7 @@ const CameraFeedPanel = ({ session_id }) => {
           className="object-cover"
         />
         <canvas ref={canvasRef} width={150} height={100} style={{ display: "none" }} />
-        <button
-          className="absolute top-1 right-1 bg-blue-600 text-white text-xs p-1 rounded"
-          onClick={() => {
-            const ctx = canvasRef.current.getContext("2d");
-            ctx.drawImage(videoRef.current, 0, 0, 150, 100);
-            const testImage = canvasRef.current.toDataURL("image/jpeg");
-            console.log("🧪 Manual Screenshot:", testImage.substring(0, 100));
-          }}
-        >
-          Test
-        </button>
+        
       </div>
     </div>
   );

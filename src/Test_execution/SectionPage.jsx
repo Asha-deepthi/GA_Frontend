@@ -25,6 +25,9 @@ export default function SectionPage() {
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [completedSections, setCompletedSections] = useState([]);
   const [fullscreenReady, setFullscreenReady]     = useState(false);
+const [stopTimer, setStopTimer] = useState(false);
+const [initialSeconds, setInitialSeconds] = useState(null);
+const [timeLeft, setTimeLeft] = useState(null);
 
   // Pallette/Question state (lifted up)
   const [questions, setQuestions]                 = useState([]);
@@ -61,10 +64,86 @@ export default function SectionPage() {
     }
   };
 
+  useEffect(() => {
+  if (!selectedSectionId) return;
+
+  const fetchTimer = async () => {
+    try {
+      const res = await fetch(`${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`);
+      if (!res.ok) throw new Error(`404 or server error`);
+      const data = await res.json();
+      console.log("Fetched timer from backend:", data);
+
+      const remaining_time = data.remaining_time;
+
+      // If remaining_time is in HH:MM:SS string format, convert it
+      const parsedTime = typeof remaining_time === "string"
+        ? toSeconds(remaining_time)
+        : remaining_time;
+
+      setInitialSeconds(parsedTime ?? 600);
+    } catch (err) {
+      console.error("Failed to fetch timer:", err);
+
+      // If no timer in backend, fallback to localStorage or default
+      const local = localStorage.getItem(`timer_${selectedSectionId}`);
+
+      const fallbackSection = sections.find((s) => s.id === selectedSectionId);
+      const fallbackTimeMinutes = fallbackSection?.time_limit ?? 10;
+
+      setInitialSeconds(local ? parseInt(local) : fallbackTimeMinutes * 60);
+    }
+  };
+
+  fetchTimer();
+}, [selectedSectionId]);
+
+
+useEffect(() => {
+  if (timeLeft === null || timeLeft <= 0) return;
+
+  const timerId = setInterval(() => {
+    setTimeLeft((prev) => {
+      const next = prev - 1;
+      console.log(`Saving time for section ${selectedSectionId}: ${next}s left`);
+      localStorage.setItem(`timer_${selectedSectionId}`, next);
+
+      if (next % 10 === 0) {
+        fetch(`${apiurl}/save-timer/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id,
+            section_id: selectedSectionId,
+            remaining_time: next,
+          }),
+        }).catch((err) => console.error("Failed to save timer:", err));
+      }
+
+      return next;
+    });
+  }, 1000);
+
+  return () => clearInterval(timerId);
+}, [timeLeft, selectedSectionId]);
+
+
+useEffect(() => {
+  if (initialSeconds !== null) {
+    setTimeLeft(initialSeconds);
+  }
+}, [initialSeconds]);
+useEffect(() => {
+  if (selectedSectionId) {
+    setStopTimer(false);
+  }
+}, [selectedSectionId]);
+
   // Mark as complete and reset to section list
   const handleSectionComplete = (sectionId) => {
     // You could append to completedSections here if desired.
     setSelectedSectionId(null);
+    setStopTimer(true); 
   };
 
   // Question palette helpers
@@ -178,6 +257,8 @@ export default function SectionPage() {
             currentQuestionId={currentQuestionId}
             onQuestionClick={handleQuestionClick}
             getColor={getColor}
+            stopTimer={stopTimer}
+            initialSeconds={initialSeconds}
           />
           <div className="absolute bottom-4 right-4">
             <CameraFeedPanel session_id={session_id} />
