@@ -7,7 +7,7 @@ import Header from "./components/Header";
 const mockCandidates = [
   {
     id: 1,
-    session_id: 12345,
+    session_id: 528,
     name: "Pavan",
     gender: "Male",
     age: 24,
@@ -158,14 +158,16 @@ const CandidateEvaluation = () => {
                   const matchedAnswer = answersData.find(
                     (a) => String(a.question_id) === String(q.id)
                   );
+                  console.log("Question ID:", q.id);
+    console.log("Matching Answer Found:", matchedAnswer);
+    console.log("Answer ID:", matchedAnswer?.answer_id || matchedAnswer?.id);
                   return {
                     ...q,
                     answer:
                       matchedAnswer?.answer_text ||
                       matchedAnswer?.answer ||
                       null,
-                    question_type:
-                      q.type || matchedAnswer?.question_type || "unknown",
+                    question_type: matchedAnswer?.question_type || q.type || "unknown",
                     section_id: section.id,
                     answer_id: matchedAnswer?.answer_id || matchedAnswer?.id || null,
                     marks_allotted: matchedAnswer?.marks_allotted ?? null,

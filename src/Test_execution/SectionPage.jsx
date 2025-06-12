@@ -8,7 +8,7 @@ import TestSummaryScreen from "./TestSummaryScreen";
 
 const apiurl       = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/test-execution";
-const session_id   = 123333;
+const session_id   = 528;
 
 const sections = [
   { id: 1, name: "Section 1" },

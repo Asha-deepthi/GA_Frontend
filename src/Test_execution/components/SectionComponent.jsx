@@ -232,6 +232,9 @@ export default function SectionComponent({
   // --- Final Submit: ensure all questions have a status ---
   const handleFinalSubmit = async () => {
     for (const q of questions) {
+      console.log("Checking question object:", q);
+      const questionType = q.type || q.question_type || "";
+  console.log("Submitting question_type:", questionType);
       if (!answersStatus[q.id]?.answer) {
         const form = new FormData();
         form.append("session_id", session_id);
