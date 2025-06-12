@@ -295,7 +295,7 @@ return (
                 Phone Number<span className="text-red-600">*</span>
               </label>
               <div className="flex mb-6">
-                <select className="border rounded-l p-2 bg-blue-100">
+                <select className="w-20 border rounded-l p-2 bg-blue-100">
                   <option>+91</option>
                 </select>
                 <div className="relative w-full">

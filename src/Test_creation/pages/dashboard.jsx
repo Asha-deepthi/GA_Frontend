@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const InterviewDashboard = () => {
   const [currentUser, setCurrentUser] = useState('');
@@ -292,88 +292,401 @@ sessionStorage.removeItem('refresh_token');
     // Navigate to login
     window.location.href = '/login';
   };
+
+const handleNavClick = (navItem) => {
+    const path = navItem.toLowerCase().replace(' ', ''); // e.g., 'createtest'
+    setActiveNav(path); // Update style
+
+    if (path === 'dashboard') {
+        navigate('/dashboard');
+    } else if (path === 'createtest') {
+        navigate('/QuizCreationFlow');
+    } else {
+        // For other links like 'Tests' and 'Candidates'
+        navigate(`/${path}`);
+    }
+  };
+/*import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const InterviewDashboard = () => {
+  const [currentUser, setCurrentUser] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+  // Set 'dashboard' as the default active nav item
+  const [activeNav, setActiveNav] = useState('dashboard');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('daily');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date(2025, 3, 26));
+  const [currentMonth, setCurrentMonth] = useState(3);
+  const [currentYear, setCurrentYear] = useState(2025);
+  const [activePage, setActivePage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('');
+  const [filterFromDate, setFilterFromDate] = useState('');
+  const [filterToDate, setFilterToDate] = useState('');
+  const navigate = useNavigate();
+
+
+  const userNames = [
+    "Jajpur House", "John Smith", "Emma Johnson", "Michael Brown", "Olivia Davis",
+    "William Wilson", "Sophia Martinez", "James Anderson", "Isabella Taylor"
+  ];
+
+  const candidatesData = [
+    {
+      id: "234(42)",
+      name: "Ameer",
+      role: "Help Desk Executive",
+      department: "IT Department",
+      date: "15 April 2025",
+      status: "attended",
+      checkin: "09:00",
+      checkout: "09:15",
+      completion: "15Min/ 30 min"
+    },
+    {
+      id: "341(42)",
+      name: "Sai",
+      role: "Senior Executive",
+      department: "Marketing",
+      date: "15 April 2025",
+      status: "absent",
+      checkin: "09:00",
+      checkout: "09:30",
+      completion: "5m"
+    },
+    {
+      id: "234(12)",
+      name: "Siva",
+      role: "Senior Manager",
+      department: "Design",
+      date: "15 April 2025",
+      status: "passed",
+      checkin: "10:30",
+      checkout: "09:15",
+      completion: "15Min/ 30 min"
+    },
+    {
+      id: "234(21)",
+      name: "Arjun",
+      role: "Director",
+      department: "Development",
+      date: "15 April 2025",
+      status: "rejected",
+      checkin: "09:00",
+      checkout: "10:00",
+      completion: "60m/ 30 min"
+    },
+    {
+      id: "234(42)",
+      name: "Pavan",
+      role: "Director",
+      department: "Sales",
+      date: "15 April 2025",
+      status: "attended",
+      checkin: "09:00",
+      checkout: "09:15",
+      completion: "15Min/ 30 min"
+    },
+    {
+      id: "234(42)",
+      name: "Jaya",
+      role: "System coordinator",
+      department: "IT Department",
+      date: "15 April 2025",
+      status: "attended",
+      checkin: "8:50",
+      checkout: "09:15",
+      completion: "15Min/ 30 min"
+    }
+  ];
+
+  const getDaySuffix = (day) => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const updateDateTime = () => {
+    const now = new Date();
+    
+    // Format time
+    const hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    const timeString = ${formattedHours}:${minutes}:${seconds} ${ampm};
+    setCurrentTime(timeString);
+    
+    // Format date
+    const day = now.getDate();
+    const month = now.toLocaleString('default', { month: 'long' });
+    const year = now.getFullYear();
+    const suffix = getDaySuffix(day);
+    const dateString = ${day}${suffix} ${month} ${year};
+    setCurrentDate(dateString);
+  };
+
+  useEffect(() => {
+    // Set random user
+    const randomUser = userNames[Math.floor(Math.random() * userNames.length)];
+    setCurrentUser(randomUser);
+    
+    // Update time initially and then every second
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    
+    // Close dropdowns when clicking outside
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.profile-dropdown')) {
+        setShowProfileMenu(false);
+      }
+      if (!e.target.closest('.date-filter')) {
+        setShowDatePicker(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  const getInitials = (name) => {
+    if (!name) return '';
+    return name.split(' ').map(n => n[0]).join('');
+  };
+
+  const getStatusBadgeClass = (status) => {
+    const baseClass = "inline-block px-4 py-1 rounded-full text-xs text-center";
+    switch (status) {
+      case 'attended':
+        return ${baseClass} bg-blue-100 text-blue-600;
+      case 'absent':
+        return ${baseClass} bg-red-100 text-red-600;
+      case 'passed':
+        return ${baseClass} bg-green-100 text-green-600;
+      case 'rejected':
+        return ${baseClass} bg-gray-100 text-gray-600;
+      default:
+        return baseClass;
+    }
+  };
+
+  const filteredCandidates = candidatesData.filter(candidate =>
+    candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const renderCalendar = () => {
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    const days = [];
+    
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < startingDay; i++) {
+      days.push(
+        <div key={empty-${i}} className="w-8 h-8 flex items-center justify-center text-gray-300 cursor-default"></div>
+      );
+    }
+    
+    // Days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const isSelected = currentYear === selectedDate.getFullYear() &&
+                        currentMonth === selectedDate.getMonth() &&
+                        i === selectedDate.getDate();
+      
+      days.push(
+        <div
+          key={i}
+          className={`w-8 h-8 flex items-center justify-center rounded-full cursor-pointer text-gray-600 hover:bg-gray-100 ${
+            isSelected ? 'bg-teal-600 text-white' : ''
+          }`}
+          onClick={() => setSelectedDate(new Date(currentYear, currentMonth, i))}
+        >
+          {i}
+        </div>
+      );
+    }
+    
+    return days;
+  };
+
+  const formatSelectedDate = () => {
+    const day = selectedDate.getDate();
+    const month = selectedDate.toLocaleString('default', { month: 'long' });
+    const year = selectedDate.getFullYear();
+    const suffix = getDaySuffix(day);
+    return ${day}${suffix} ${month} ${year};
+  };
+
+  const getMonthName = () => {
+    return new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const handleApplyDate = () => {
+    setShowDatePicker(false);
+    alert(Date filter applied: ${formatSelectedDate()});
+  };
+
+  const handleSort = (column) => {
+    alert(Sorting by ${column});
+  };
+
+  const handlePageChange = (page) => {
+    setActivePage(page);
+    if (page !== '...') {
+      alert(Going to page ${page});
+    }
+  };
+
+  const handleApplyFilters = () => {
+    alert('Advanced filters applied');
+    setShowFilterModal(false);
+  };
+
+  const handleResetFilters = () => {
+    setFilterStatus('');
+    setFilterDepartment('');
+    setFilterFromDate('');
+    setFilterToDate('');
+    alert('Filters reset');
+  };
+
+  const handleLogout = () => {
+      // Clear auth tokens or user context
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('refresh_token');
+
+      // Navigate to login
+      window.location.href = '/login';
+    };*/
+
  return (
     <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
-      {/* Header */}
+      {/* ===== UPDATED HEADER STARTS HERE ===== */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            <div className="w-20 h-10 bg-gray-300 rounded"></div>
-            
-            <div className="flex gap-8">
-              <button
-                className={`pb-1 ${activeNav === 'home' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-600'}`}
-                onClick={ () => {
-                  setActiveNav('home');
-                  alert('Navigating to Home');
-                } }
-              >
-                Home
-              </button>
-              <button
-                className={`pb-1 ${activeNav === 'evaluations' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-600'}`}
-                onClick={ () => {
-                  setActiveNav('evaluations');
-                  alert('Navigating to Evaluations');
-                }}
-              >
-                Evaluations
-              </button>
-              <button
-  className={`pb-1 ${activeNav === 'positions' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-600'}`}
-  onClick={() => {
-    setActiveNav('positions');
-    navigate('/positions'); // ✅ navigates to ImportFormPage
-  }}
->
-  Positions
-</button>
-
+          <div className="flex justify-between items-center py-3">
+            {/* Left Side: Logo */}
+            <div className="flex items-center gap-2 cursor-pointer">
+              {/* New SVG Logo */}
+              <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+              <svg width="24" height="24" viewBox="0 0 24 24" className="text-teal-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 8L8 0L16 8L8 16L0 8Z" transform="translate(4 4)" />
+              </svg>
+               </Link>
+              <span className="font-bold text-teal-500 text-lg">GA Proctored Test</span>
             </div>
-            
-            <div className="relative profile-dropdown">
-              <div
-                className="flex items-center gap-3 cursor-pointer"
-                onClick={ () => setShowProfileMenu(!showProfileMenu)}
-              >
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold text-sm">
-                  {currentUser ? getInitials(currentUser) : ''}
-                </div>
-                <span>{currentUser || 'Loading...'}</span>
+
+            <nav>
+              <div className="flex items-center gap-8 text-sm font-medium">
+                {['Dashboard', 'Tests', 'Candidates', 'Create Test'].map(item => (
+                  <button
+                    key={item}
+                    className={`pb-3 hover:text-teal-500 transition-colors duration-200 ${
+                      activeNav === item.toLowerCase().replace(' ', '')
+                        ? 'text-teal-500 border-b-2 border-teal-500'
+                        : 'text-gray-500'
+                    }`}
+                    // --- CHANGE: Use the new handler ---
+                    onClick={() => handleNavClick(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
+            </nav>
+
+            {/* Right Side: Actions and Profile */}
+            <div className="flex items-center gap-4">
+              <button className="text-gray-500 p-2 rounded-full hover:bg-gray-100">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              </button>
               
-              {showProfileMenu && (
-                <div className="absolute right-0 top-full mt-2 bg-white min-w-40 shadow-lg rounded z-50">
-                  <button
-                    className="block w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50"
-                    onClick={ () => {
-                      alert('Clicked on Profile');
-                      setShowProfileMenu(false);
-                    }}
-                  >
-                    Profile
-                  </button>
-                  <button
-                    className="block w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50"
-                    onClick={ () => {
-                      alert('Clicked on Settings');
-                      setShowProfileMenu(false);
-                    }}
-                  >
-                    Settings
-                  </button>
-                    <button
-      className="block w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50"
-      onClick={handleLogout}
-    >
-      Logout
-    </button>
+              <div className="relative profile-dropdown">
+                <div
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                >
+                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm">
+                    {getInitials(currentUser)}
+                  </div>
+                  <span className="text-sm font-medium">{currentUser || 'Loading...'}</span>
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </div>
-              )}
+                
+                {showProfileMenu && (
+                  <div className="absolute right-0 top-full mt-3 bg-white min-w-48 shadow-lg rounded-md z-50 border border-gray-100">
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => {
+                        alert('Clicked on Profile');
+                        setShowProfileMenu(false);
+                      }}
+                    >
+                      Profile
+                    </button>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => {
+                        alert('Clicked on Settings');
+                        setShowProfileMenu(false);
+                      }}
+                    >
+                      Settings
+                    </button>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </header>
+      {/* ===== UPDATED HEADER ENDS HERE ===== */}
+
 
       {/* Dashboard */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -455,7 +768,7 @@ sessionStorage.removeItem('refresh_token');
                   className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   onClick={ () => setShowDatePicker(!showDatePicker)}
                 >
-                  📅 {formatSelectedDate()}
+                  <span role="img" aria-label="calendar">📅</span> {formatSelectedDate()}
                 </button>
                 
                 {showDatePicker && (
@@ -511,7 +824,7 @@ sessionStorage.removeItem('refresh_token');
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm"
                 onClick={ () => setShowFilterModal(true)}
               >
-                🔍 Advanced Filter
+                <span role="img" aria-label="search">🔍</span> Advanced Filter
               </button>
             </div>
             
@@ -525,7 +838,7 @@ sessionStorage.removeItem('refresh_token');
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  🔍
+                <span role="img" aria-label="search">🔍</span>
                 </div>
               </div>
               
@@ -666,7 +979,7 @@ sessionStorage.removeItem('refresh_token');
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">1</span> to <span className="font-medium">6</span> of{' '}
+                  Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredCandidates.length}</span> of{' '}
                   <span className="font-medium">{candidatesData.length}</span> results
                 </p>
               </div>

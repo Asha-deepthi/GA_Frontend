@@ -1,0 +1,79 @@
+/* Using variables from previous steps */
+:root {
+    --primary-color: #1abc9c;
+    --primary-color-dark: #16a085;
+    --bg-color: #f8f9fa;
+    --card-bg-color: #ffffff;
+    --border-color: #e9ecef;
+    --text-dark: #343a40;
+    --text-light: #6c757d;
+    --border-radius-md: 8px;
+}
+
+/* Base, Header, Stepper, and Footer (reused from previous steps) */
+body { margin: 0; font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-dark); }
+.quiz-page-container { display: flex; flex-direction: column; min-height: 100vh; }
+.page-header { background-color: var(--card-bg-color); display: flex; align-items: center; padding: 12px 40px; border-bottom: 1px solid var(--border-color); }
+.logo-container { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; }
+.logo-icon { background-color: var(--primary-color-dark); color: white; padding: 6px 8px; border-radius: 4px; }
+.main-nav { display: flex; gap: 30px; margin: 0 auto; }
+.main-nav a { text-decoration: none; color: var(--text-light); font-weight: 500; padding: 5px 0; border-bottom: 3px solid transparent; }
+.main-nav a.active, .main-nav a:hover { color: var(--primary-color-dark); border-bottom-color: var(--primary-color-dark); }
+.user-controls { display: flex; align-items: center; gap: 20px; }
+.icon-button { background: none; border: none; cursor: pointer; color: var(--text-light); }
+.user-profile { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 36px; height: 36px; background-color: #e0e0e0; border-radius: 50%; }
+.main-content { max-width: 960px; width: 100%; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
+.stepper { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 40px; }
+.step { display: flex; flex-direction: column; align-items: center; text-align: center; width: 160px; }
+.step-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; font-weight: 600; background-color: white; color: #ccc; margin-bottom: 8px; }
+.step-label { font-size: 0.9rem; color: var(--text-light); }
+.step.active .step-circle { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); color: white; }
+.step.active .step-label { color: var(--text-dark); font-weight: 500; }
+.step .step-circle.complete { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); color: white; font-size: 1.2rem; }
+.connector { flex-grow: 1; height: 2px; background-color: #ccc; margin-top: 15px; }
+.connector.complete { background-color: var(--primary-color-dark); }
+.page-footer-actions { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+.btn { padding: 10px 24px; border: none; border-radius: var(--border-radius-md); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.btn-primary { background-color: var(--primary-color-dark); color: white; }
+.btn-secondary { background-color: #f1f3f5; color: var(--text-dark); border: 1px solid #dee2e6; }
+
+/* Form, Tabs, and Settings Content */
+.form-wrapper { background-color: var(--card-bg-color); padding: 30px; border-radius: var(--border-radius-md); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.main-tabs { margin-bottom: 25px; border-bottom: 1px solid var(--border-color); }
+.tab-item { background: none; border: none; padding: 12px 20px; margin-bottom: -1px; font-size: 1rem; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; }
+.tab-item.active { color: var(--primary-color-dark); border-bottom-color: var(--primary-color-dark); font-weight: 600; }
+.settings-header { margin-bottom: 40px; }
+.settings-header h1 { font-size: 1.75rem; color: var(--primary-color-dark); margin: 0 0 5px 0; }
+.settings-header p { margin: 0; color: var(--text-light); }
+.settings-form { display: flex; flex-direction: column; gap: 30px; }
+
+/* Form Row Layout */
+.form-group-row { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: flex-start; }
+.form-label-title { font-weight: 600; padding-top: 5px; }
+.form-input-group { display: flex; flex-direction: column; gap: 15px; }
+.form-input-group label { font-size: 0.9rem; }
+.form-input-group input[type="number"] { width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: var(--border-radius-md); font-size: 0.95rem; }
+
+/* Custom Radio Button */
+.custom-radio { display: flex; align-items: center; gap: 12px; cursor: pointer; background-color: #fff; border: 1px solid #ccc; padding: 12px 15px; border-radius: var(--border-radius-md); transition: border-color 0.2s, box-shadow 0.2s; width: 100%; max-width: 400px; }
+.custom-radio input[type="radio"] { position: absolute; opacity: 0; }
+.custom-radio .radio-dot { height: 20px; width: 20px; border: 2px solid #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; }
+.custom-radio .radio-dot::after { content: ''; width: 10px; height: 10px; background-color: var(--primary-color-dark); border-radius: 50%; display: block; opacity: 0; transition: opacity 0.2s; }
+.custom-radio input[type="radio"]:checked + .radio-dot { border-color: var(--primary-color-dark); }
+.custom-radio input[type="radio"]:checked + .radio-dot::after { opacity: 1; }
+.custom-radio:has(input:checked) { border-color: var(--primary-color-dark); box-shadow: 0 0 0 1px var(--primary-color-dark); }
+
+/* Toggle Switch Row */
+.toggle-row { align-items: center; }
+.label-description { font-size: 0.9rem; color: var(--text-light); }
+.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--primary-color-dark); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+/* Conditional Input for Attempts */
+.conditional-input { margin-top: 10px; }
+.conditional-input label { display: block; margin-bottom: 8px; }

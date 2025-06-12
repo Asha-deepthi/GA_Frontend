@@ -1,12 +1,15 @@
 import React from 'react';
+import './App.css';
 import { Routes, Route } from 'react-router-dom';
 import SignupPage from "./Test_creation/pages/signup";
 import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
-import Positions from "./Test_creation/pages/positions";
-import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
-import InterviewQuestions from "./Test_creation/pages/interviewquestions";
+import QuizPreview from "./Test_creation/pages/QuizPreview";
+import QuizSettings from "./Test_creation/pages/QuizSettings";
+import SendInvitations from "./Test_creation/pages/SendInvitations";
+import QuizCreationFlow  from "./Test_creation/pages/QuizCreationFlow";
+import ImportCandidates from "./Test_creation/pages/ImportCandidates";
 import PrivateRoute from "./Test_creation/components/PrivateRoute";
 import { StreamProvider } from './Test_execution/StreamContext';
 import SectionPage from "./Test_execution/SectionPage";
@@ -34,8 +37,18 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email/:uuid" element={<VerifyEmail />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/positions" element={<Positions />} />
-     <Route path="/interviewquestions" element={<InterviewQuestions />} />
+      <Route path="/QuizPreview" element={<QuizPreview />} />
+      <Route path="/QuizSettings" element={< QuizSettings/>} />
+      <Route path="/import-candidates/:testId" element={<ImportCandidates />} />
+      <Route path="/send-invitation/:testId" element={<SendInvitations />} />
+      <Route 
+      path="/QuizCreationFlow"
+      element={
+       <PrivateRoute>
+        <QuizCreationFlow />
+        </PrivateRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={
@@ -44,22 +57,14 @@ function App() {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/importform"
-        element={
-          <PrivateRoute>
-            <JobImportForm />
-          </PrivateRoute>
-        }
-      />
-        <Route path="/instructionscreen" element={<InstructionScreen />} />
+        <Route path="/instructionscreen:testId" element={<InstructionScreen />} />
         <Route path="/tutorialscreen" element={<TutorialScreen />} />
         <Route path="/connectionstrength" element={<ConnectionStrength />} />
         <Route path="/videoquestion" element={<VideoQuestion />} />
         <Route path="/codingquestion" element={<CodingQuestion />} />
         <Route path="/mcqquestion" element={<McqQuestion />} />
         <Route path="/fullscreen" element={<FullScreen />} />
-        <Route path="/welcome" element={<WelcomeScreen />} />
+        <Route path="/welcome/:testId" element={<WelcomeScreen />} />
         <Route path="/basic-details" element={<BasicDetails />} />
         <Route path="/permission" element={<PermissionScreen />} />
         <Route path="/audioquestion" element={<AudioQuestion />} />
