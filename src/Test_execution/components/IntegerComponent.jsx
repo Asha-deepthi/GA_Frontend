@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [value, setValue] = useState('');
 
   useEffect(() => {
@@ -23,7 +23,9 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) =
       markedForReview: markForReview,
       status
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (

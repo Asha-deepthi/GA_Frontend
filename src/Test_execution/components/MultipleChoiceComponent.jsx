@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(currentStatus?.answer || '');
 
   useEffect(() => {
@@ -16,7 +16,9 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
       answer: selectedAnswer,
       markedForReview: false,
     });
-    if (onNext) onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   const handleMarkForReview = () => {
@@ -24,7 +26,9 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
       answer: selectedAnswer,
       markedForReview: true,
     });
-    if (onNext) onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (

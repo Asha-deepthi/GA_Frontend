@@ -6,10 +6,9 @@ import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
 import TestSummaryScreen from "./TestSummaryScreen";
 
-
 const apiurl       = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/test-execution";
-const session_id   = 1234;
+const session_id   = 123333;
 
 const sections = [
   { id: 1, name: "Section 1" },
@@ -151,12 +150,6 @@ export default function SectionPage() {
 
         {/* Center SectionComponent */}
         <div className="flex-1 p-4 overflow-auto relative">
-          <button
-            className="absolute top-0 left-0 text-sm text-blue-500 underline"
-            onClick={exitFullscreen}
-          >
-            ← Back to Sections
-          </button>
           <SectionComponent
             section_id={selectedSectionId}
             session_id={session_id}
@@ -176,7 +169,6 @@ export default function SectionPage() {
     section_id={selectedSectionId}
             session_id={session_id}
   />
-
         </div>
 
         {/* Right Panel & Camera */}

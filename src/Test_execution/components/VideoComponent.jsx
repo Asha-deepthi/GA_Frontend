@@ -1,6 +1,6 @@
 import React,{ useEffect, useRef, useState } from 'react';
 
-const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [blobUrl, setBlobUrl] = useState(null);
   const [stream, setStream] = useState(null);
   const videoRef = useRef(null);
@@ -48,7 +48,9 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => 
       markedForReview: markForReview,
       status
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (

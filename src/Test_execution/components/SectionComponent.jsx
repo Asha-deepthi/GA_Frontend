@@ -11,9 +11,8 @@ import useProctoring from "./useProctoring";
 import TabSwitchAlert from "../TabSwitchAlert";
 import CameraOffAlert from "../CameraOffAlert";
 import LowNetworkAlert from "../LowNetworkAlert";
-import AudioAlert from "../AudioAlert";
+//import AudioAlert from "../AudioAlert";
 import VideoAlert from "../VideoAlert";
-import Webcam from "react-webcam";
 
 const SECTION_DURATION = 5 * 60; // default in seconds
 
@@ -88,6 +87,7 @@ export default function SectionComponent({
         // add numbering
         const numbered = data.map((q, i) => ({ ...q, number: i + 1 }));
         setQuestions(numbered);
+        setCurrentQuestionId(numbered[0]?.id || null);
         // set default timer from API metadata if available
         setDefaultTime(
           (data[0]?.section?.time_limit || SECTION_DURATION / 60) * 60
@@ -139,10 +139,10 @@ export default function SectionComponent({
 
   // --- Countdown ---
   useEffect(() => {
-    if (timeLeft <= 0) {
-      handleFinalSubmit();
-      return;
-    }
+    // if (timeLeft <= 0) {
+    //   handleFinalSubmit();
+    //   return;
+    // }
     const timerId = setInterval(() => {
       setTimeLeft((t) => {
         const next = t - 1;
@@ -295,23 +295,24 @@ export default function SectionComponent({
                 onNext: () =>
                   setCurrentQuestionId(questions[currentIndex + 1]?.id),
               };
+              const isLast = currentIndex === questions.length - 1;
               switch (current.type) {
                 case "multiple-choice":
-                  return <MultipleChoiceComponent {...props} />;
+                  return <MultipleChoiceComponent {...props} isLast={isLast} />;
                 case "fill-in-blanks":
-                  return <FillInTheBlankComponent {...props} />;
+                  return <FillInTheBlankComponent {...props} isLast={isLast} />;
                 case "integer":
-                  return <IntegerComponent {...props} />;
+                  return <IntegerComponent {...props} isLast={isLast} />;
                 case "subjective":
-                  return <SubjectiveComponent {...props} />;
+                  return <SubjectiveComponent {...props} isLast={isLast} />;
                 case "audio":
-                  return <AudioComponent {...props} />;
+                  return <AudioComponent {...props} isLast={isLast} />;
                 case "video":
-                  return <VideoComponent {...props} />;
+                  return <VideoComponent {...props} isLast={isLast} />;
                 case "text":
-                  return <Textcomponent {...props} />;
+                  return <Textcomponent {...props} isLast={isLast} />;
                 case "passage":
-                  return <Passagecomponent {...props} />;
+                  return <Passagecomponent {...props} isLast={isLast} />;
                 default:
                   return <p>Unsupported question type: {current.type}</p>;
               }
@@ -330,9 +331,9 @@ export default function SectionComponent({
       {showLowNetworkAlert && (
         <LowNetworkAlert onDismiss={() => setShowLowNetworkAlert(false)} />
       )}
-      {showLowAudioAlert && (
+      {/* {showLowAudioAlert && (
         <AudioAlert onDismiss={() => setShowLowAudioAlert(false)} />
-      )}
+      )} */}
       {showLowVideoAlert && (
         <VideoAlert onDismiss={() => setShowLowVideoAlert(false)} />
       )}

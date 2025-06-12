@@ -4,7 +4,8 @@ const FillInTheBlankComponent = ({
   question, 
   onAnswerUpdate, 
   currentStatus,
-  onNext
+  onNext,
+  isLast
 }) => {
   const [answer, setAnswer] = useState('');
 
@@ -31,7 +32,9 @@ const FillInTheBlankComponent = ({
       markedForReview: markForReview,
       status,
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (
