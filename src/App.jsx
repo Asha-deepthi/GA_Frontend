@@ -32,6 +32,8 @@ import Popupalert_4 from './Test_execution/AudioAlert';
 import Popupalert_5 from './Test_execution/VideoAlert';
 import TestSubmission from './Test_execution/TestSubmission';
 import Timeupscreen from './Test_execution/TimeupScreen';
+import TestSummaryScreen from './Test_execution/TestSummaryScreen';
+
 function App() {
   return (
     <StreamProvider>
@@ -77,6 +79,7 @@ function App() {
         <Route path="/popup" element={<Popupalert_5 />} />
         <Route path="/submission" element={<TestSubmission/>}/>
         <Route path="/timeupscreen" element={<Timeupscreen/>}/>
+        <Route path="/summaryscreen" element={<TestSummaryScreen/>}/>
       </Routes>
     </StreamProvider>
   );

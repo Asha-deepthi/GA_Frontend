@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useRef } from "react"; // <-- add useRef
+import React, { useState, useEffect } from "react";
+import TopHeader       from "./components/TopHeader";
+import SidebarLayout   from "./components/SidebarLayout";
+import RightPanel      from "./components/RightPanel";
+import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
-import TopHeader from "./components/TopHeader";
-import SidebarLayout from "./components/SidebarLayout";
-import RightPanel from "./components/RightPanel";
-import CameraFeedPanel from "./components/CameraFeedPanel"; // ✅ New Component
+import TestSummaryScreen from "./TestSummaryScreen";
 
-const apiurl = "http://localhost:8000/api/test-creation";
+
+const apiurl       = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/test-execution";
-//const testId = 1; // or get it from props, context, or URL
-const session_id = 12345;
+const session_id   = 1234;
+
 const sections = [
   { id: 1, name: "Section 1" },
   { id: 2, name: "Section 2" },
@@ -19,55 +21,73 @@ const sections = [
   { id: 7, name: "Section 7" },
 ];
 
-const SectionPage = () => {
+export default function SectionPage() {
+  // Core UI state
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [completedSections, setCompletedSections] = useState([]);
-  const [fullscreenReady, setFullscreenReady] = useState(false);
-  //const webcamRef = useRef(null); // 👈 shared video ref
+  const [fullscreenReady, setFullscreenReady]     = useState(false);
 
+  // Pallette/Question state (lifted up)
+  const [questions, setQuestions]                 = useState([]);
+  const [currentQuestionId, setCurrentQuestionId] = useState(null);
+  const [answersStatus, setAnswersStatus]         = useState({});
 
+  // Load completedSections from localStorage
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("completedSections")) || [];
+    setCompletedSections(stored);
+  }, []);
+
+  // Fullscreen request/exit handlers
   const requestFullscreen = () => {
     const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
-    }
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     setFullscreenReady(true);
   };
-
   const exitFullscreen = () => {
     const exit =
       document.exitFullscreen ||
       document.webkitExitFullscreen ||
       document.msExitFullscreen;
     if (exit) {
-      exit()
-        .then(() => {
-          setFullscreenReady(false);
-          setSelectedSectionId(null);
-        })
-        .catch(() => {
-          setFullscreenReady(false);
-          setSelectedSectionId(null);
-        });
+      exit().then(() => {
+        setFullscreenReady(false);
+        setSelectedSectionId(null);
+      });
     } else {
       setFullscreenReady(false);
       setSelectedSectionId(null);
     }
   };
 
-  useEffect(() => {
-    const storedCompleted = JSON.parse(localStorage.getItem("completedSections")) || [];
-    setCompletedSections(storedCompleted);
-  }, []);
-
+  // Mark as complete and reset to section list
   const handleSectionComplete = (sectionId) => {
+    // You could append to completedSections here if desired.
     setSelectedSectionId(null);
   };
 
+  // Question palette helpers
+  const updateQuestionStatus = (questionId, status) => {
+    setAnswersStatus((prev) => ({ ...prev, [questionId]: { status } }));
+  };
+  const getColor = (qid) => {
+    const s = answersStatus[qid]?.status;
+    switch (s) {
+      case "answered":           return "#4CAF50";
+      case "reviewed_with_answer": return "#FF9800";
+      case "reviewed":           return "#9C27B0";
+      case "skipped":            return "#F44336";
+      default:                   return "#CFDBE8";
+    }
+  };
+  const handleQuestionClick = (qid) => {
+    setCurrentQuestionId(qid);
+    updateQuestionStatus(qid, "visited");
+  };
+
+  // 1) Section selection screen
   if (!selectedSectionId) {
     return (
       <div className="min-h-screen bg-white text-black">
@@ -75,20 +95,21 @@ const SectionPage = () => {
         <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
           <div className="flex flex-col gap-4">
             <h1 className="text-3xl font-bold text-center">Select a Section</h1>
-            {sections.map((section) => (
+            {sections.map((sec) => (
               <button
-                key={section.id}
+                key={sec.id}
                 onClick={() =>
-                  !completedSections.includes(section.id) &&
-                  setSelectedSectionId(section.id)
+                  !completedSections.includes(sec.id) &&
+                  setSelectedSectionId(sec.id)
                 }
-                className={`px-6 py-3 rounded text-lg border transition ${completedSections.includes(section.id)
+                className={`px-6 py-3 rounded text-lg border transition ${
+                  completedSections.includes(sec.id)
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-black text-white hover:bg-white hover:text-black"
-                  }`}
-                disabled={completedSections.includes(section.id)}
+                }`}
+                disabled={completedSections.includes(sec.id)}
               >
-                {section.name}
+                {sec.name}
               </button>
             ))}
           </div>
@@ -97,6 +118,7 @@ const SectionPage = () => {
     );
   }
 
+  // 2) Fullscreen prompt
   if (!fullscreenReady) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black">
@@ -113,6 +135,7 @@ const SectionPage = () => {
     );
   }
 
+  // 3) Main exam layout
   return (
     <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
       <TopHeader />
@@ -122,12 +145,11 @@ const SectionPage = () => {
           <SidebarLayout
             selectedSectionId={selectedSectionId}
             completedSections={completedSections}
-            onSelectSection={(id) => setSelectedSectionId(id)}
-            //testId={testId}
+            onSelectSection={setSelectedSectionId}
           />
         </div>
 
-        {/* Center Section with Questions */}
+        {/* Center SectionComponent */}
         <div className="flex-1 p-4 overflow-auto relative">
           <button
             className="absolute top-0 left-0 text-sm text-blue-500 underline"
@@ -137,25 +159,39 @@ const SectionPage = () => {
           </button>
           <SectionComponent
             section_id={selectedSectionId}
-           session_id={session_id}
+            session_id={session_id}
             apiurl={apiurl}
             answerApiUrl={answerApiUrl}
             onSectionComplete={handleSectionComplete}
+
+            // Pass lifted state & setters
+            questions={questions}
+            setQuestions={setQuestions}
+            currentQuestionId={currentQuestionId}
+            setCurrentQuestionId={setCurrentQuestionId}
+            answersStatus={answersStatus}
+            setAnswersStatus={setAnswersStatus}
           />
+          <TestSummaryScreen
+    section_id={selectedSectionId}
+            session_id={session_id}
+  />
+
         </div>
 
-        {/* Right Panel with Palette, Timer, and Camera Feed */}
+        {/* Right Panel & Camera */}
         <div className="relative border-l p-4 flex flex-col justify-between">
-          <RightPanel />
+          <RightPanel
+            questions={questions}
+            currentQuestionId={currentQuestionId}
+            onQuestionClick={handleQuestionClick}
+            getColor={getColor}
+          />
           <div className="absolute bottom-4 right-4">
-           <CameraFeedPanel 
-           session_id={session_id}
-            />
+            <CameraFeedPanel session_id={session_id} />
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default SectionPage;
+}
