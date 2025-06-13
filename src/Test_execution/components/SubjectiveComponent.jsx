@@ -1,6 +1,6 @@
 import React,{ useEffect, useState } from 'react';
 
-const SubjectiveComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const SubjectiveComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -23,7 +23,9 @@ const SubjectiveComponent = ({ question, onAnswerUpdate, currentStatus, onNext }
       markedForReview: markForReview,
       status
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 
 export default function InstructionScreen({ onNext, onBack }) {
@@ -18,8 +18,15 @@ export default function InstructionScreen({ onNext, onBack }) {
     },
   ];
   const navigate = useNavigate();
+  const { testId } = useParams();
     const handleAccept = () => {
-      navigate("/permission");
+      if (testId) {
+          navigate(`/Permission/${testId}`);
+            } else {
+                alert("Error: Test ID is missing. Cannot proceed.");
+                console.error("testId is missing from URL parameters in BasicDetails page.");
+            }
+            
     };
     const [userName, setUserName] = useState(null);
        // fetch from your backend
@@ -27,7 +34,7 @@ export default function InstructionScreen({ onNext, onBack }) {
       const id = localStorage.getItem('userId');
       if (!id) return setUserName('Guest');
     
-      fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+      fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
         .then(res => res.json())
         .then(profile => setUserName(profile.name))
         .catch(() => setUserName('Guest'));

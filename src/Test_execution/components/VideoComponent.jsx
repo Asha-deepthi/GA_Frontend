@@ -1,6 +1,6 @@
 import React,{ useEffect, useRef, useState } from 'react';
 
-const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [blobUrl, setBlobUrl] = useState(null);
   const [stream, setStream] = useState(null);
   const videoRef = useRef(null);
@@ -9,7 +9,7 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => 
 
   useEffect(() => {
     setBlobUrl(currentStatus?.answer || null);
-  }, [question.question_id]);
+  }, [question.id]);
 
   const startRecording = async () => {
     const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -43,17 +43,19 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => 
       ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
       : hasAnswer ? 'answered' : 'skipped';
 
-    onAnswerUpdate(question.question_id, {
+    onAnswerUpdate(question.id, {
       answer: hasAnswer ? blobUrl : null,
       markedForReview: markForReview,
       status
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (
     <div className="p-4">
-      <h3 className="text-lg font-semibold mb-4">{question.question}</h3>
+      <h3 className="text-lg font-semibold mb-4">{question.text}</h3>
       <div className="mb-4">
         <video ref={videoRef} autoPlay className="w-full h-64 bg-black" />
       </div>

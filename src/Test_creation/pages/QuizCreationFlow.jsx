@@ -54,7 +54,7 @@ const handleSubmit = async () => {
     console.log("Submitting cleaned quiz data:", finalQuizData);
 
   try {
-    const response = await fetch('http://localhost:8000/api/test_creation/tests/full-create/', {
+    const response = await fetch('http://localhost:8000/api/test-creation/tests/full-create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

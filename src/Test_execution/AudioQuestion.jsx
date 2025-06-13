@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaClock } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useStream } from './StreamContext';
 import { FiRefreshCw } from 'react-icons/fi';
 import { FaMicrophone, FaVideo } from 'react-icons/fa';
@@ -22,13 +22,14 @@ const AudioQuestion = () => {
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
   const navigate = useNavigate();
+  const { testId } = useParams();
 
   // Fetch user name
   useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
 
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
@@ -36,7 +37,7 @@ const AudioQuestion = () => {
 
   // Fetch audio question
   useEffect(() => {
-    fetch("http://localhost:8000/test-execution/demo-questions/")
+    fetch("http://localhost:8000/api/test-execution/demo-questions/")
       .then(response => {
         if (!response.ok) throw new Error("Failed to fetch questions");
         return response.json();
@@ -207,7 +208,7 @@ const AudioQuestion = () => {
     formData.append("audio_file", audioBlob, "response.webm");
 
     try {
-      const response = await fetch("http://localhost:8000/test-execution/upload-audio/", {
+      const response = await fetch("http://localhost:8000/api/test-execution/upload-audio/", {
         method: "POST",
         body: formData,
       });
@@ -220,14 +221,16 @@ const AudioQuestion = () => {
 
       const result = await response.json();
       console.log("Audio uploaded:", result);
-      navigate("/videoquestion");
-    } catch (error) {
-      console.error("Upload error:", error);
+    if (testId) {
+        navigate(`/videoquestion/${testId}`);
+      } else {
+        alert("Error: Test ID is missing. Cannot proceed.");
+        console.error("testId is missing from URL parameters in BasicDetails page.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
     }
   };
-
-  
-
   return (
     <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto pb-24">
       {/* Top Color Bar */}

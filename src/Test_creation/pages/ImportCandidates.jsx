@@ -185,7 +185,7 @@ const ImportCandidates = () => {
     let successfulAssignments = 0;
     const accessToken = sessionStorage.getItem("access_token");
     const assignmentPromises = candidatesToAssign.map(candidate =>
-      fetch(`http://localhost:8000/api/test_creation/assign-test/`, {
+      fetch(`http://localhost:8000/api/test-creation/assign-test/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ test_id: testId, candidate_email: candidate.email })

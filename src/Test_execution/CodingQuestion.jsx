@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useParams } from 'react-router-dom';
 import { useStream } from './StreamContext';
 
 const CodingQuestionScreen = () => {
   const navigate = useNavigate();
+  const { testId } = useParams();
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
 
@@ -18,13 +19,13 @@ const CodingQuestionScreen = () => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
   
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
   }, []);
   useEffect(() => {
-    fetch("http://localhost:8000/test-execution/demo-questions/")
+    fetch("http://localhost:8000/api/test-execution/demo-questions/")
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch questions");
         return res.json();
@@ -121,8 +122,14 @@ const CodingQuestionScreen = () => {
 
   const handleBack = () => navigate("/mcqquestion");
   const handleFullscreen = () => navigate("/fullscreen");
-  const handleSubmit = () => navigate("/result");
-
+  const handleSubmit = () => {
+  if (testId) {
+    navigate(`/sectionpage/${testId}`);
+  } else {
+    alert("Error: Test ID is missing. Cannot proceed.");
+    console.error("testId is missing from URL parameters in BasicDetails page.");
+  }
+};
   const renderBars = (level, color) => (
     <div className="flex items-end gap-1">
       {[1,2,3,4,5].map(n => (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaMicrophone, FaVideo, FaClock, FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useStream } from './StreamContext';
 
 export default function MCQQuestionScreen() {
@@ -10,13 +10,14 @@ export default function MCQQuestionScreen() {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
   
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
   }, []);
   const [progress] = useState([true, true, true, false]);
   const navigate = useNavigate();
+  const { testId } = useParams();
   const { webcamStream } = useStream();
   const videoRef = useRef(null);
 
@@ -27,11 +28,17 @@ export default function MCQQuestionScreen() {
   const [videoLevel, setVideoLevel] = useState(0);
 
   const handleBack = () => navigate("/videoquestion");
-  const handleSubmit = () => navigate("/codingquestion");
-
+  const handleSubmit = () => {
+  if (testId) {
+    navigate(`/codingquestion/${testId}`);
+  } else {
+    alert("Error: Test ID is missing. Cannot proceed.");
+    console.error("testId is missing from URL parameters in BasicDetails page.");
+  }
+};
   // Fetch MCQ question
   useEffect(() => {
-    fetch("http://localhost:8000/test-execution/demo-questions/")
+    fetch("http://localhost:8000/api/test-execution/demo-questions/")
       .then(res => res.ok ? res.json() : Promise.reject("Fetch failed"))
       .then(data => {
         const mcq = data.find(q => q.question_type === "mcq");

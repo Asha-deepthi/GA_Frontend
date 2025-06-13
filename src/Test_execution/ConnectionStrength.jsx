@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaQuestionCircle } from 'react-icons/fa';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams} from "react-router-dom";
 
 export default function ConnectionStrengthScreen() {
   const navigate = useNavigate();
+  const { testId } = useParams();
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [userName, setUserName] = useState(null);
@@ -12,7 +13,7 @@ export default function ConnectionStrengthScreen() {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
 
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
@@ -167,13 +168,19 @@ export default function ConnectionStrengthScreen() {
       />
     ));
   };
-  const handleAccept = () => navigate('/demoquestion');
   const data = [
     { title: 'Your camera is ready to record.', subtitle: 'Ensure you have good lighting for a clear video.' },
     { title: 'Your microphone is working properly.', subtitle: 'Make sure your surroundings are quiet to capture clear audio.' },
     { title: 'Your internet connection is stable.', subtitle: 'A strong connection ensures a smooth interview experience.' }
   ];
-
+  const handleAccept = () => {
+    if (testId) {
+                navigate(`/demoquestion/${testId}`);
+            } else {
+                alert("Error: Test ID is missing. Cannot proceed.");
+                console.error("testId is missing from URL parameters in BasicDetails page.");
+            }
+  };
   return (
     <div className="relative w-screen h-screen bg-white overflow-auto font-overpass">
       <div className="sticky top-0 w-full flex h-1 z-10">

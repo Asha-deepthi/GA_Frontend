@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const AudioComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const AudioComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [blobUrl, setBlobUrl] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -43,7 +43,9 @@ const AudioComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => 
       markedForReview: markForReview,
       status
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (

@@ -24,7 +24,7 @@ const SendInvitations = () => {
         setIsLoading(true);
         const accessToken = sessionStorage.getItem("access_token");
         try {
-            const response = await fetch(`http://localhost:8000/api/test_creation/tests/${testId}/assigned-candidates/`, {
+            const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/assigned-candidates/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
             if (!response.ok) throw new Error("Failed to fetch candidates.");
@@ -46,7 +46,7 @@ const SendInvitations = () => {
         setIsSending(true);
         const accessToken = sessionStorage.getItem("access_token");
         try {
-            const response = await fetch(`http://localhost:8000/api/test_creation/send-invitations/`, {
+            const response = await fetch(`http://localhost:8000/api/test-creation/send-invitations/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
                 body: JSON.stringify({ test_id: testId, message: invitationMessage })
@@ -126,7 +126,6 @@ const SendInvitations = () => {
                                 <span>Name</span>
                                 <span>Email</span>
                                 <span>Phone Number</span>
-                                <span>Skills</span>
                                 <span>Invitation Status</span>
                             </div>
 {isLoading ? <p>Loading...</p> : candidates.map(assignment => (
@@ -134,6 +133,7 @@ const SendInvitations = () => {
         {/* Access name and email from the nested candidate object */}
         <span>{assignment.candidate.name}</span>
         <span>{assignment.candidate.email}</span>
+        <span>{assignment.candidate.phone || 'N/A'}</span>
         <span className={`status-pill ${assignment.status.toLowerCase()}`}>{assignment.status}</span>
     </div>
 ))}

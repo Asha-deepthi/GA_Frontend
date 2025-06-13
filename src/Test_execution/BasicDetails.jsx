@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useParams } from 'react-router-dom';
+
 const FormPage = () => {
   const navigate = useNavigate();
+  const { testId } = useParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -11,7 +13,7 @@ const FormPage = () => {
     console.log('Form submitted');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/test-execution/submit-details/', {
+      const response = await fetch('http://127.0.0.1:8000/api/test-execution/submit-details/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,23 +26,38 @@ const FormPage = () => {
       });
 
       const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('userId', data.id);
-        localStorage.setItem('userName', data.name)
-        alert('Details submitted successfully!');
-        navigate('/tutorialscreen');
-        setName('');
-        setEmail('');
-        setPhone('');
-      } else {
-        alert('Error: ' + JSON.stringify(data));
-      }
-    } catch (error) {
-      console.error('Error submitting details:', error);
-      alert('Something went wrong!');
-    }
-  };
+       if (response.ok) {
+            // This block runs ONLY if the submission was successful
+            localStorage.setItem('userId', data.id);
+            localStorage.setItem('userName', data.name);
+            alert('Details submitted successfully!');
+            
+            // Clear the form fields after successful submission
+            setName('');
+            setEmail('');
+            setPhone('');
 
+            // Now, navigate to the next page
+            if (testId) {
+                navigate(`/tutorialscreen/${testId}`);
+            } else {
+                alert("Error: Test ID is missing. Cannot proceed.");
+                console.error("testId is missing from URL parameters in BasicDetails page.");
+            }
+            
+        } else {
+            // This block runs ONLY if the submission failed
+            // The backend error message is often in data.detail or data.error
+            const errorMessage = Object.values(data).join('\n');
+            alert('Error: ' + errorMessage);
+        }
+        // --- END OF CORRECTED LOGIC ---
+
+    } catch (error) {
+        console.error('Error submitting details:', error);
+        alert('An unexpected error occurred. Please try again.');
+    }
+};
   return (
     <div className="w-screen h-screen overflow-auto bg-white">
       {/* Top color bar */}

@@ -1,48 +1,51 @@
-import React,{ useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext }) => {
+const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(currentStatus?.answer || '');
 
   useEffect(() => {
-    // Set the answer if returning to a previously answered question
     setSelectedAnswer(currentStatus?.answer || '');
-  }, [question.question_id]);
+  }, [question.id, currentStatus?.answer]);
 
   const handleOptionClick = (option) => {
-    setSelectedAnswer((prev) => (prev === option ? '' : option));
+    setSelectedAnswer((prev) => (prev === option.id ? '' : option.id));
   };
 
   const handleSaveAndNext = () => {
-    onAnswerUpdate(question.question_id, {
+    onAnswerUpdate(question.id, {
       answer: selectedAnswer,
       markedForReview: false,
     });
-    if (onNext) onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   const handleMarkForReview = () => {
-    onAnswerUpdate(question.question_id, {
+    onAnswerUpdate(question.id, {
       answer: selectedAnswer,
       markedForReview: true,
     });
-    if (onNext) onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (
     <div>
-      <p className="mb-4 font-semibold">{question.question}</p>
+      <p className="mb-4 font-semibold">{question.text}</p>
       <div className="flex flex-col gap-2">
         {question.options.map((opt, index) => (
           <div
-            key={index}
+            key={opt.id || index}
             onClick={() => handleOptionClick(opt)}
             className={`border rounded px-4 py-2 cursor-pointer transition ${
-              selectedAnswer === opt
+              selectedAnswer === opt.id
                 ? 'bg-blue-500 text-white'
                 : 'bg-white hover:bg-gray-100'
             }`}
           >
-            {opt}
+            {opt.text}
           </div>
         ))}
       </div>
@@ -64,5 +67,4 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
     </div>
   );
 };
-
 export default MultipleChoiceComponent;

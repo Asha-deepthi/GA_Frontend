@@ -1,5 +1,5 @@
 import React,{ useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FaQuestionCircle } from "react-icons/fa";
 import { useStream } from './StreamContext';  // Your custom context hook
 
@@ -10,7 +10,7 @@ export default function PermissionScreen() {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
   
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
@@ -19,6 +19,7 @@ export default function PermissionScreen() {
   const [mic, setMic] = useState(false);
   const [screen, setScreen] = useState(false);
   const navigate = useNavigate();
+  const { testId } = useParams();
   const { requestWebcamAndMic, setWebcamStream } = useStream();
 
   const requestPermission = async (type) => {
@@ -72,7 +73,11 @@ export default function PermissionScreen() {
 
   const handleNext = () => {
     if (webcam && mic && screen) {
-      navigate('/connectionstrength');
+            if (testId) {
+        navigate(`/connectionstrength/${testId}`);
+      } else {
+        alert("Error: Test ID is missing. Cannot proceed.");
+      }
     } else {
       alert('Please grant all permissions before proceeding.');
     }

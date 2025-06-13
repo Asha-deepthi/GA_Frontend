@@ -4,6 +4,8 @@ import { Routes, Route } from 'react-router-dom';
 import SignupPage from "./Test_creation/pages/signup";
 import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
+/*import Positions from "./Test_creation/pages/tests";
+import JobImportForm from "./Test_creation/pages/importform";*/
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import QuizPreview from "./Test_creation/pages/QuizPreview";
 import QuizSettings from "./Test_creation/pages/QuizSettings";
@@ -28,6 +30,14 @@ import DemoQuestion from './Test_execution/DemoQuestion';
 import ResultScreen from './Test_execution/ResultScreen';
 import CandidateEvaluation from './Test_execution/CandidateEvaluation';
 import Test_CandidatePage from './Test_execution/Test_CandidatePage';
+import Popupalert_1 from './Test_execution/TabSwitchAlert';
+import Popupalert_2 from './Test_execution/CameraOffAlert';
+import Popupalert_3 from './Test_execution/LowNetworkAlert';
+import Popupalert_4 from './Test_execution/AudioAlert';
+import Popupalert_5 from './Test_execution/VideoAlert';
+import TestSubmission from './Test_execution/TestSubmission';
+import Timeupscreen from './Test_execution/TimeupScreen';
+import TestSummaryScreen from './Test_execution/TestSummaryScreen';
 
 function App() {
   return (
@@ -49,6 +59,8 @@ function App() {
         </PrivateRoute>
         }
       />
+    {/*<Route path="/tests" element={<Positions />} />
+     <Route path="/interviewquestions" element={<InterviewQuestions />} />*/}
       <Route
         path="/dashboard"
         element={
@@ -57,22 +69,26 @@ function App() {
           </PrivateRoute>
         }
       />
-        <Route path="/instructionscreen:testId" element={<InstructionScreen />} />
-        <Route path="/tutorialscreen" element={<TutorialScreen />} />
-        <Route path="/connectionstrength" element={<ConnectionStrength />} />
-        <Route path="/videoquestion" element={<VideoQuestion />} />
-        <Route path="/codingquestion" element={<CodingQuestion />} />
-        <Route path="/mcqquestion" element={<McqQuestion />} />
+        <Route path="/instructionscreen/:testId" element={<InstructionScreen />} />
+        <Route path="/tutorialscreen/:testId" element={<TutorialScreen />} />
+        <Route path="/connectionstrength/:testId" element={<ConnectionStrength />} />
+        <Route path="/videoquestion/:testId" element={<VideoQuestion />} />
+        <Route path="/codingquestion/:testId" element={<CodingQuestion />} />
+        <Route path="/mcqquestion/:testId" element={<McqQuestion />} />
         <Route path="/fullscreen" element={<FullScreen />} />
         <Route path="/welcome/:testId" element={<WelcomeScreen />} />
-        <Route path="/basic-details" element={<BasicDetails />} />
-        <Route path="/permission" element={<PermissionScreen />} />
-        <Route path="/audioquestion" element={<AudioQuestion />} />
-        <Route path="/demoquestion" element={<DemoQuestion />} />
+        <Route path="/basic-details/:testId" element={<BasicDetails />} />
+        <Route path="/permission/:testId" element={<PermissionScreen />} />
+        <Route path="/audioquestion/:testId" element={<AudioQuestion />} />
+        <Route path="/demoquestion/:testId" element={<DemoQuestion />} />
         <Route path="/result" element={<ResultScreen />} />
-        <Route path="/sectionpage" element={<SectionPage />} />
+        <Route path="/sectionpage/:testId" element={<SectionPage />} />
         <Route path="/evaluation" element={<CandidateEvaluation />} />
         <Route path="/test-candidates" element={<Test_CandidatePage />} />
+        <Route path="/popup" element={<Popupalert_5 />} />
+        <Route path="/submission" element={<TestSubmission/>}/>
+        <Route path="/timeupscreen" element={<Timeupscreen/>}/>
+        <Route path="/summaryscreen" element={<TestSummaryScreen/>}/>
       </Routes>
     </StreamProvider>
   );

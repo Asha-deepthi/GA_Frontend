@@ -10,7 +10,7 @@ const Header = () => {
   // Define nav items and their target paths
   const navItems = [
     { label: "Dashboard", path: "/dashboard", width: "w-[74px]" },
-    { label: "Tests", path: "/tets", width: "w-[37px]" },
+    { label: "Tests", path: "/tests", width: "w-[37px]" },
     { label: "Candidates", path: "/candidates", width: "w-[77px]" },
     { label: "Create test", path: "/importform", width: "w-[78px]" },
   ];

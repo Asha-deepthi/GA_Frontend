@@ -4,7 +4,8 @@ const FillInTheBlankComponent = ({
   question, 
   onAnswerUpdate, 
   currentStatus,
-  onNext
+  onNext,
+  isLast
 }) => {
   const [answer, setAnswer] = useState('');
 
@@ -15,7 +16,7 @@ const FillInTheBlankComponent = ({
     } else {
       setAnswer('');
     }
-  }, [question.question_id]);
+  }, [question.id]);
 
   const handleAction = async (markForReview = false) => {
     const trimmedAnswer = answer.trim();
@@ -26,17 +27,19 @@ const FillInTheBlankComponent = ({
       : hasAnswer ? 'answered' : 'skipped';
 
     // Notify parent with updated answer and status
-    onAnswerUpdate(question.question_id, {
+    onAnswerUpdate(question.id, {
       answer: hasAnswer ? trimmedAnswer : null,
       markedForReview: markForReview,
       status,
     });
-    onNext();
+    if (!isLast && onNext){
+       onNext();
+      }
   };
 
   return (
     <div className="p-4">
-      <h3 className="mb-2 font-semibold">{question.question}</h3>
+      <h3 className="mb-2 font-semibold">{question.text}</h3>
       <input
         type="text"
         className="border p-2 rounded w-full mb-4"

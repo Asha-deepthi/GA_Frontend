@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useStream } from './StreamContext';
 import { FaMicrophone, FaVideo } from 'react-icons/fa';
 import { FiRefreshCw } from 'react-icons/fi';
@@ -20,19 +20,20 @@ const DemoQuestion = () => {
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [audioBlob, setAudioBlob] = useState(null);
+  const { testId } = useParams();
      // fetch from your backend
-    useEffect(() => {
+useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
-  
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/test-execution/demo-questions/")
+    fetch("http://localhost:8000/api/test-execution/demo-questions/")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch video question.");
         return res.json();
@@ -102,7 +103,7 @@ const DemoQuestion = () => {
     formData.append("demo_audio_file", audioBlob, "response.webm");
 
     try {
-      const response = await fetch("http://localhost:8000/test-execution/upload-demo-audio/", {
+      const response = await fetch("http://localhost:8000/api/test-execution/upload-demo-audio/", {
         method: "POST",
         body: formData,
       });
@@ -115,13 +116,19 @@ const DemoQuestion = () => {
 
       const result = await response.json();
       console.log("Audio uploaded:", result);
-      navigate("/audioquestion");
-    } catch (error) {
-      console.error("Upload error:", error);
+
+      if (testId) {
+        navigate(`/audioquestion/${testId}`);
+      } else {
+        alert("Error: Test ID is missing. Cannot proceed.");
+        console.error("testId is missing from URL parameters in BasicDetails page.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
     }
   };
 
-  // Webcam setup
+  // ✅ Moved outside handleAccept — Webcam setup
   useEffect(() => {
     if (webcamStream && videoRef.current) {
       let active = true;
@@ -138,7 +145,7 @@ const DemoQuestion = () => {
     }
   }, [webcamStream]);
 
-  // Video strength analyzer
+  // ✅ Moved outside handleAccept — Video strength analyzer
   useEffect(() => {
     if (!webcamStream) return;
 
@@ -176,7 +183,7 @@ const DemoQuestion = () => {
     return () => cancelAnimationFrame(videoAnimationFrameId);
   }, [webcamStream]);
 
-  // Mic strength analyzer
+  // ✅ Moved outside handleAccept — Mic strength analyzer
   useEffect(() => {
     if (!micStream) return;
 

@@ -1,12 +1,25 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from "react-icons/fa";
+import { useParams } from 'react-router-dom';
 
 const WelcomeScreen = () => {
-  const navigate = useNavigate();
-  const handleAccept = () => {
-    navigate("/basic-details");
-  };
+    const navigate = useNavigate();
+    
+    // --- FIX 2: Get the testId from this page's URL ---
+    // This works because your App.jsx has the route: /welcome/:testId
+    const { testId } = useParams();
+
+    const handleAccept = () => {
+        // --- FIX 3: Include the testId when navigating to the next page ---
+        if (testId) {
+            navigate(`/basic-details/${testId}`);
+        } else {
+            // This is a safety check in case the URL is wrong
+            alert("Error: Test ID is missing. Cannot proceed.");
+            console.error("testId is missing from URL parameters in WelcomeScreen.");
+        }
+    };
   return (
     <div className="w-screen min-h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
       {/* Top Color Bar */}

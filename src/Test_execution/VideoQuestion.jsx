@@ -7,7 +7,7 @@ import {
   FaRedo,
   FaStop,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useStream } from "./StreamContext";
 
 const VideoQuestion = () => {
@@ -17,7 +17,7 @@ const VideoQuestion = () => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
   
-    fetch(`http://127.0.0.1:8000/test-execution/get-user/${id}/`)
+    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
@@ -34,6 +34,7 @@ const VideoQuestion = () => {
   const [loading, setLoading] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
   const [videoLevel, setVideoLevel] = useState(0);
+    const { testId } = useParams();
 
   const handleBack = () => navigate("/audioquestion");
   const handleSubmit = async () => {
@@ -47,7 +48,7 @@ const VideoQuestion = () => {
   formData.append("video", recordedBlob, "recorded-video.webm");
 
   try {
-    const response = await fetch("http://localhost:8000/test-execution/upload-video/", {
+    const response = await fetch("http://localhost:8000/api/test-execution/upload-video/", {
       method: "POST",
       body: formData,
     });
@@ -59,15 +60,19 @@ const VideoQuestion = () => {
     }
 
     console.log("Video uploaded successfully.");
-    navigate("/mcqquestion");
-  } catch (error) {
-    console.error("Video upload failed:", error);
-    alert("Upload failed. Please try again.");
-  }
+   if (testId) {
+        navigate(`/mcqquestion/${testId}`);
+      } else {
+        alert("Error: Test ID is missing. Cannot proceed.");
+        console.error("testId is missing from URL parameters in BasicDetails page.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+    } 
 };
 
   useEffect(() => {
-    fetch("http://localhost:8000/test-execution/demo-questions/")
+    fetch("http://localhost:8000/api/test-execution/demo-questions/")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch video question.");
         return res.json();
