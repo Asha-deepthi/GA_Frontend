@@ -10,7 +10,7 @@ function debounce(func, delay) {
 
 const requiresManualEvaluation = (type) => {
   const lower = (type || "").toLowerCase();
-  return ["subjective", "audio", "video"].includes(lower);
+  return ["subjective", "audio", "video","text"].includes(lower);
 };
 
 const groupBySection = (questions) => {
@@ -85,8 +85,8 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
   const renderAnswer = (q) => {
     const answer = q.answer || {};
     switch ((q.type || "").toLowerCase()) {
-      case "mcq":
-      case "fillintheblank":
+      case "multiple-choice":
+      case "fill-in-blanks":
       case "integer":
       case "subjective":
       case "text":

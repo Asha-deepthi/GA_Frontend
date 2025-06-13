@@ -15,6 +15,7 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
     onAnswerUpdate(question.id, {
       answer: selectedAnswer,
       markedForReview: false,
+      type: question.type,
     });
     if (!isLast && onNext){
        onNext();
@@ -25,6 +26,7 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
     onAnswerUpdate(question.id, {
       answer: selectedAnswer,
       markedForReview: true,
+      type: question.type,
     });
     if (!isLast && onNext){
        onNext();
