@@ -8,7 +8,7 @@ const LowNetworkAlert = ({ onDismiss}) => {
           {/* Icon */}
           <div className="w-[92px] h-[92px] rounded-full bg-[#00A3981A] flex items-center justify-center">
             <img
-              src="images/lownet.png"
+              src="/images/lownet.png"
               alt="low net"
               className="w-[48px] h-[48px] object-contain"
             />

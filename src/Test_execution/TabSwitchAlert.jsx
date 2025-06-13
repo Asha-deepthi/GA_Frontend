@@ -8,7 +8,7 @@ const TabSwitchAlert = ({ onDismiss ,onContinue}) => {
           {/* Icon */}
           <div className="w-[92px] h-[92px] rounded-full bg-[#00A3981A] flex items-center justify-center">
             <img
-              src="images/tabswitch.png"
+              src="/images/tabswitch.png"
               alt="No tab switch"
               className="w-[48px] h-[48px] object-contain"
             />

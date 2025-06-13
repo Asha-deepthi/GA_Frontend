@@ -122,19 +122,19 @@ export default function PermissionScreen() {
         <div className="flex flex-col gap-[30px] w-full max-w-[600px] mx-auto">
           <PermissionToggle
             label="Grant permission to WebCam"
-            image="images/Webcam.png"
+            image="/images/Webcam.png"
             checked={webcam}
             onChange={() => toggleSwitch('webcam')}
           />
           <PermissionToggle
             label="Grant permission to Microphone"
-            image="images/Microphone.png"
+            image="/images/Microphone.png"
             checked={mic}
             onChange={() => toggleSwitch('mic')}
           />
           <PermissionToggle
             label="Grant Permission for Entire Screen Share"
-            image="images/Screenshare.png"
+            image="/images/Screenshare.png"
             checked={screen}
             onChange={() => toggleSwitch('screen')}
           />
