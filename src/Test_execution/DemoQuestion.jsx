@@ -118,7 +118,7 @@ useEffect(() => {
       console.log("Audio uploaded:", result);
 
       if (testId) {
-        navigate(`/audioquestion/${testId}`);
+        navigate(`/instructionscreen/${testId}`);
       } else {
         alert("Error: Test ID is missing. Cannot proceed.");
         console.error("testId is missing from URL parameters in BasicDetails page.");
