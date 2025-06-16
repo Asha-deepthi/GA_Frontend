@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import TopHeader       from "./components/TopHeader";
-import SidebarLayout   from "./components/SidebarLayout";
-import RightPanel      from "./components/RightPanel";
+import TopHeader from "./components/TopHeader";
+import SidebarLayout from "./components/SidebarLayout";
+import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
-import TestSummaryScreen from "./TestSummaryScreen";
+//import TestSummaryScreen from "./TestSummaryScreen";
 
-const apiurl       = "http://localhost:8000/api/test-creation";
+const apiurl = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
-const session_id   = 123333;
+const session_id = 123333;
 
 const sections = [
   { id: 1, name: "Section 1" },
@@ -24,15 +24,15 @@ export default function SectionPage() {
   // Core UI state
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [completedSections, setCompletedSections] = useState([]);
-  const [fullscreenReady, setFullscreenReady]     = useState(false);
-const [stopTimer, setStopTimer] = useState(false);
-const [initialSeconds, setInitialSeconds] = useState(null);
-const [timeLeft, setTimeLeft] = useState(null);
+  const [fullscreenReady, setFullscreenReady] = useState(false);
+  const [stopTimer, setStopTimer] = useState(false);
+  const [initialSeconds, setInitialSeconds] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   // Pallette/Question state (lifted up)
-  const [questions, setQuestions]                 = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
-  const [answersStatus, setAnswersStatus]         = useState({});
+  const [answersStatus, setAnswersStatus] = useState({});
 
   // Load completedSections from localStorage
   useEffect(() => {
@@ -65,85 +65,93 @@ const [timeLeft, setTimeLeft] = useState(null);
   };
 
   useEffect(() => {
-  if (!selectedSectionId) return;
+    if (!selectedSectionId) return;
 
-  const fetchTimer = async () => {
-    try {
-      const res = await fetch(`${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`);
-      if (!res.ok) throw new Error(`404 or server error`);
-      const data = await res.json();
-      console.log("Fetched timer from backend:", data);
+    const fetchTimer = async () => {
+      try {
+        const res = await fetch(`${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`);
+        if (!res.ok) throw new Error(`404 or server error`);
+        const data = await res.json();
+        console.log("Fetching timer with session_id:", session_id, "section_id:", selectedSectionId);
+        console.log("Fetched timer from backend:", data);
 
-      const remaining_time = data.remaining_time;
+        const remaining_time = data.remaining_time;
 
-      // If remaining_time is in HH:MM:SS string format, convert it
-      const parsedTime = typeof remaining_time === "string"
-        ? toSeconds(remaining_time)
-        : remaining_time;
+        // If remaining_time is in HH:MM:SS string format, convert it
+        const parsedTime = typeof remaining_time === "string"
+          ? toSeconds(remaining_time)
+          : remaining_time;
 
-      setInitialSeconds(parsedTime ?? 600);
-    } catch (err) {
-      console.error("Failed to fetch timer:", err);
+        setInitialSeconds(parsedTime ?? 600);
+      } catch (err) {
+        console.error("Failed to fetch timer:", err);
 
-      // If no timer in backend, fallback to localStorage or default
-      const local = localStorage.getItem(`timer_${selectedSectionId}`);
+        // If no timer in backend, fallback to localStorage or default
+        const local = localStorage.getItem(`timer_${selectedSectionId}`);
 
-      const fallbackSection = sections.find((s) => s.id === selectedSectionId);
-      const fallbackTimeMinutes = fallbackSection?.time_limit ?? 10;
+        const fallbackSection = sections.find((s) => s.id === selectedSectionId);
+        const fallbackTimeMinutes = fallbackSection?.time_limit ?? 10;
 
-      setInitialSeconds(local ? parseInt(local) : fallbackTimeMinutes * 60);
-    }
-  };
-
-  fetchTimer();
-}, [selectedSectionId]);
-
-
-useEffect(() => {
-  if (timeLeft === null || timeLeft <= 0) return;
-
-  const timerId = setInterval(() => {
-    setTimeLeft((prev) => {
-      const next = prev - 1;
-      console.log(`Saving time for section ${selectedSectionId}: ${next}s left`);
-      localStorage.setItem(`timer_${selectedSectionId}`, next);
-
-      if (next % 10 === 0) {
-        fetch(`${apiurl}/save-timer/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            session_id,
-            section_id: selectedSectionId,
-            remaining_time: next,
-          }),
-        }).catch((err) => console.error("Failed to save timer:", err));
+        setInitialSeconds(local ? parseInt(local) : fallbackTimeMinutes * 60);
       }
+    };
 
-      return next;
-    });
-  }, 1000);
-
-  return () => clearInterval(timerId);
-}, [timeLeft, selectedSectionId]);
+    fetchTimer();
+  }, [selectedSectionId]);
 
 
-useEffect(() => {
-  if (initialSeconds !== null) {
-    setTimeLeft(initialSeconds);
-  }
-}, [initialSeconds]);
-useEffect(() => {
-  if (selectedSectionId) {
-    setStopTimer(false);
-  }
-}, [selectedSectionId]);
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0 || stopTimer) return;
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => {
+        const next = prev - 1;
+
+        if (next <= 0) {
+          setStopTimer(true);
+          localStorage.setItem(`timer_${selectedSectionId}`, 0);
+          return 0;
+        }
+
+        localStorage.setItem(`timer_${selectedSectionId}`, next);
+
+        if (next % 10 === 0) {
+          fetch(`${apiurl}/save-timer/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id,
+              section_id: selectedSectionId,
+              remaining_time: next,
+            }),
+          }).catch((err) => console.error("Failed to save timer:", err));
+        }
+
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [timeLeft, selectedSectionId, stopTimer]);
+
+
+  useEffect(() => {
+    if (initialSeconds !== null) {
+      setTimeLeft(initialSeconds);
+    }
+  }, [initialSeconds]);
+  useEffect(() => {
+    // Only reset if not already completed
+if (selectedSectionId && !stopTimer) {
+  setStopTimer(false);
+}
+  }, [selectedSectionId]);
 
   // Mark as complete and reset to section list
   const handleSectionComplete = (sectionId) => {
     // You could append to completedSections here if desired.
     setSelectedSectionId(null);
-    setStopTimer(true); 
+    setStopTimer(true);
   };
 
   // Question palette helpers
@@ -153,11 +161,11 @@ useEffect(() => {
   const getColor = (qid) => {
     const s = answersStatus[qid]?.status;
     switch (s) {
-      case "answered":           return "#4CAF50";
+      case "answered": return "#4CAF50";
       case "reviewed_with_answer": return "#FF9800";
-      case "reviewed":           return "#9C27B0";
-      case "skipped":            return "#F44336";
-      default:                   return "#CFDBE8";
+      case "reviewed": return "#9C27B0";
+      case "skipped": return "#F44336";
+      default: return "#CFDBE8";
     }
   };
   const handleQuestionClick = (qid) => {
@@ -180,11 +188,10 @@ useEffect(() => {
                   !completedSections.includes(sec.id) &&
                   setSelectedSectionId(sec.id)
                 }
-                className={`px-6 py-3 rounded text-lg border transition ${
-                  completedSections.includes(sec.id)
+                className={`px-6 py-3 rounded text-lg border transition ${completedSections.includes(sec.id)
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-black text-white hover:bg-white hover:text-black"
-                }`}
+                  }`}
                 disabled={completedSections.includes(sec.id)}
               >
                 {sec.name}
@@ -228,27 +235,33 @@ useEffect(() => {
         </div>
 
         {/* Center SectionComponent */}
-        <div className="flex-1 p-4 overflow-auto relative">
-          <SectionComponent
-            section_id={selectedSectionId}
-            session_id={session_id}
-            apiurl={apiurl}
-            answerApiUrl={answerApiUrl}
-            onSectionComplete={handleSectionComplete}
+<div className="flex-1 p-4 overflow-auto relative">
+  {/* Commenting out summary screen for now */}
+  {/* 
+  {stopTimer ? (
+    <TestSummaryScreen
+      section_id={selectedSectionId}
+      session_id={session_id}
+    />
+  ) : ( 
+  */}
+    <SectionComponent
+      section_id={selectedSectionId}
+      session_id={session_id}
+      apiurl={apiurl}
+      answerApiUrl={answerApiUrl}
+      onSectionComplete={handleSectionComplete}
+      questions={questions}
+      setQuestions={setQuestions}
+      currentQuestionId={currentQuestionId}
+      setCurrentQuestionId={setCurrentQuestionId}
+      answersStatus={answersStatus}
+      setAnswersStatus={setAnswersStatus}
+    />
+  {/* )} */}
+</div>
 
-            // Pass lifted state & setters
-            questions={questions}
-            setQuestions={setQuestions}
-            currentQuestionId={currentQuestionId}
-            setCurrentQuestionId={setCurrentQuestionId}
-            answersStatus={answersStatus}
-            setAnswersStatus={setAnswersStatus}
-          />
-          <TestSummaryScreen
-    section_id={selectedSectionId}
-            session_id={session_id}
-  />
-        </div>
+
 
         {/* Right Panel & Camera */}
         <div className="relative border-l p-4 flex flex-col justify-between">
