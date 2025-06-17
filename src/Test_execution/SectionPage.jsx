@@ -1,27 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import TopHeader from "./components/TopHeader";
 import SidebarLayout from "./components/SidebarLayout";
 import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
-//import TestSummaryScreen from "./TestSummaryScreen";
+// import TestSummaryScreen from "./TestSummaryScreen";
 
 const apiurl = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
 const session_id = 123333;
 
-const sections = [
-  { id: 1, name: "Section 1" },
-  { id: 2, name: "Section 2" },
-  { id: 3, name: "Section 3" },
-  { id: 4, name: "Section 4" },
-  { id: 5, name: "Section 5" },
-  { id: 6, name: "Section 6" },
-  { id: 7, name: "Section 7" },
-];
-
 export default function SectionPage() {
-  // Core UI state
+  const { testId } = useParams();
+
+  const [sections, setSections] = useState([]);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [completedSections, setCompletedSections] = useState([]);
   const [fullscreenReady, setFullscreenReady] = useState(false);
@@ -29,18 +22,34 @@ export default function SectionPage() {
   const [initialSeconds, setInitialSeconds] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
 
-  // Pallette/Question state (lifted up)
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
 
-  // Load completedSections from localStorage
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("completedSections")) || [];
     setCompletedSections(stored);
   }, []);
 
-  // Fullscreen request/exit handlers
+  useEffect(() => {
+    if (!testId) {
+      console.error("Test ID is missing from URL.");
+      return;
+    }
+
+    fetch(`http://localhost:8000/api/test-creation/tests/${testId}/sections/`, {
+      method: "GET",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => setSections(data?.sections || data || []))
+      .catch((err) => console.error("Error fetching sections:", err));
+  }, [testId]);
+
   const requestFullscreen = () => {
     const elem = document.documentElement;
     if (elem.requestFullscreen) elem.requestFullscreen();
@@ -48,6 +57,7 @@ export default function SectionPage() {
     else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     setFullscreenReady(true);
   };
+
   const exitFullscreen = () => {
     const exit =
       document.exitFullscreen ||
@@ -69,36 +79,34 @@ export default function SectionPage() {
 
     const fetchTimer = async () => {
       try {
-        const res = await fetch(`${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`);
+        const res = await fetch(
+          `${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`
+        );
         if (!res.ok) throw new Error(`404 or server error`);
         const data = await res.json();
-        console.log("Fetching timer with session_id:", session_id, "section_id:", selectedSectionId);
-        console.log("Fetched timer from backend:", data);
 
         const remaining_time = data.remaining_time;
 
-        // If remaining_time is in HH:MM:SS string format, convert it
-        const parsedTime = typeof remaining_time === "string"
-          ? toSeconds(remaining_time)
-          : remaining_time;
+        const parsedTime =
+          typeof remaining_time === "string"
+            ? toSeconds(remaining_time)
+            : remaining_time;
 
         setInitialSeconds(parsedTime ?? 600);
       } catch (err) {
         console.error("Failed to fetch timer:", err);
 
-        // If no timer in backend, fallback to localStorage or default
         const local = localStorage.getItem(`timer_${selectedSectionId}`);
 
         const fallbackSection = sections.find((s) => s.id === selectedSectionId);
-        const fallbackTimeMinutes = fallbackSection?.time_limit ?? 10;
+        const fallbackTimeMinutes = fallbackSection?.time_limit || 10;
 
         setInitialSeconds(local ? parseInt(local) : fallbackTimeMinutes * 60);
       }
     };
 
     fetchTimer();
-  }, [selectedSectionId]);
-
+  }, [selectedSectionId, sections]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || stopTimer) return;
@@ -134,46 +142,48 @@ export default function SectionPage() {
     return () => clearInterval(timerId);
   }, [timeLeft, selectedSectionId, stopTimer]);
 
-
   useEffect(() => {
     if (initialSeconds !== null) {
       setTimeLeft(initialSeconds);
     }
   }, [initialSeconds]);
+
   useEffect(() => {
-    // Only reset if not already completed
-if (selectedSectionId && !stopTimer) {
-  setStopTimer(false);
-}
+    if (selectedSectionId && !stopTimer) {
+      setStopTimer(false);
+    }
   }, [selectedSectionId]);
 
-  // Mark as complete and reset to section list
   const handleSectionComplete = (sectionId) => {
-    // You could append to completedSections here if desired.
     setSelectedSectionId(null);
     setStopTimer(true);
   };
 
-  // Question palette helpers
   const updateQuestionStatus = (questionId, status) => {
     setAnswersStatus((prev) => ({ ...prev, [questionId]: { status } }));
   };
+
   const getColor = (qid) => {
     const s = answersStatus[qid]?.status;
     switch (s) {
-      case "answered": return "#4CAF50";
-      case "reviewed_with_answer": return "#FF9800";
-      case "reviewed": return "#9C27B0";
-      case "skipped": return "#F44336";
-      default: return "#CFDBE8";
+      case "answered":
+        return "#4CAF50";
+      case "reviewed_with_answer":
+        return "#FF9800";
+      case "reviewed":
+        return "#9C27B0";
+      case "skipped":
+        return "#F44336";
+      default:
+        return "#CFDBE8";
     }
   };
+
   const handleQuestionClick = (qid) => {
     setCurrentQuestionId(qid);
     updateQuestionStatus(qid, "visited");
   };
 
-  // 1) Section selection screen
   if (!selectedSectionId) {
     return (
       <div className="min-h-screen bg-white text-black">
@@ -181,29 +191,34 @@ if (selectedSectionId && !stopTimer) {
         <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
           <div className="flex flex-col gap-4">
             <h1 className="text-3xl font-bold text-center">Select a Section</h1>
-            {sections.map((sec) => (
-              <button
-                key={sec.id}
-                onClick={() =>
-                  !completedSections.includes(sec.id) &&
-                  setSelectedSectionId(sec.id)
-                }
-                className={`px-6 py-3 rounded text-lg border transition ${completedSections.includes(sec.id)
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-black text-white hover:bg-white hover:text-black"
+
+            {sections.length === 0 ? (
+              <p className="text-gray-500 text-center">Loading sections...</p>
+            ) : (
+              sections.map((sec) => (
+                <button
+                  key={sec.id}
+                  onClick={() =>
+                    !completedSections.includes(sec.id) &&
+                    setSelectedSectionId(sec.id)
+                  }
+                  className={`px-6 py-3 rounded text-lg border transition ${
+                    completedSections.includes(sec.id)
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-black text-white hover:bg-white hover:text-black"
                   }`}
-                disabled={completedSections.includes(sec.id)}
-              >
-                {sec.name}
-              </button>
-            ))}
+                  disabled={completedSections.includes(sec.id)}
+                >
+                  {sec.name || `Section ${sec.id}`}
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // 2) Fullscreen prompt
   if (!fullscreenReady) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black">
@@ -220,12 +235,10 @@ if (selectedSectionId && !stopTimer) {
     );
   }
 
-  // 3) Main exam layout
   return (
     <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
       <TopHeader />
       <div className="flex flex-1">
-        {/* Left Sidebar */}
         <div className="border-r p-4">
           <SidebarLayout
             selectedSectionId={selectedSectionId}
@@ -234,36 +247,22 @@ if (selectedSectionId && !stopTimer) {
           />
         </div>
 
-        {/* Center SectionComponent */}
-<div className="flex-1 p-4 overflow-auto relative">
-  {/* Commenting out summary screen for now */}
-  {/* 
-  {stopTimer ? (
-    <TestSummaryScreen
-      section_id={selectedSectionId}
-      session_id={session_id}
-    />
-  ) : ( 
-  */}
-    <SectionComponent
-      section_id={selectedSectionId}
-      session_id={session_id}
-      apiurl={apiurl}
-      answerApiUrl={answerApiUrl}
-      onSectionComplete={handleSectionComplete}
-      questions={questions}
-      setQuestions={setQuestions}
-      currentQuestionId={currentQuestionId}
-      setCurrentQuestionId={setCurrentQuestionId}
-      answersStatus={answersStatus}
-      setAnswersStatus={setAnswersStatus}
-    />
-  {/* )} */}
-</div>
+        <div className="flex-1 p-4 overflow-auto relative">
+          <SectionComponent
+            section_id={selectedSectionId}
+            session_id={session_id}
+            apiurl={apiurl}
+            answerApiUrl={answerApiUrl}
+            onSectionComplete={handleSectionComplete}
+            questions={questions}
+            setQuestions={setQuestions}
+            currentQuestionId={currentQuestionId}
+            setCurrentQuestionId={setCurrentQuestionId}
+            answersStatus={answersStatus}
+            setAnswersStatus={setAnswersStatus}
+          />
+        </div>
 
-
-
-        {/* Right Panel & Camera */}
         <div className="relative border-l p-4 flex flex-col justify-between">
           <RightPanel
             questions={questions}
@@ -280,4 +279,9 @@ if (selectedSectionId && !stopTimer) {
       </div>
     </div>
   );
+}
+
+function toSeconds(timeStr) {
+  const parts = timeStr.split(":").map(Number);
+  return parts[0] * 3600 + parts[1] * 60 + parts[2];
 }
