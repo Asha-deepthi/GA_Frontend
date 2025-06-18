@@ -18,10 +18,10 @@ export default function InstructionScreen({ onNext, onBack }) {
     },
   ];
   const navigate = useNavigate();
-  const { testId } = useParams();
+  const { testId, candidateId } = useParams();
     const handleAccept = () => {
       if (testId) {
-          navigate(`/sectionpage/${testId}`);
+          navigate(`/sectionpage/${testId}/${candidateId}`);
             } else {
                 alert("Error: Test ID is missing. Cannot proceed.");
                 console.error("testId is missing from URL parameters in BasicDetails page.");

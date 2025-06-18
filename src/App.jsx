@@ -82,7 +82,7 @@ function App() {
         <Route path="/audioquestion/:testId" element={<AudioQuestion />} />
         <Route path="/demoquestion/:testId" element={<DemoQuestion />} />
         <Route path="/result" element={<ResultScreen />} />
-        <Route path="/sectionpage/:testId" element={<SectionPage />} />
+        <Route path="/sectionpage/:testId/:candidateTestId" element={<SectionPage />} />
         <Route path="/evaluation" element={<CandidateEvaluation />} />
         <Route path="/test-candidates" element={<Test_CandidatePage />} />
         <Route path="/popup" element={<Popupalert_5 />} />

@@ -19,7 +19,8 @@ import { useParams } from 'react-router-dom';
 
 export default function SectionComponent({
   section_id,
-  session_id,
+  test_id,
+  candidate_test_id,
   apiurl,
   answerApiUrl,
   onSectionComplete,
@@ -38,12 +39,12 @@ export default function SectionComponent({
   const [showLowAudioAlert, setShowLowAudioAlert] = useState(false);
   const [showLowVideoAlert, setShowLowVideoAlert] = useState(false);
   const [showCameraOffAlert, setShowCameraOffAlert] = useState(false);
-  const { testId } = useParams();
+  //const { testId } = useParams();
   const [loading, setLoading] = useState(true); // Add this line at the top in your component
 
   // Hook for proctoring events & violation count
   const { violationCount, webcamRef } = useProctoring({
-    sessionId: session_id,
+    candidate_test_id: candidate_test_id,
     answerApiUrl,
     onTabSwitch: () => setShowTabSwitchAlert(true),
     onFullscreenExit: () => setShowTabSwitchAlert(true),
@@ -81,11 +82,13 @@ export default function SectionComponent({
   // --- Fetch Section Questions & Saved Answers ---
   useEffect(() => {
     const fetchSectionData = async () => {
-      if (!testId || !section_id) return;
-
+      if (!section_id || !candidate_test_id) {
+    console.warn("Missing section_id or candidate_test_id for fetching section data");
+    return;
+  }
       setLoading(true);
       try {
-        const res = await fetch(`${apiurl}/tests/${testId}/sections/${section_id}/questions/`);
+        const res = await fetch(`${apiurl}/tests/${test_id}/sections/${section_id}/questions/`);
         if (!res.ok) throw new Error('Failed to fetch questions');
 
         const rawData = await res.json();
@@ -120,7 +123,7 @@ export default function SectionComponent({
         }
 
         // ✅ Fetch saved answers
-        const ansRes = await fetch(`${answerApiUrl}/get-answers/?session_id=${session_id}&section_id=${section_id}`);
+        const ansRes = await fetch(`${answerApiUrl}/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section_id}`);
         if (!ansRes.ok) throw new Error('Failed to fetch answers');
         const ansData = await ansRes.json();
 
@@ -149,7 +152,7 @@ export default function SectionComponent({
     };
 
     fetchSectionData();
-  }, [testId, section_id, session_id, apiurl, answerApiUrl, setQuestions, setAnswersStatus, setCurrentQuestionId]);
+  }, [test_id, section_id, apiurl, answerApiUrl, setQuestions, setAnswersStatus, setCurrentQuestionId]);
 
   useEffect(() => {
     if (!currentQuestionId && questions.length > 0) {
@@ -256,7 +259,7 @@ export default function SectionComponent({
     });
 
     const form = new FormData();
-    form.append("session_id", session_id);
+    form.append("candidate_test_id", candidate_test_id);
     form.append("question_id", question_id);
     form.append("question_type", payload.type);
     form.append("section_id", section_id);
@@ -288,7 +291,7 @@ export default function SectionComponent({
       console.log("Submitting question_type:", questionType);
       if (!answersStatus[q.id]?.answer) {
         const form = new FormData();
-        form.append("session_id", session_id);
+        form.append("candidate_test_id", candidate_test_id);
         form.append("question_id", q.id);
         form.append("question_type", q.type || q.question_type || "unknown");
         form.append("section_id", section_id);

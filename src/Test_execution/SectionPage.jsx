@@ -5,15 +5,12 @@ import SidebarLayout from "./components/SidebarLayout";
 import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
-// import TestSummaryScreen from "./TestSummaryScreen";
 
 const apiurl = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
-const session_id = 123333;
 
 export default function SectionPage() {
   const { testId } = useParams();
-
   const [sections, setSections] = useState([]);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [completedSections, setCompletedSections] = useState([]);
@@ -21,92 +18,102 @@ export default function SectionPage() {
   const [stopTimer, setStopTimer] = useState(false);
   const [initialSeconds, setInitialSeconds] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [realCandidateTestId, setRealCandidateTestId] = useState(null);
 
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
 
+  // ✅ New: Fetch candidate_test_id and sections using token
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("completedSections")) || [];
-    setCompletedSections(stored);
-  }, []);
-
-  useEffect(() => {
-    if (!testId) {
-      console.error("Test ID is missing from URL.");
+    const token = sessionStorage.getItem("access_token");
+    if (!testId || !token) {
+      console.warn("Missing testId or token");
       return;
     }
 
-    fetch(`http://localhost:8000/api/test-creation/tests/${testId}/sections/`, {
-      method: "GET",
+    fetch("http://localhost:8000/api/me/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     })
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error("Candidate not found or token expired");
         return res.json();
       })
-      .then((data) => setSections(data?.sections || data || []))
-      .catch((err) => console.error("Error fetching sections:", err));
+      .then((user) => {
+        const candidateId = user.id;
+
+        return fetch(
+          `${apiurl}/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      })
+      .then((res) => {
+        if (!res.ok) throw new Error("Candidate_Test not found");
+        return res.json();
+      })
+      .then((data) => {
+        setRealCandidateTestId(data.id);
+        setSections(data.sections || []);
+        console.log("✅ Candidate_Test loaded:", data.id, data.sections);
+      })
+      .catch((err) => {
+        console.error("❌ Error during authentication or data fetch:", err);
+      });
   }, [testId]);
 
   const requestFullscreen = () => {
     const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.() || elem.msRequestFullscreen?.();
     setFullscreenReady(true);
   };
 
   const exitFullscreen = () => {
-    const exit =
-      document.exitFullscreen ||
-      document.webkitExitFullscreen ||
-      document.msExitFullscreen;
-    if (exit) {
-      exit().then(() => {
+    document.exitFullscreen?.()
+      .then(() => {
+        setFullscreenReady(false);
+        setSelectedSectionId(null);
+      })
+      .catch(() => {
         setFullscreenReady(false);
         setSelectedSectionId(null);
       });
-    } else {
-      setFullscreenReady(false);
-      setSelectedSectionId(null);
-    }
   };
 
   useEffect(() => {
-    if (!selectedSectionId) return;
+    if (!selectedSectionId || !realCandidateTestId) return;
 
     const fetchTimer = async () => {
       try {
         const res = await fetch(
-          `${apiurl}/get-timer/?session_id=${session_id}&section_id=${selectedSectionId}`
+          `${apiurl}/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
         );
-        if (!res.ok) throw new Error(`404 or server error`);
+        if (!res.ok) throw new Error("Timer fetch failed");
         const data = await res.json();
 
-        const remaining_time = data.remaining_time;
-
         const parsedTime =
-          typeof remaining_time === "string"
-            ? toSeconds(remaining_time)
-            : remaining_time;
+          typeof data.remaining_time === "string"
+            ? toSeconds(data.remaining_time)
+            : data.remaining_time;
 
         setInitialSeconds(parsedTime ?? 600);
       } catch (err) {
-        console.error("Failed to fetch timer:", err);
-
-        const local = localStorage.getItem(`timer_${selectedSectionId}`);
-
-        const fallbackSection = sections.find((s) => s.id === selectedSectionId);
-        const fallbackTimeMinutes = fallbackSection?.time_limit || 10;
-
-        setInitialSeconds(local ? parseInt(local) : fallbackTimeMinutes * 60);
+        const fallbackTime = localStorage.getItem(`timer_${selectedSectionId}`);
+        const sectionObj = sections.find((s) => s.id === selectedSectionId);
+        const fallbackMinutes = sectionObj?.time_limit || 10;
+        setInitialSeconds(fallbackTime ? parseInt(fallbackTime) : fallbackMinutes * 60);
       }
     };
 
     fetchTimer();
-  }, [selectedSectionId, sections]);
+  }, [selectedSectionId, realCandidateTestId, sections]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || stopTimer) return;
@@ -114,7 +121,6 @@ export default function SectionPage() {
     const timerId = setInterval(() => {
       setTimeLeft((prev) => {
         const next = prev - 1;
-
         if (next <= 0) {
           setStopTimer(true);
           localStorage.setItem(`timer_${selectedSectionId}`, 0);
@@ -122,61 +128,50 @@ export default function SectionPage() {
         }
 
         localStorage.setItem(`timer_${selectedSectionId}`, next);
-
         if (next % 10 === 0) {
           fetch(`${apiurl}/save-timer/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              session_id,
+              candidate_test_id: realCandidateTestId,
               section_id: selectedSectionId,
               remaining_time: next,
             }),
           }).catch((err) => console.error("Failed to save timer:", err));
         }
-
         return next;
       });
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [timeLeft, selectedSectionId, stopTimer]);
+  }, [timeLeft, selectedSectionId, stopTimer, realCandidateTestId]);
 
   useEffect(() => {
-    if (initialSeconds !== null) {
-      setTimeLeft(initialSeconds);
-    }
+    if (initialSeconds !== null) setTimeLeft(initialSeconds);
   }, [initialSeconds]);
 
   useEffect(() => {
-    if (selectedSectionId && !stopTimer) {
-      setStopTimer(false);
-    }
+    if (selectedSectionId && !stopTimer) setStopTimer(false);
   }, [selectedSectionId]);
 
-  const handleSectionComplete = (sectionId) => {
+  const handleSectionComplete = () => {
+    setCompletedSections((prev) => [...prev, selectedSectionId]);
     setSelectedSectionId(null);
     setStopTimer(true);
   };
 
-  const updateQuestionStatus = (questionId, status) => {
-    setAnswersStatus((prev) => ({ ...prev, [questionId]: { status } }));
+  const updateQuestionStatus = (qid, status) => {
+    setAnswersStatus((prev) => ({ ...prev, [qid]: { status } }));
   };
 
   const getColor = (qid) => {
     const s = answersStatus[qid]?.status;
-    switch (s) {
-      case "answered":
-        return "#4CAF50";
-      case "reviewed_with_answer":
-        return "#FF9800";
-      case "reviewed":
-        return "#9C27B0";
-      case "skipped":
-        return "#F44336";
-      default:
-        return "#CFDBE8";
-    }
+    return {
+      answered: "#4CAF50",
+      reviewed_with_answer: "#FF9800",
+      reviewed: "#9C27B0",
+      skipped: "#F44336",
+    }[s] || "#CFDBE8";
   };
 
   const handleQuestionClick = (qid) => {
@@ -191,7 +186,6 @@ export default function SectionPage() {
         <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
           <div className="flex flex-col gap-4">
             <h1 className="text-3xl font-bold text-center">Select a Section</h1>
-
             {sections.length === 0 ? (
               <p className="text-gray-500 text-center">Loading sections...</p>
             ) : (
@@ -199,8 +193,7 @@ export default function SectionPage() {
                 <button
                   key={sec.id}
                   onClick={() =>
-                    !completedSections.includes(sec.id) &&
-                    setSelectedSectionId(sec.id)
+                    !completedSections.includes(sec.id) && setSelectedSectionId(sec.id)
                   }
                   className={`px-6 py-3 rounded text-lg border transition ${
                     completedSections.includes(sec.id)
@@ -244,13 +237,16 @@ export default function SectionPage() {
             selectedSectionId={selectedSectionId}
             completedSections={completedSections}
             onSelectSection={setSelectedSectionId}
+            candidateTestId={realCandidateTestId}  
+            testId={testId}
           />
         </div>
 
         <div className="flex-1 p-4 overflow-auto relative">
           <SectionComponent
             section_id={selectedSectionId}
-            session_id={session_id}
+            candidate_test_id={realCandidateTestId}
+            test_id={testId}
             apiurl={apiurl}
             answerApiUrl={answerApiUrl}
             onSectionComplete={handleSectionComplete}
@@ -273,7 +269,7 @@ export default function SectionPage() {
             initialSeconds={initialSeconds}
           />
           <div className="absolute bottom-4 right-4">
-            <CameraFeedPanel session_id={session_id} />
+            <CameraFeedPanel />
           </div>
         </div>
       </div>
