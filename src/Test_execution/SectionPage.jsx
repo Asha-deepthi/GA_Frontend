@@ -5,6 +5,7 @@ import SidebarLayout from "./components/SidebarLayout";
 import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
+import { useNavigate } from "react-router-dom";
 
 const apiurl = "http://localhost:8000/api/test-creation";
 const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
@@ -19,9 +20,11 @@ export default function SectionPage() {
   const [initialSeconds, setInitialSeconds] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [realCandidateTestId, setRealCandidateTestId] = useState(null);
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
+  const [testCompleted, setTestCompleted] = useState(false);
 
   // ✅ New: Fetch candidate_test_id and sections using token
   useEffect(() => {
@@ -61,6 +64,8 @@ export default function SectionPage() {
       .then((data) => {
         setRealCandidateTestId(data.id);
         setSections(data.sections || []);
+        const firstSection = data.sections?.[0]?.id;
+        setSelectedSectionId(firstSection || null);
         console.log("✅ Candidate_Test loaded:", data.id, data.sections);
       })
       .catch((err) => {
@@ -155,13 +160,40 @@ export default function SectionPage() {
 
   const handleSectionComplete = () => {
     setCompletedSections((prev) => [...prev, selectedSectionId]);
-    setSelectedSectionId(null);
     setStopTimer(true);
+
+    // Find the index of the completed section
+    const currentIndex = sections.findIndex((sec) => sec.id === selectedSectionId);
+
+    // Find the next uncompleted section
+    const nextSection = sections.slice(currentIndex + 1).find(
+      (sec) => !completedSections.includes(sec.id)
+    );
+
+    if (nextSection) {
+      setSelectedSectionId(nextSection.id);
+    } else {
+      setTestCompleted(true);
+      setSelectedSectionId(null);
+      setStopTimer(true);
+      alert("✅ All sections completed! Submitting test...");
+      // Optionally navigate to a summary page here
+      navigate("/submission");
+    }
   };
 
-  const updateQuestionStatus = (qid, status) => {
-    setAnswersStatus((prev) => ({ ...prev, [qid]: { status } }));
+
+  const updateQuestionStatus = (qid, status, answer = null) => {
+    setAnswersStatus((prev) => ({
+      ...prev,
+      [qid]: {
+        ...prev[qid],
+        status,
+        ...(answer !== null && { answer }), // only overwrite answer if provided
+      },
+    }));
   };
+
 
   const getColor = (qid) => {
     const s = answersStatus[qid]?.status;
@@ -178,54 +210,28 @@ export default function SectionPage() {
     updateQuestionStatus(qid, "visited");
   };
 
-  if (!selectedSectionId) {
+  if (!fullscreenReady) {
     return (
-      <div className="min-h-screen bg-white text-black">
+      <div className="min-h-screen bg-white text-[#00A398]">
         <TopHeader />
         <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
-          <div className="flex flex-col gap-4">
-            <h1 className="text-3xl font-bold text-center">Select a Section</h1>
-            {sections.length === 0 ? (
-              <p className="text-gray-500 text-center">Loading sections...</p>
-            ) : (
-              sections.map((sec) => (
-                <button
-                  key={sec.id}
-                  onClick={() =>
-                    !completedSections.includes(sec.id) && setSelectedSectionId(sec.id)
-                  }
-                  className={`px-6 py-3 rounded text-lg border transition ${
-                    completedSections.includes(sec.id)
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-black text-white hover:bg-white hover:text-black"
-                  }`}
-                  disabled={completedSections.includes(sec.id)}
-                >
-                  {sec.name || `Section ${sec.id}`}
-                </button>
-              ))
-            )}
+          <div className="flex flex-col gap-4 items-center">
+            <h1 className="text-3xl font-bold mb-4">Start Your Test</h1>
+            <button
+              onClick={requestFullscreen}
+              className="px-6 py-3 bg-[#00A398] text-white text-lg rounded-full hover:bg-white hover:text-[#00A398] border border-[#00A398] transition"
+            >
+              Start
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!fullscreenReady) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black">
-        <p className="text-xl font-semibold text-center mb-6">
-          Please enter fullscreen mode before starting the exam.
-        </p>
-        <button
-          className="px-6 py-3 bg-black text-white text-lg rounded hover:bg-white hover:text-black border border-black transition"
-          onClick={requestFullscreen}
-        >
-          🔳 Enter Fullscreen
-        </button>
-      </div>
-    );
-  }
+if (testCompleted) {
+  return null; // 🛑 Prevent UI (including proctoring) from firing again
+}
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
@@ -236,7 +242,7 @@ export default function SectionPage() {
             selectedSectionId={selectedSectionId}
             completedSections={completedSections}
             onSelectSection={setSelectedSectionId}
-            candidateTestId={realCandidateTestId}  
+            candidateTestId={realCandidateTestId}
             testId={testId}
           />
         </div>
@@ -269,12 +275,13 @@ export default function SectionPage() {
           />
           <div className="absolute bottom-4 right-4">
             <CameraFeedPanel
-            candidate_test_id={realCandidateTestId} />
+              candidate_test_id={realCandidateTestId} />
           </div>
         </div>
       </div>
     </div>
   );
+
 }
 
 function toSeconds(timeStr) {

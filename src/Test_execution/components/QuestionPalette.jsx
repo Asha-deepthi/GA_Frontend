@@ -15,7 +15,7 @@ export default function QuestionPalette({
               key={q.id}
               onClick={() => onQuestionClick(q.id)}
               className={`w-10 h-10 rounded border
-                ${isActive ? "ring-2 ring-black" : "border-gray-200"}`}
+                ${isActive ? "ring-2 ring-blue-500" : "border-gray-200"}`}
               style={{ backgroundColor: bg }}
             >
               {q.number}

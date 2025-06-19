@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SectionItem from './SectionItem';
 import { useParams } from 'react-router-dom';
 
-const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId }) => {
+const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId , selectedSectionId,}) => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   //const { testId, candidateId } = useParams();
@@ -49,10 +49,15 @@ const SectionNavigation = ({ onSectionSelect, completedSections, testId, candida
         return (
           <SectionItem
             key={section.section_id}
-            title={section.section_name || `Section ${section.section_id}`}
+            title={
+              isCompleted
+                ? ` ${section.section_name || `Section ${section.section_id}`}`
+                : section.section_name || `Section ${section.section_id}`
+            }
             progress={progress}
             onClick={() => !isCompleted && onSectionSelect(section.section_id)}
             disabled={isCompleted}
+            isActive={selectedSectionId === section.section_id}
           />
         );
       })}
