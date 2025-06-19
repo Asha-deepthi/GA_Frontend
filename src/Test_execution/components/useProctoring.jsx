@@ -9,7 +9,7 @@ const isFullscreenActive = () =>
   );
 
 const useProctoring = ({
-  sessionId,
+  candidate_test_id,
   answerApiUrl,
   onTabSwitch = () => { },
   onFullscreenExit = () => { },
@@ -27,10 +27,10 @@ const useProctoring = ({
 
   const logViolation = useCallback(
     async ({ eventType, remarks = "", confidence = 0.0 }) => {
-      if (!sessionId) return;
+      if (!candidate_test_id) return;
 
       const payload = {
-        session_id: sessionId,
+         candidate_test_id: candidate_test_id,
         event_type: eventType,
         confidence,
         remarks,
@@ -54,7 +54,7 @@ const useProctoring = ({
         console.error("Fetch error:", err);
       }
     },
-    [sessionId, answerApiUrl]
+    [candidate_test_id, answerApiUrl]
   );
 
   const logWithCooldown = (eventType, remarks = "") => {
@@ -72,7 +72,7 @@ const useProctoring = ({
 
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!candidate_test_id) return;
 
     const handleVisibility = () => {
       if (document.visibilityState === "hidden") {
@@ -120,10 +120,10 @@ const useProctoring = ({
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [sessionId, logViolation, onTabSwitch, onFullscreenExit, onLowNetwork]);
+  }, [candidate_test_id, logViolation, onTabSwitch, onFullscreenExit, onLowNetwork]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!candidate_test_id) return;
 
     let audioCheck, videoCheck;
 
@@ -183,7 +183,7 @@ const useProctoring = ({
       clearInterval(audioCheck);
       clearInterval(videoCheck);
     };
-  }, [sessionId, logViolation, onLowAudioQuality, onLowVideoQuality, onCameraOff]);
+  }, [candidate_test_id , logViolation, onLowAudioQuality, onLowVideoQuality, onCameraOff]);
 
   useEffect(() => {
     if (violationCount === 2) {

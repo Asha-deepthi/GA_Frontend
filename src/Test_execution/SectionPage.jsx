@@ -269,7 +269,8 @@ export default function SectionPage() {
             initialSeconds={initialSeconds}
           />
           <div className="absolute bottom-4 right-4">
-            <CameraFeedPanel />
+            <CameraFeedPanel
+            candidate_test_id={realCandidateTestId} />
           </div>
         </div>
       </div>

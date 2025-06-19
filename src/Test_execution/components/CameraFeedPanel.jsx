@@ -19,7 +19,7 @@ const SignalBars = ({ level }) => (
   </div>
 );
 
-const CameraFeedPanel = ({ session_id }) => {
+const CameraFeedPanel = ({ candidate_test_id }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [audioStrength, setAudioStrength] = useState(0.1);
@@ -66,7 +66,7 @@ const CameraFeedPanel = ({ session_id }) => {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (!ready || !videoRef.current || !canvasRef.current || !session_id) return;
+      if (!ready || !videoRef.current || !canvasRef.current || !candidate_test_id) return;
 
       const ctx = canvasRef.current.getContext("2d");
       ctx.drawImage(videoRef.current, 0, 0, 150, 100);
@@ -77,7 +77,7 @@ const CameraFeedPanel = ({ session_id }) => {
       try {
         const blob = await fetch(dataUrl).then((res) => res.blob());
         const formData = new FormData();
-        formData.append("session",session_id);
+        formData.append("candidate_test_id", candidate_test_id);
         formData.append("screenshot", blob, `webcam_${Date.now()}.jpg`);
 
         await fetch("http://127.0.0.1:8000/api/test-execution/proctoring-screenshots/", {
@@ -92,7 +92,7 @@ const CameraFeedPanel = ({ session_id }) => {
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [ready,session_id]);
+  }, [ready,candidate_test_id]);
 
   return (
     <div className="fixed bottom-4 right-4 flex" style={{ width: "270px", height: "100px", gap: "15px" }}>
