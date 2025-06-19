@@ -36,11 +36,29 @@ export default function SectionComponent({
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
   const [showLowNetworkAlert, setShowLowNetworkAlert] = useState(false);
-  const [showLowAudioAlert, setShowLowAudioAlert] = useState(false);
+  //const [showLowAudioAlert, setShowLowAudioAlert] = useState(false);
   const [showLowVideoAlert, setShowLowVideoAlert] = useState(false);
   const [showCameraOffAlert, setShowCameraOffAlert] = useState(false);
   //const { testId } = useParams();
-  const [loading, setLoading] = useState(true); // Add this line at the top in your component
+  const [loading, setLoading] = useState(true); 
+
+ const [blurOverlayActive, setBlurOverlayActive] = useState(false);
+
+useEffect(() => {
+  const isAnyAlertShown = showTabSwitchAlert ||
+    showLowNetworkAlert ||
+    //showLowAudioAlert ||
+    showLowVideoAlert ||
+    showCameraOffAlert;
+  setBlurOverlayActive(isAnyAlertShown);
+}, [
+  showTabSwitchAlert,
+  showLowNetworkAlert,
+  //showLowAudioAlert,
+  showLowVideoAlert,
+  showCameraOffAlert
+]);
+
 
   // Hook for proctoring events & violation count
   const { violationCount, webcamRef } = useProctoring({
@@ -49,7 +67,7 @@ export default function SectionComponent({
     onTabSwitch: () => setShowTabSwitchAlert(true),
     onFullscreenExit: () => setShowTabSwitchAlert(true),
     onLowNetwork: () => setShowLowNetworkAlert(true),
-    onLowAudioQuality: () => setShowLowAudioAlert(true),
+    //onLowAudioQuality: () => setShowLowAudioAlert(true),
     onLowVideoQuality: () => setShowLowVideoAlert(true),
     onCameraOff: () => setShowCameraOffAlert(true),
   });
@@ -77,6 +95,22 @@ export default function SectionComponent({
   const enqueueRequest = (url, options) => {
     requestQueue.current.push({ url, options });
     processQueue();
+  };
+
+  const requestFullscreen = () => {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) {
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) {
+    elem.msRequestFullscreen();
+  }
+};
+
+const dismissAndUnblur = (setAlertFn) => {
+    setAlertFn(false);
+    setTimeout(() => requestFullscreen(), 10);
   };
 
   // --- Fetch Section Questions & Saved Answers ---
@@ -328,8 +362,22 @@ export default function SectionComponent({
   const currentIndex = questions.findIndex((q) => q.id === currentQuestionId);
   const current = questions[currentIndex];
 
+const shouldBlur = () => {
+  return (
+    showTabSwitchAlert === true ||
+    showLowNetworkAlert === true ||
+    //showLowAudioAlert === true ||
+    showLowVideoAlert === true ||
+    showCameraOffAlert === true
+  );
+};
+
   return (
     <div className="p-6 relative">
+      {shouldBlur() && (
+  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"/>
+)}
+  <div className={`relative transition duration-300 ${shouldBlur() ? "blur-sm brightness-50" : ""}`}>
       {/* Top bar: violations + timer */}
       <div className="text-right text-lg font-bold mb-4">
         <p className="text-sm text-red-600">
@@ -452,28 +500,28 @@ export default function SectionComponent({
       })()}
     </>
   )}
+  </div>
 </div>
-
       {/* Alerts */}
       {showTabSwitchAlert && (
         <TabSwitchAlert
-          onDismiss={() => setShowTabSwitchAlert(false)}
-          onContinue={() => setShowTabSwitchAlert(false)}
+          onDismiss={() => dismissAndUnblur(setShowTabSwitchAlert)}
+          onContinue={() => dismissAndUnblur(setShowTabSwitchAlert)}
         />
       )}
       {showLowNetworkAlert && (
-        <LowNetworkAlert onDismiss={() => setShowLowNetworkAlert(false)} />
+        <LowNetworkAlert onDismiss={() => dismissAndUnblur(setShowLowNetworkAlert)} />
       )}
       {/* {showLowAudioAlert && (
-        <AudioAlert onDismiss={() => setShowLowAudioAlert(false)} />
+        <AudioAlert onDismiss={() => dismissAndUnblur(setShowLowAudioAlert)} />
       )} */}
       {showLowVideoAlert && (
-        <VideoAlert onDismiss={() => setShowLowVideoAlert(false)} />
+        <VideoAlert onDismiss={() => dismissAndUnblur(setShowLowVideoAlert)} />
       )}
       {showCameraOffAlert && (
         <CameraOffAlert
-          onDismiss={() => setShowCameraOffAlert(false)}
-          onEnable={() => setShowCameraOffAlert(false)}
+           onDismiss={() => dismissAndUnblur(setShowCameraOffAlert)}
+          onEnable={() => dismissAndUnblur(setShowCameraOffAlert)}
         />
       )}
 

@@ -11,12 +11,18 @@ const isFullscreenActive = () =>
 const useProctoring = ({
   candidate_test_id,
   answerApiUrl,
-  onTabSwitch = () => { },
-  onFullscreenExit = () => { },
-  onLowNetwork = () => { },
-  onLowAudioQuality = () => { },
-  onLowVideoQuality = () => { },
-  onCameraOff = () => { },
+  onTabSwitch = () => {console.log("⚠️ Tab switch alert triggered");
+    setShowTabSwitchAlert(true); },
+  onFullscreenExit = () => {console.log("⚠️ Fullscreen exited");
+    setShowTabSwitchAlert(true);},
+  onLowNetwork = () => {console.log("⚠️ Low network alert triggered");
+    setShowLowNetworkAlert(true);},
+  onLowAudioQuality = () => {console.log("⚠️ Low audio alert triggered");
+    setShowLowAudioAlert(true); },
+  onLowVideoQuality = () => {console.log("⚠️ Low video alert triggered");
+    setShowLowVideoAlert(true);},
+  onCameraOff = () => {console.log("⚠️ Camera off alert triggered");
+    setShowCameraOffAlert(true);},
 }) => {
   const [violationCount, setViolationCount] = useState(0);
   const lastViolationTimeRef = useRef({}); // ✅ an object to hold keys like 'low_audio'
