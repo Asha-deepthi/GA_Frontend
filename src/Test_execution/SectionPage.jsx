@@ -24,13 +24,10 @@ export default function SectionPage() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
-<<<<<<< HEAD
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
-=======
   const [testCompleted, setTestCompleted] = useState(false);
->>>>>>> 4d1bfad3c87de47503f7a19d4deddb49562ddc65
 
   // ✅ New: Fetch candidate_test_id and sections using token
   useEffect(() => {

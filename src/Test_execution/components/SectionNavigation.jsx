@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SectionItem from './SectionItem';
 
-<<<<<<< HEAD
-const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId, refreshTrigger }) => {
-=======
-const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId , selectedSectionId,}) => {
->>>>>>> 4d1bfad3c87de47503f7a19d4deddb49562ddc65
+const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId , selectedSectionId, refreshTrigger}) => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
