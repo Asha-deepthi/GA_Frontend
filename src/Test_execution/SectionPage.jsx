@@ -23,6 +23,9 @@ export default function SectionPage() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
+
 
   // ✅ New: Fetch candidate_test_id and sections using token
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function SectionPage() {
         return res.json();
       })
       .then((user) => {
+        console.log("User from /api/me/:", user);
         const candidateId = user.id;
 
         return fetch(
@@ -239,6 +243,7 @@ export default function SectionPage() {
             onSelectSection={setSelectedSectionId}
             candidateTestId={realCandidateTestId}  
             testId={testId}
+            refreshTrigger={refreshTrigger}
           />
         </div>
 
@@ -256,6 +261,7 @@ export default function SectionPage() {
             setCurrentQuestionId={setCurrentQuestionId}
             answersStatus={answersStatus}
             setAnswersStatus={setAnswersStatus}
+            refreshProgress={triggerRefresh}
           />
         </div>
 

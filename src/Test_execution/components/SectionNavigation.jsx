@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import SectionItem from './SectionItem';
-import { useParams } from 'react-router-dom';
 
-const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId }) => {
+const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId, refreshTrigger }) => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
-  //const { testId, candidateId } = useParams();
-  console.log("testId:", testId, "candidateId:", candidateTestId);
 
-  useEffect(() => {
+  const fetchSectionProgress = () => {
     if (!testId || !candidateTestId) {
-      console.error("Missing testId or candidateId.");
+      console.error("Missing testId or candidateTestId.");
       return;
     }
 
@@ -29,15 +26,14 @@ const SectionNavigation = ({ onSectionSelect, completedSections, testId, candida
         console.error("Error fetching section progress:", err);
         setLoading(false);
       });
-  }, [testId, candidateTestId]);
+  };
 
-  if (loading) {
-    return <p className="text-sm text-gray-500">Loading sections...</p>;
-  }
+  useEffect(() => {
+    fetchSectionProgress();
+  }, [testId, candidateTestId, refreshTrigger]); // ✅ re-fetch when refreshTrigger changes
 
-  if (sections.length === 0) {
-    return <p className="text-sm text-gray-500">No sections available.</p>;
-  }
+  if (loading) return <p className="text-sm text-gray-500">Loading sections...</p>;
+  if (sections.length === 0) return <p className="text-sm text-gray-500">No sections available.</p>;
 
   return (
     <div className="px-4">

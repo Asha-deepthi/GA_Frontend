@@ -211,6 +211,12 @@ export default function SectionComponent({
     return () => clearInterval(timerId);
   }, [timeLeft]);*/}
 
+  const refreshSectionProgress = () => {
+  if (typeof refreshProgress === "function") {
+    refreshProgress();
+  }
+};
+
   // --- Debounced Answer Saving ---
   const latestAnswer = useRef(null);
   const debounceId = useRef(null);
@@ -219,6 +225,7 @@ export default function SectionComponent({
     const { url, options } = latestAnswer.current;
     enqueueRequest(url, options);
     latestAnswer.current = null;
+    refreshSectionProgress();
   };
   const debouncedSave = () => {
     clearTimeout(debounceId.current);
