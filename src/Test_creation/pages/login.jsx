@@ -3,8 +3,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom"; // Import use
 import axios from "axios";// LoginPage.jsx (CORRECTED)
 import { jwtDecode } from "jwt-decode"; // You'll need to `npm install jwt-decode
 import loginimage from "../../assets/loginimage.jpg";
+import { useAuth } from '../../Test_creation/contexts/AuthContext';  // Adjust path as needed
 
 const LoginPage = () => {
+  const { setUser } = useAuth();
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -38,7 +40,7 @@ const LoginPage = () => {
     try {
       // Your axios call is fine
       const res = await axios.post("http://localhost:8000/api/login/", { // Using your correct login URL
-        identifier: formData.identifier,
+        email: formData.identifier,
         password: formData.password,
       });
       
@@ -48,6 +50,12 @@ const LoginPage = () => {
 
       // --- NEW SMART REDIRECT LOGIC ---
       const decodedToken = jwtDecode(res.data.access);
+      setUser({
+        id: decodedToken.user_id,
+        email: decodedToken.email,
+        role: decodedToken.role,
+        name: decodedToken.name,
+      });
       
       if (decodedToken.role === 'ADMIN') {
         navigate("/dashboard", { replace: true });

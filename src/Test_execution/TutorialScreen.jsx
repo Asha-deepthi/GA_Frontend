@@ -2,65 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from 'react-icons/fa';
 import { useParams } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import { useContext } from "react";
+import AuthContext from "../Test_creation/contexts/AuthContext"; // adjust path if needed
 
+export default function VideoInterviewGuide() {
+  const { user } = useContext(AuthContext);
+  useEffect(() => {
+    console.log("👤 User from context in PermissionScreen:", user);
+  }, [user]);
+  const userName = user?.name || 'Guest';
 
-
-export default function VideoInterviewGuide({ onNext }) {
-  const [userName, setUserName] = useState(null);
-    const { testId } = useParams();
-    const navigate = useNavigate();
-
-   // fetch from your backend
-  /*useEffect(() => {
-  const id = localStorage.getItem('userId');
-  if (!id) return setUserName('Guest');
-
-  fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-    .then(res => res.json())
-    .then(profile => setUserName(profile.name))
-    .catch(() => setUserName('Guest'));
-}, []);
+  const { testId } = useParams();
+  const navigate = useNavigate();
 
   const handleAccept = () => {
-  navigate("/instructionscreen");
-    };*/
-useEffect(() => {
-        const fetchUserData = () => {
-            try {
-                // --- FIX: Get user details from the access token, not localStorage ---
-                const accessToken = sessionStorage.getItem('access_token'); // Or localStorage
-                if (!accessToken) {
-                    console.error("No access token found.");
-                    setUserName('Guest');
-                    return;
-                }
-                
-                // Decode the token to get the user's name
-                const decodedToken = jwtDecode(accessToken);
-                // The name is stored in the 'name' claim we set up in the backend serializer
-                setUserName(decodedToken.name || 'Candidate');
-
-            } catch (error) {
-                console.error("Error decoding token or fetching user data:", error);
-                setUserName('Guest');
-            }
-        };
-
-        fetchUserData();
-    }, []); // This effect runs only once when the component mounts
-
-    // --- FIX: The handleAccept function now includes the testId ---
-    const handleAccept = () => {
-        if (testId) {
-            // Navigate to the instruction screen for the specific test
-            navigate(`/Permission/${testId}`);
-        } else {
-            // This is a safety fallback
-            alert("Error: Test ID is missing. Cannot proceed.");
-            console.error("testId is missing from URL parameters in TutorialScreen.");
-        }
-    };
+    if (testId) {
+      navigate(`/Permission/${testId}`);
+    } else {
+      alert("Error: Test ID is missing.");
+    }
+  };
   return (
     <div className="relative w-screen min-h-screen bg-white overflow-y-auto overflow-x-hidden font-overpass">
       {/* Top Colored Bar */}

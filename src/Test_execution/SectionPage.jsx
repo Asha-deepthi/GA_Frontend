@@ -24,6 +24,7 @@ export default function SectionPage() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
+  const [userName, setUserName] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   //const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
@@ -62,53 +63,56 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
 };
 
 
-  // ✅ New: Fetch candidate_test_id and sections using token
+  //  New: Fetch candidate_test_id and sections using token
   useEffect(() => {
-    const token = sessionStorage.getItem("access_token");
-    if (!testId || !token) {
-      console.warn("Missing testId or token");
-      return;
-    }
+  const token = sessionStorage.getItem("access_token");
+  if (!testId || !token) {
+    console.warn("Missing testId or token");
+    return;
+  }
 
-    fetch("http://localhost:8000/api/me/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+  fetch("http://localhost:8000/api/me/", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Candidate not found or token expired");
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Candidate not found or token expired");
-        return res.json();
-      })
-      .then((user) => {
-        console.log("User from /api/me/:", user);
-        const candidateId = user.id;
+    .then((user) => {
+      console.log("✅ User from /api/me/:", user);
+      setUserName(user.name);  // ✅ This is what you display in JSX
 
-        return fetch(
-          `${apiurl}/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      })
-      .then((res) => {
-        if (!res.ok) throw new Error("Candidate_Test not found");
-        return res.json();
-      })
-      .then((data) => {
-        setRealCandidateTestId(data.id);
-        setSections(data.sections || []);
-        const firstSection = data.sections?.[0]?.id;
-        setSelectedSectionId(firstSection || null);
-        console.log("✅ Candidate_Test loaded:", data.id, data.sections);
-      })
-      .catch((err) => {
-        console.error("❌ Error during authentication or data fetch:", err);
-      });
-  }, [testId]);
+      const candidateId = user.id;
+
+      return fetch(
+        `${apiurl}/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    })
+    .then((res) => {
+      if (!res.ok) throw new Error("Candidate_Test not found");
+      return res.json();
+    })
+    .then((data) => {
+      setRealCandidateTestId(data.id);
+      setSections(data.sections || []);
+      const firstSection = data.sections?.[0]?.id;
+      setSelectedSectionId(firstSection || null);
+      console.log("✅ Candidate_Test loaded:", data.id, data.sections);
+    })
+    .catch((err) => {
+      console.error("❌ Error during authentication or data fetch:", err);
+      setUserName("Guest");
+    });
+}, [testId]);
 
   const requestFullscreen = () => {
     const elem = document.documentElement;

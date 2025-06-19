@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useContext } from "react";
 import { useStream } from './StreamContext';
 import { FaMicrophone, FaVideo } from 'react-icons/fa';
 import { FiRefreshCw } from 'react-icons/fi';
+import AuthContext from "../Test_creation/contexts/AuthContext";
 
 const DemoQuestion = () => {
+  const { user } = useContext(AuthContext);
+  const userName = user?.name || 'Guest';
   const { webcamStream } = useStream();
   const [isRecording, setIsRecording] = useState(false);
   const [micStrength, setMicStrength] = useState(0);
@@ -16,21 +20,10 @@ const DemoQuestion = () => {
   const videoRef = useRef(null);
   const audioChunksRef = useRef([]);
   const navigate = useNavigate();
-  const [userName, setUserName] = useState(null);
   const [questionData, setQuestionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [audioBlob, setAudioBlob] = useState(null);
   const { testId } = useParams();
-     // fetch from your backend
-useEffect(() => {
-    const id = localStorage.getItem('userId');
-    if (!id) return setUserName('Guest');
-
-    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-      .then(res => res.json())
-      .then(profile => setUserName(profile.name))
-      .catch(() => setUserName('Guest'));
-  }, []);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/test-execution/demo-questions/")

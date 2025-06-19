@@ -18,65 +18,77 @@ export default function InstructionScreen({ onNext, onBack }) {
     },
   ];
   const navigate = useNavigate();
-const { testId } = useParams();
+  const [userName, setUserName] = useState(null);
+  const { testId } = useParams();
 
-const handleAccept = async () => {
-  const token = sessionStorage.getItem("access_token");
+// ✅ Fetch user name using token
+  useEffect(() => {
+    const token = sessionStorage.getItem("access_token");
+    if (!token) {
+      setUserName("Guest");
+      return;
+    }
 
-  if (!testId || !token) {
-    alert("Missing testId or token");
-    return;
-  }
-
-  try {
-    // 1. Get user info
-    const userRes = await fetch("http://localhost:8000/api/me/", {
+    fetch("http://localhost:8000/api/me/", {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    });
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((user) => {
+        setUserName(user.name); // sets actual name like "Pavan"
+        localStorage.setItem("userId", user.id); // optional: in case used elsewhere
+      })
+      .catch(() => setUserName("Guest"));
+  }, []);
 
-    if (!userRes.ok) throw new Error("User fetch failed");
-    const user = await userRes.json();
+  // ✅ Accept button logic
+  const handleAccept = async () => {
+    const token = sessionStorage.getItem("access_token");
 
-    const candidateId = user.id;
+    if (!testId || !token) {
+      alert("Missing testId or token");
+      return;
+    }
 
-    // 2. Get candidate_test_id
-    const testRes = await fetch(
-      `http://localhost:8000/api/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
-      {
+    try {
+      const userRes = await fetch("http://localhost:8000/api/me/", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
-    );
+      });
 
-    if (!testRes.ok) throw new Error("Candidate_Test fetch failed");
-    const testData = await testRes.json();
+      if (!userRes.ok) throw new Error("User fetch failed");
+      const user = await userRes.json();
 
-    const candidateTestId = testData.id;
+      const candidateId = user.id;
 
-    // ✅ 3. Navigate with the correct ID
-    navigate(`/sectionpage/${testId}/${candidateTestId}`);
-  } catch (err) {
-    console.error("Error in handleAccept:", err);
-    alert("Something went wrong. Please try again.");
-  }
-};
+      const testRes = await fetch(
+        `http://localhost:8000/api/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    const [userName, setUserName] = useState(null);
-       // fetch from your backend
-      useEffect(() => {
-      const id = localStorage.getItem('userId');
-      if (!id) return setUserName('Guest');
-    
-      fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-        .then(res => res.json())
-        .then(profile => setUserName(profile.name))
-        .catch(() => setUserName('Guest'));
-    }, []);
+      if (!testRes.ok) throw new Error("Candidate_Test fetch failed");
+      const testData = await testRes.json();
+
+      const candidateTestId = testData.id;
+
+      navigate(`/sectionpage/${testId}/${candidateTestId}`);
+    } catch (err) {
+      console.error("Error in handleAccept:", err);
+      alert("Something went wrong. Please try again.");
+    }
+  };
   return (
     <div className="relative w-screen min-h-screen bg-gray-50 overflow-y-auto font-overpass">
       {/* Top Colored Bar */}

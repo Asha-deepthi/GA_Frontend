@@ -13,7 +13,7 @@ const WelcomeScreen = () => {
     const handleAccept = () => {
         // --- FIX 3: Include the testId when navigating to the next page ---
         if (testId) {
-            navigate(`/basic-details/${testId}`);
+            navigate(`/tutorialscreen/${testId}`);
         } else {
             // This is a safety check in case the URL is wrong
             alert("Error: Test ID is missing. Cannot proceed.");

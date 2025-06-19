@@ -1,23 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaQuestionCircle } from 'react-icons/fa';
 import { useNavigate, useParams} from "react-router-dom";
+import { useContext } from "react";
+import AuthContext from "../Test_creation/contexts/AuthContext";
 
 export default function ConnectionStrengthScreen() {
+  const { user } = useContext(AuthContext);
+  const userName = user?.name || 'Guest';
   const navigate = useNavigate();
   const { testId } = useParams();
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
-  const [userName, setUserName] = useState(null);
-  // fetch from your backend
-  useEffect(() => {
-    const id = localStorage.getItem('userId');
-    if (!id) return setUserName('Guest');
-
-    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-      .then(res => res.json())
-      .then(profile => setUserName(profile.name))
-      .catch(() => setUserName('Guest'));
-  }, []);
   // live quality state
   const [videoBars, setVideoBars] = useState(0);
   const [audioBars, setAudioBars] = useState(0);

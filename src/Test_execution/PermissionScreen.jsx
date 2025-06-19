@@ -2,19 +2,12 @@ import React,{ useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaQuestionCircle } from "react-icons/fa";
 import { useStream } from './StreamContext';  // Your custom context hook
+import { useContext } from "react";
+import AuthContext from "../Test_creation/contexts/AuthContext";
 
 export default function PermissionScreen() {
-  const [userName, setUserName] = useState(null);
-     // fetch from your backend
-    useEffect(() => {
-    const id = localStorage.getItem('userId');
-    if (!id) return setUserName('Guest');
-  
-    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-      .then(res => res.json())
-      .then(profile => setUserName(profile.name))
-      .catch(() => setUserName('Guest'));
-  }, []);
+  const { user } = useContext(AuthContext);
+  const userName = user?.name || 'Guest';
   const [webcam, setWebcam] = useState(false);
   const [mic, setMic] = useState(false);
   const [screen, setScreen] = useState(false);

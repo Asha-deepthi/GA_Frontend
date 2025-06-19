@@ -38,9 +38,11 @@ import Popupalert_5 from './Test_execution/VideoAlert';
 import TestSubmission from './Test_execution/TestSubmission';
 import Timeupscreen from './Test_execution/TimeupScreen';
 import TestSummaryScreen from './Test_execution/TestSummaryScreen';
+import { AuthProvider } from './Test_creation/contexts/AuthContext';
 
 function App() {
   return (
+    <AuthProvider>
     <StreamProvider>
     <Routes>
       <Route path="/" element={<SignupPage />} />
@@ -77,7 +79,7 @@ function App() {
         <Route path="/mcqquestion/:testId" element={<McqQuestion />} />
         <Route path="/fullscreen" element={<FullScreen />} />
         <Route path="/welcome/:testId" element={<WelcomeScreen />} />
-        <Route path="/basic-details/:testId" element={<BasicDetails />} />
+        {/*<Route path="/basic-details/:testId" element={<BasicDetails />} />*/}
         <Route path="/permission/:testId" element={<PermissionScreen />} />
         <Route path="/audioquestion/:testId" element={<AudioQuestion />} />
         <Route path="/demoquestion/:testId" element={<DemoQuestion />} />
@@ -91,6 +93,7 @@ function App() {
         <Route path="/summaryscreen" element={<TestSummaryScreen/>}/>
       </Routes>
     </StreamProvider>
+    </AuthProvider>
   );
 }
 
