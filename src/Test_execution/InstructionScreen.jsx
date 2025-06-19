@@ -18,16 +18,54 @@ export default function InstructionScreen({ onNext, onBack }) {
     },
   ];
   const navigate = useNavigate();
-  const { testId, candidateId } = useParams();
-    const handleAccept = () => {
-      if (testId) {
-          navigate(`/sectionpage/${testId}/${candidateId}`);
-            } else {
-                alert("Error: Test ID is missing. Cannot proceed.");
-                console.error("testId is missing from URL parameters in BasicDetails page.");
-            }
-            
-    };
+const { testId } = useParams();
+
+const handleAccept = async () => {
+  const token = sessionStorage.getItem("access_token");
+
+  if (!testId || !token) {
+    alert("Missing testId or token");
+    return;
+  }
+
+  try {
+    // 1. Get user info
+    const userRes = await fetch("http://localhost:8000/api/me/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!userRes.ok) throw new Error("User fetch failed");
+    const user = await userRes.json();
+
+    const candidateId = user.id;
+
+    // 2. Get candidate_test_id
+    const testRes = await fetch(
+      `http://localhost:8000/api/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!testRes.ok) throw new Error("Candidate_Test fetch failed");
+    const testData = await testRes.json();
+
+    const candidateTestId = testData.id;
+
+    // ✅ 3. Navigate with the correct ID
+    navigate(`/sectionpage/${testId}/${candidateTestId}`);
+  } catch (err) {
+    console.error("Error in handleAccept:", err);
+    alert("Something went wrong. Please try again.");
+  }
+};
+
     const [userName, setUserName] = useState(null);
        // fetch from your backend
       useEffect(() => {

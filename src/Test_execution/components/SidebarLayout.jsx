@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import MicrophoneStatus from './MicrophoneStatus';
 import SectionNavigation from './SectionNavigation';
 
-const SidebarLayout = ({ selectedSectionId, completedSections, onSelectSection, testId, candidateTestId, refreshTrigger, }) => {
+const SidebarLayout = ({ selectedSectionId, completedSections, onSelectSection, testId, candidateTestId, sections, }) => {
   return (
     <div className="w-[320px] h-[327px] bg-white shadow rounded-md">
       <MicrophoneStatus />
@@ -12,7 +12,7 @@ const SidebarLayout = ({ selectedSectionId, completedSections, onSelectSection, 
         onSectionSelect={onSelectSection}
         candidateTestId={candidateTestId}  
         testId={testId}
-        refreshTrigger={refreshTrigger}
+        sections={sections}
       />
     </div>
   );

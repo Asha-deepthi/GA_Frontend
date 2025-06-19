@@ -32,6 +32,7 @@ export default function SectionComponent({
   setCurrentQuestionId,
   answersStatus,
   setAnswersStatus,
+  onQuestionAttempted,
 }) {
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
@@ -83,9 +84,9 @@ export default function SectionComponent({
   useEffect(() => {
     const fetchSectionData = async () => {
       if (!section_id || !candidate_test_id) {
-    console.warn("Missing section_id or candidate_test_id for fetching section data");
-    return;
-  }
+       console.warn("Missing section_id or candidate_test_id for fetching section data");
+       return;
+     }
       setLoading(true);
       try {
         const res = await fetch(`${apiurl}/tests/${test_id}/sections/${section_id}/questions/`);
@@ -211,12 +212,7 @@ export default function SectionComponent({
     return () => clearInterval(timerId);
   }, [timeLeft]);*/}
 
-  const refreshSectionProgress = () => {
-  if (typeof refreshProgress === "function") {
-    refreshProgress();
-  }
-};
-
+  
   // --- Debounced Answer Saving ---
   const latestAnswer = useRef(null);
   const debounceId = useRef(null);
@@ -224,71 +220,83 @@ export default function SectionComponent({
     if (!latestAnswer.current) return;
     const { url, options } = latestAnswer.current;
     enqueueRequest(url, options);
-    latestAnswer.current = null;
-    refreshSectionProgress();
-  };
+  }
   const debouncedSave = () => {
     clearTimeout(debounceId.current);
     debounceId.current = setTimeout(sendAnswer, 500);
   };
 
   const updateAnswer = (question_id, payload, parent_question_id = null) => {
-    const hasAns = payload.answer && payload.answer !== "";
-    const status = payload.markedForReview
-      ? hasAns ? "reviewed_with_answer" : "reviewed"
-      : hasAns ? "answered" : "skipped";
+  const hasAns = payload.answer && payload.answer !== "";
+  const status = payload.markedForReview
+    ? hasAns ? "reviewed_with_answer" : "reviewed"
+    : hasAns ? "answered" : "skipped";
 
-    setAnswersStatus((prev) => {
-      const updated = {
-        ...prev,
-        [question_id]: {
-          answer: hasAns ? payload.answer : null,
-          markedForReview: payload.markedForReview,
-          status,
-        },
-      };
+  let wasAttempted = false;
+  let isAttempted = false;
 
-      // Also update parent question status if needed
-      if (parent_question_id) {
-        updated[parent_question_id] = {
-          answer: null,
-          markedForReview: payload.markedForReview,
-          status,
-        };
-      }
+  setAnswersStatus((prev) => {
+    const prevStatus = prev[question_id]?.status;
+    wasAttempted = prevStatus === "answered" || prevStatus === "reviewed_with_answer";
+    isAttempted = status === "answered" || status === "reviewed_with_answer";
 
-      localStorage.setItem(
-        `answers_${section_id}`,
-        JSON.stringify(updated)
-      );
-
-      return updated;
-    });
-
-    const form = new FormData();
-    form.append("candidate_test_id", candidate_test_id);
-    form.append("question_id", question_id);
-    form.append("question_type", payload.type);
-    form.append("section_id", section_id);
-
-    if (hasAns) {
-      if (payload.answer.type === "audio")
-        form.append("audio_file", payload.answer.blob, payload.answer.filename);
-      else if (payload.answer.type === "video")
-        form.append("video_file", payload.answer.blob, payload.answer.filename);
-      else form.append("answer_text", payload.answer);
-    }
-
-    form.append("marked_for_review", payload.markedForReview);
-    form.append("status", status);
-
-    latestAnswer.current = {
-      url: `${answerApiUrl}/answers/`,
-      options: { method: "POST", body: form },
+    const updated = {
+      ...prev,
+      [question_id]: {
+        answer: hasAns ? payload.answer : null,
+        markedForReview: payload.markedForReview,
+        status,
+      },
     };
 
-    debouncedSave();
+    // Only visually update parent question's status; do not include in attempted count
+    if (parent_question_id) {
+      updated[parent_question_id] = {
+        answer: null,
+        markedForReview: payload.markedForReview,
+        status,
+      };
+    }
+
+    localStorage.setItem(`answers_${section_id}`, JSON.stringify(updated));
+    return updated;
+  });
+
+  // ✅ Call outside of setAnswersStatus to avoid stale closure or multiple calls
+  if (!parent_question_id && typeof onQuestionAttempted === "function") {
+    if (!wasAttempted && isAttempted) {
+      onQuestionAttempted(section_id, +1);
+    } else if (wasAttempted && !isAttempted) {
+      onQuestionAttempted(section_id, -1);
+    }
+  }
+
+  // ✅ Debounced Save
+  const form = new FormData();
+  form.append("candidate_test_id", candidate_test_id);
+  form.append("question_id", question_id);
+  form.append("question_type", payload.type);
+  form.append("section_id", section_id);
+
+  if (hasAns) {
+    if (payload.answer?.type === "audio")
+      form.append("audio_file", payload.answer.blob, payload.answer.filename);
+    else if (payload.answer?.type === "video")
+      form.append("video_file", payload.answer.blob, payload.answer.filename);
+    else form.append("answer_text", payload.answer);
+  }
+
+  form.append("marked_for_review", payload.markedForReview);
+  form.append("status", status);
+
+  latestAnswer.current = {
+    url: `${answerApiUrl}/answers/`,
+    options: { method: "POST", body: form },
   };
+
+  debouncedSave();
+};
+
 
   // --- Final Submit: ensure all questions have a status ---
   const handleFinalSubmit = async () => {

@@ -25,9 +25,42 @@ export default function SectionPage() {
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
+  //const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
   const [testCompleted, setTestCompleted] = useState(false);
+  const fetchSectionProgress = () => {
+  fetch(
+    `http://localhost:8000/api/test-execution/candidate-section-progress/?test_id=${testId}&candidate_test_id=${realCandidateTestId}`
+  )
+    .then((res) => res.json())
+    .then((data) => setSections(data || []))
+    .catch((err) => console.error("Error fetching section progress:", err));
+};
+
+useEffect(() => {
+  if (testId && realCandidateTestId) {
+    const timeoutId = setTimeout(() => {
+      fetchSectionProgress();
+    }, 2000); // wait 2 seconds before calling
+
+    return () => clearTimeout(timeoutId); // clear on re-render
+  }
+}, [testId, realCandidateTestId]);
+
+// Update attempted count for a section
+const incrementAttempted = (sectionId, incrementBy = 1) => {
+  setSections(prevSections =>
+    prevSections.map(sec =>
+      sec.section_id === sectionId
+        ? { 
+            ...sec, 
+            attempted_questions: Math.max(0, (sec.attempted_questions || 0) + incrementBy)
+          }
+        : sec
+    )
+  );
+};
+
 
   // ✅ New: Fetch candidate_test_id and sections using token
   useEffect(() => {
@@ -248,7 +281,7 @@ if (testCompleted) {
             onSelectSection={setSelectedSectionId}
             candidateTestId={realCandidateTestId}
             testId={testId}
-            refreshTrigger={refreshTrigger}
+            sections={sections}
           />
         </div>
 
@@ -266,7 +299,7 @@ if (testCompleted) {
             setCurrentQuestionId={setCurrentQuestionId}
             answersStatus={answersStatus}
             setAnswersStatus={setAnswersStatus}
-            refreshProgress={triggerRefresh}
+            onQuestionAttempted={incrementAttempted}
           />
         </div>
 
