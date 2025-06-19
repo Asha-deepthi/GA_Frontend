@@ -19,7 +19,6 @@ export default function SectionPage() {
   const [initialSeconds, setInitialSeconds] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [realCandidateTestId, setRealCandidateTestId] = useState(null);
-
   const [questions, setQuestions] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [answersStatus, setAnswersStatus] = useState({});
