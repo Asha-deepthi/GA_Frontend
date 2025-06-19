@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import SectionItem from './SectionItem';
 
+<<<<<<< HEAD
 const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId, refreshTrigger }) => {
+=======
+const SectionNavigation = ({ onSectionSelect, completedSections, testId, candidateTestId , selectedSectionId,}) => {
+>>>>>>> 4d1bfad3c87de47503f7a19d4deddb49562ddc65
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,10 +49,15 @@ const SectionNavigation = ({ onSectionSelect, completedSections, testId, candida
         return (
           <SectionItem
             key={section.section_id}
-            title={section.section_name || `Section ${section.section_id}`}
+            title={
+              isCompleted
+                ? ` ${section.section_name || `Section ${section.section_id}`}`
+                : section.section_name || `Section ${section.section_id}`
+            }
             progress={progress}
             onClick={() => !isCompleted && onSectionSelect(section.section_id)}
             disabled={isCompleted}
+            isActive={selectedSectionId === section.section_id}
           />
         );
       })}
