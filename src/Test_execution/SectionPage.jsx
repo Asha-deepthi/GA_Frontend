@@ -207,7 +207,7 @@ export default function SectionPage() {
 
   const handleQuestionClick = (qid) => {
     setCurrentQuestionId(qid);
-    updateQuestionStatus(qid, "visited");
+    //updateQuestionStatus(qid, "visited");
   };
 
   if (!fullscreenReady) {
