@@ -1,10 +1,10 @@
 import React, { useEffect, useState} from 'react';
 import { FaQuestionCircle } from "react-icons/fa";
 
-const TopHeader = () => {
-  const [userName, setUserName] = useState(null);
+const TopHeader = ({ userName }) => {
+  {/*const [userName, setUserName] = useState(null);*/}
 
-  useEffect(() => {
+  {/*useEffect(() => {
     const id = localStorage.getItem('userId');
     if (!id) return setUserName('Guest');
 
@@ -12,7 +12,7 @@ const TopHeader = () => {
       .then(res => res.json())
       .then(profile => setUserName(profile.name))
       .catch(() => setUserName('Guest'));
-  }, []);
+  }, []);*/}
 
   return (
     <div className="relative w-full bg-white font-lexend">
