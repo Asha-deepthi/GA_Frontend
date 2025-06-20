@@ -192,7 +192,7 @@ export default function ConnectionStrengthScreen() {
           </button>
           <div className="h-6 w-px bg-gray-300" />
           <div className="flex items-center gap-2">
-            <img src="images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
+            <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
             <span className="text-gray-900 text-base font-medium">{userName ?? 'Loading...'}</span>
           </div>
         </div>

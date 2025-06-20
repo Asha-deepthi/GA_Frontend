@@ -90,7 +90,7 @@ export default function InstructionScreen({ onNext, onBack }) {
     }
   };
   return (
-    <div className="relative w-screen min-h-screen bg-gray-50 overflow-y-auto font-overpass">
+    <div className="relative w-screen h-screen bg-gray-50 overflow-hidden font-overpass flex flex-col">
       {/* Top Colored Bar */}
       <div className="sticky top-0 left-0 w-full flex h-1 z-10">
         <div className="flex-1 bg-red-500" />
@@ -174,7 +174,7 @@ export default function InstructionScreen({ onNext, onBack }) {
       </header>
 
       {/* Title & Subtitle */}
-      <div className="mx-auto text-center mt-20 max-w-[856px] px-4">
+      <div className="mx-auto text-center mt-8 max-w-[856px] px-4">
         <h1 className="text-[40px] leading-[48px] font-bold text-gray-900">Interview Instructions</h1>
         <p className="mt-2 text-[20px] leading-[28px] text-gray-900">
           Follow these guidelines to complete your interview successfully. Each question type has a specific time limit.
@@ -182,7 +182,7 @@ export default function InstructionScreen({ onNext, onBack }) {
       </div>
 
       {/* Instruction List */}
-      <div className="mt-24 mx-auto w-[854px] flex flex-col gap-10 px-4">
+      <div className="mt-10 mx-auto w-full max-w-[854px] flex flex-col gap-6 px-4">
         {instructions.map((item, idx) => (
           <div
             key={idx}
@@ -191,7 +191,7 @@ export default function InstructionScreen({ onNext, onBack }) {
             <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-lg">
               {idx + 1}
             </div>
-            <div className="flex flex-col gap-2 w-[660px]">
+            <div className="flex flex-col gap-2 w-full max-w-[660px]">
               <p className="text-[20px] leading-[28px] font-bold text-gray-900">{item.title}</p>
               <p className="text-[16px] leading-[24px] text-gray-900">{item.text}</p>
             </div>
@@ -200,7 +200,7 @@ export default function InstructionScreen({ onNext, onBack }) {
       </div>
 
       {/* Next Button */}
-      <div className="flex justify-center mt-20 mb-10">
+      <div className="flex justify-center mt-10 mb-6">
         <button
           onClick={handleAccept}
           className="px-10 py-2.5 rounded-full text-white text-[16px] leading-[24px] font-semibold shadow-md hover:shadow-lg transition-all"
