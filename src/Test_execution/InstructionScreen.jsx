@@ -18,10 +18,10 @@ export default function InstructionScreen({ onNext, onBack }) {
     },
   ];
   const navigate = useNavigate();
-  const { testId } = useParams();
+  const { testId, candidateId } = useParams();
     const handleAccept = () => {
       if (testId) {
-          navigate(`/Permission/${testId}`);
+          navigate(`/sectionpage/${testId}/${candidateId}`);
             } else {
                 alert("Error: Test ID is missing. Cannot proceed.");
                 console.error("testId is missing from URL parameters in BasicDetails page.");
@@ -104,7 +104,7 @@ export default function InstructionScreen({ onNext, onBack }) {
             }}
           >
             <img
-              src="images/profilepic.png"
+              src="/images/profilepic.png"
               alt="Avatar"
               style={{ width: '24px', height: '24px', borderRadius: '50%' }}
             />

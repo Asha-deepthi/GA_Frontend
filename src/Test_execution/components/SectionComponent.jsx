@@ -19,7 +19,8 @@ import { useParams } from 'react-router-dom';
 
 export default function SectionComponent({
   section_id,
-  session_id,
+  test_id,
+  candidate_test_id,
   apiurl,
   answerApiUrl,
   onSectionComplete,
@@ -38,11 +39,12 @@ export default function SectionComponent({
   const [showLowAudioAlert, setShowLowAudioAlert] = useState(false);
   const [showLowVideoAlert, setShowLowVideoAlert] = useState(false);
   const [showCameraOffAlert, setShowCameraOffAlert] = useState(false);
-  const { testId } = useParams(); 
+  //const { testId } = useParams();
+  const [loading, setLoading] = useState(true); // Add this line at the top in your component
 
   // Hook for proctoring events & violation count
   const { violationCount, webcamRef } = useProctoring({
-    sessionId: session_id,
+    candidate_test_id: candidate_test_id,
     answerApiUrl,
     onTabSwitch: () => setShowTabSwitchAlert(true),
     onFullscreenExit: () => setShowTabSwitchAlert(true),
@@ -53,7 +55,7 @@ export default function SectionComponent({
   });
 
   // --- Timer State ---
- // const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
+  // const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);
   //const [defaultTime, setDefaultTime] = useState(SECTION_DURATION);
 
   // --- Answer Save Queue ---
@@ -80,23 +82,18 @@ export default function SectionComponent({
   // --- Fetch Section Questions & Saved Answers ---
   useEffect(() => {
     const fetchSectionData = async () => {
-    
-      if (!testId || !section_id) return; 
-
-      // --- FIX: The entire try...catch block is replaced to handle data processing ---
+      if (!section_id || !candidate_test_id) {
+    console.warn("Missing section_id or candidate_test_id for fetching section data");
+    return;
+  }
+      setLoading(true);
       try {
-        // 1) Fetch all raw questions from the API
-        const res = await fetch(
-          `${apiurl}/tests/${testId}/sections/${section_id}/questions/`
-        );
+        const res = await fetch(`${apiurl}/tests/${test_id}/sections/${section_id}/questions/`);
         if (!res.ok) throw new Error('Failed to fetch questions');
+
         const rawData = await res.json();
 
-        // 2) Process the raw data to handle paragraphs correctly
-        const processedQuestions = [];
         const subQuestionsMap = {};
-
-        // First, group all sub-questions by their parent's ID
         for (const q of rawData) {
           if (q.parent_question) {
             if (!subQuestionsMap[q.parent_question]) {
@@ -106,50 +103,65 @@ export default function SectionComponent({
           }
         }
 
-        // Second, build the final list of questions that will be displayed
-        for (const q of rawData) {
-          // Only add top-level questions to the list
-          if (!q.parent_question) {
-            // If the question is a paragraph, attach its children
+        const processedQuestions = rawData
+          .filter((q) => !q.parent_question)
+          .map((q) => {
             if (q.type === 'paragraph') {
               q.sub_questions = subQuestionsMap[q.id] || [];
             }
-            processedQuestions.push(q);
-          }
+            return q;
+          });
+
+        const numbered = processedQuestions.map((q, i) => ({ ...q, number: i + 1 }));
+
+        if (numbered.length === 0) {
+          setQuestions([]);
+          setCurrentQuestionId(null);
+        } else {
+          setQuestions(numbered);
+          setCurrentQuestionId(numbered[0].id);
         }
 
-        // 3) Set state with the clean, processed data. `questions.length` is now correct.
-        const numbered = processedQuestions.map((q, i) => ({ ...q, number: i + 1 }));
-        setQuestions(numbered);
-        setCurrentQuestionId(numbered[0]?.id || null);
-
-        // 4) Fetch saved answers (this part is unchanged)
-        const ansRes = await fetch(
-            `${answerApiUrl}/get-answers/?session_id=${session_id}&section_id=${section_id}`
-);
+        // ✅ Fetch saved answers
+        const ansRes = await fetch(`${answerApiUrl}/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section_id}`);
         if (!ansRes.ok) throw new Error('Failed to fetch answers');
         const ansData = await ansRes.json();
+
         const backendMap = {};
         ansData.forEach((a) => {
+          let parsedAnswer = null;
+          if (a.answer?.text) parsedAnswer = a.answer.text;
+          else if (a.answer?.audioUrl) parsedAnswer = { type: "audio", url: a.answer.audioUrl };
+          else if (a.answer?.videoUrl) parsedAnswer = { type: "video", url: a.answer.videoUrl };
+
           backendMap[a.question_id] = {
-            answer: a.answer_text || null,
-            markedForReview: a.marked_for_review,
-            status: a.status,
+            answer: parsedAnswer,
+            markedForReview: a.marked_for_review || false,
+            status: a.status || (parsedAnswer ? "answered" : "skipped"),
           };
         });
-        setAnswersStatus((prev) => ({ ...prev, ...backendMap }));
 
+        setAnswersStatus((prev) => ({ ...prev, ...backendMap }));
       } catch (err) {
         console.error("Error fetching section data:", err);
-        setQuestions([]); // Set to empty array on error to prevent crashes
+        setQuestions([]);
+        setCurrentQuestionId(null);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSectionData();
-  }, [testId, section_id, session_id, apiurl, answerApiUrl, setQuestions, setAnswersStatus, setCurrentQuestionId]);
+  }, [test_id, section_id, apiurl, answerApiUrl, setQuestions, setAnswersStatus, setCurrentQuestionId]);
+
+  useEffect(() => {
+    if (!currentQuestionId && questions.length > 0) {
+      setCurrentQuestionId(questions[0].id);
+    }
+  }, [questions, currentQuestionId]);
 
   // --- Sync Timer from Backend or Local ---
- {/* useEffect(() => {
+  {/* useEffect(() => {
     const fetchTimer = async () => {
       try {
         const res = await fetch(
@@ -174,11 +186,11 @@ export default function SectionComponent({
 
   // --- Countdown ---
   //useEffect(() => {
-    // if (timeLeft <= 0) {
-    //   handleFinalSubmit();
-    //   return;
-    // }
-    {/*const timerId = setInterval(() => {
+  // if (timeLeft <= 0) {
+  //   handleFinalSubmit();
+  //   return;
+  // }
+  {/*const timerId = setInterval(() => {
       setTimeLeft((t) => {
         const next = t - 1;
         localStorage.setItem(`timer_${section_id}`, next);
@@ -213,41 +225,45 @@ export default function SectionComponent({
     debounceId.current = setTimeout(sendAnswer, 500);
   };
 
-  const updateAnswer = (question_id, payload) => {
+  const updateAnswer = (question_id, payload, parent_question_id = null) => {
     const hasAns = payload.answer && payload.answer !== "";
     const status = payload.markedForReview
-      ? hasAns
-        ? "reviewed_with_answer"
-        : "reviewed"
-      : hasAns
-      ? "answered"
-      : "skipped";
-    // update local state
-    setAnswersStatus((prev) => ({
-      ...prev,
-      [question_id]: {
-        answer: hasAns ? payload.answer : null,
-        markedForReview: payload.markedForReview,
-        status,
-      },
-    }));
-    localStorage.setItem(
-      `answers_${section_id}`,
-      JSON.stringify({
-        ...answersStatus,
+      ? hasAns ? "reviewed_with_answer" : "reviewed"
+      : hasAns ? "answered" : "skipped";
+
+    setAnswersStatus((prev) => {
+      const updated = {
+        ...prev,
         [question_id]: {
           answer: hasAns ? payload.answer : null,
           markedForReview: payload.markedForReview,
           status,
         },
-      })
-    );
-    // prepare form
+      };
+
+      // Also update parent question status if needed
+      if (parent_question_id) {
+        updated[parent_question_id] = {
+          answer: null,
+          markedForReview: payload.markedForReview,
+          status,
+        };
+      }
+
+      localStorage.setItem(
+        `answers_${section_id}`,
+        JSON.stringify(updated)
+      );
+
+      return updated;
+    });
+
     const form = new FormData();
-    form.append("session_id", session_id);
+    form.append("candidate_test_id", candidate_test_id);
     form.append("question_id", question_id);
     form.append("question_type", payload.type);
     form.append("section_id", section_id);
+
     if (hasAns) {
       if (payload.answer.type === "audio")
         form.append("audio_file", payload.answer.blob, payload.answer.filename);
@@ -255,12 +271,15 @@ export default function SectionComponent({
         form.append("video_file", payload.answer.blob, payload.answer.filename);
       else form.append("answer_text", payload.answer);
     }
+
     form.append("marked_for_review", payload.markedForReview);
     form.append("status", status);
+
     latestAnswer.current = {
       url: `${answerApiUrl}/answers/`,
       options: { method: "POST", body: form },
     };
+
     debouncedSave();
   };
 
@@ -269,12 +288,12 @@ export default function SectionComponent({
     for (const q of questions) {
       console.log("Checking question object:", q);
       const questionType = q.type || q.question_type || "";
-  console.log("Submitting question_type:", questionType);
+      console.log("Submitting question_type:", questionType);
       if (!answersStatus[q.id]?.answer) {
         const form = new FormData();
-        form.append("session_id", session_id);
+        form.append("candidate_test_id", candidate_test_id);
         form.append("question_id", q.id);
-        form.append("question_type", q.type);
+        form.append("question_type", q.type || q.question_type || "unknown");
         form.append("section_id", section_id);
         form.append("answer_text", "");
         form.append("status", "skipped");
@@ -309,7 +328,7 @@ export default function SectionComponent({
         <p className="text-sm text-red-600">
           Violations: {violationCount}
         </p>
-       {/* <p>
+        {/* <p>
           Time Left: {Math.floor(timeLeft / 60)}:
           {String(timeLeft % 60).padStart(2, "0")}
         </p>*/}
@@ -317,109 +336,116 @@ export default function SectionComponent({
 
       {/* Question */}
       <div className="border p-4 rounded shadow mb-4">
-        {!current ? (
-          <p>Loading question…</p>
-        ) : (
-          <>
-            <h2 className="text-xl font-bold mb-2">
-              Question {current.number} of {questions.length}
-            </h2>
-            {current.type !== 'paragraph' && (
-  <p className="mb-4">{current.question_text}</p>
-)}
-            {(() => {
-              const props = {
-                question: current,
-                currentStatus: answersStatus[current.id] || {},
-                onAnswerUpdate: updateAnswer,
-                onNext: () =>
-                  setCurrentQuestionId(questions[currentIndex + 1]?.id),
-              };
-              const isLast = currentIndex === questions.length - 1;
-              switch (current.type) {
-                case "mcq":
-                  return <MultipleChoiceComponent {...props} isLast={isLast} />;
-                case "fib":
-                  return <FillInTheBlankComponent {...props} isLast={isLast} />;
-                case "integer":
-                  return <IntegerComponent {...props} isLast={isLast} />;
-                case "subjective":
-                  return <SubjectiveComponent {...props} isLast={isLast} />;
-                case "audio":
-                  return <AudioComponent {...props} isLast={isLast} />;
-                case "video":
-                  return <VideoComponent {...props} isLast={isLast} />;
-                case "text":
-                  return <Textcomponent {...props} isLast={isLast} />;
-case "paragraph": { // Use curly braces here to create a local scope
-  
-  // Safety check: if there are no sub-questions, show an error.
-  if (!current.sub_questions || current.sub_questions.length === 0) {
-    return <p className="text-red-500">Error: Sub-questions are missing for this paragraph.</p>;
-  }
-  
-  // Get the first sub-question object. This is the actual question to answer.
-  const subQuestion = current.sub_questions[0];
-
-  // Create a new 'props' object specifically for the sub-question component.
-  // This is very important.
-  const subQuestionProps = {
-    question: subQuestion, // Pass the sub-question data
-    currentStatus: answersStatus[subQuestion.id] || {}, // Use the sub-question's ID for tracking answers
-      onAnswerUpdate: (sub_question_id, payload) => {
-    // 1. Do the original work: Save the answer for the sub-question correctly.
-    updateAnswer(sub_question_id, payload);
-
-    // 2. ALSO, update the PARENT question's status so the color changes in the UI.
-    const hasAns = payload.answer && payload.answer !== "";
-    const parentStatus = payload.markedForReview
-      ? hasAns ? "reviewed_with_answer" : "reviewed"
-      : hasAns ? "answered" : "skipped";
-    
-    setAnswersStatus((prev) => ({
-      ...prev,
-      [current.id]: { // Use the PARENT'S ID here
-        answer: null, 
-        markedForReview: payload.markedForReview,
-        status: parentStatus,
-      },
-    }));
-  },
-    onNext: () => setCurrentQuestionId(questions[currentIndex + 1]?.id), // The next button logic is the same
-  };
-
-  // This helper function decides which component to show for the sub-question.
-  // For now, it only handles 'mcq'. You can add more types like 'fib' here if needed.
-  const renderSubQuestionComponent = () => {
-    switch (subQuestion.type) {
-      case 'mcq':
-        return <MultipleChoiceComponent {...subQuestionProps} isLast={isLast} />;
-      // Add other cases here if you have other sub-question types
-      case 'fib':
-        return <FillInTheBlankComponent {...subQuestionProps} isLast={isLast} />;
-      default:
-        return <p>Unsupported sub-question type: {subQuestion.type}</p>;
-    }
-  };
-
-  return (
-    <div>
-      {/* 1. Display the passage text from the parent question */}
-      <div className="prose mb-4 p-4 border rounded-md bg-gray-50">
-        <p>{current.paragraph_content || 'Passage content is missing.'}</p>
-      </div>
-      {/* 3. RENDER THE ACTUAL ANSWER COMPONENT (e.g., MultipleChoiceComponent) */}
-      {renderSubQuestionComponent()}
+  {loading || !current ? (
+    <div className="flex justify-center items-center gap-2 text-gray-600">
+      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-800"></div>
+      <span>{loading ? "Loading questions…" : "No question found."}</span>
     </div>
-  );
-}
-  default:
-    return <p>Unsupported question type: {current.type}</p>;
-}
-            })()}
-          </>
-        )}
-      </div>
+  ) : (
+    <>
+      <h2 className="text-xl font-bold mb-2">
+        Question {current.number} of {questions.length}
+      </h2>
+
+      {current.type !== 'paragraph' && (
+        <p className="mb-4">{current.question_text}</p>
+      )}
+
+      {(() => {
+        const props = {
+          question: current,
+          currentStatus: answersStatus[current.id] || {},
+          onAnswerUpdate: updateAnswer,
+          onNext: () => {
+            if (currentIndex < questions.length - 1) {
+              setCurrentQuestionId(questions[currentIndex + 1].id);
+            } else {
+              handleFinalSubmit(); // ✅ Last question
+            }
+          },
+        };
+
+        const isLast = currentIndex === questions.length - 1;
+
+        switch (current.type) {
+          case "mcq":
+            return <MultipleChoiceComponent {...props} isLast={isLast} />;
+          case "fib":
+            return <FillInTheBlankComponent {...props} isLast={isLast} />;
+          case "integer":
+            return <IntegerComponent {...props} isLast={isLast} />;
+          case "subjective":
+            return <SubjectiveComponent {...props} isLast={isLast} />;
+          case "audio":
+            return <AudioComponent {...props} isLast={isLast} />;
+          case "video":
+            return <VideoComponent {...props} isLast={isLast} />;
+          case "text":
+            return <Textcomponent {...props} isLast={isLast} />;
+          case "paragraph": {
+            if (!current.sub_questions || current.sub_questions.length === 0) {
+              return <p className="text-red-500">Error: Sub-questions are missing for this paragraph.</p>;
+            }
+
+            const subQuestion = current.sub_questions[0];
+
+            const subQuestionProps = {
+              question: subQuestion,
+              currentStatus: answersStatus[subQuestion.id] || {},
+              onAnswerUpdate: (sub_question_id, payload) => {
+                updateAnswer(sub_question_id, payload);
+
+                const hasAns = payload.answer && payload.answer !== "";
+                const parentStatus = payload.markedForReview
+                  ? hasAns ? "reviewed_with_answer" : "reviewed"
+                  : hasAns ? "answered" : "skipped";
+
+                setAnswersStatus((prev) => ({
+                  ...prev,
+                  [current.id]: {
+                    answer: null,
+                    markedForReview: payload.markedForReview,
+                    status: parentStatus,
+                  },
+                }));
+              },
+              onNext: () => {
+                if (currentIndex < questions.length - 1) {
+                  setCurrentQuestionId(questions[currentIndex + 1].id);
+                } else {
+                  handleFinalSubmit();
+                }
+              },
+              isLast,
+            };
+
+            const renderSubQuestionComponent = () => {
+              switch (subQuestion.type) {
+                case 'mcq':
+                  return <MultipleChoiceComponent {...subQuestionProps} />;
+                case 'fib':
+                  return <FillInTheBlankComponent {...subQuestionProps} />;
+                default:
+                  return <p>Unsupported sub-question type: {subQuestion.type}</p>;
+              }
+            };
+
+            return (
+              <div>
+                <div className="prose mb-4 p-4 border rounded-md bg-gray-50">
+                  <p>{current.paragraph_content || 'Passage content is missing.'}</p>
+                </div>
+                {renderSubQuestionComponent()}
+              </div>
+            );
+          }
+          default:
+            return <p>Unsupported question type: {current.type}</p>;
+        }
+      })()}
+    </>
+  )}
+</div>
 
       {/* Alerts */}
       {showTabSwitchAlert && (

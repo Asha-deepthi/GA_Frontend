@@ -54,7 +54,7 @@ useEffect(() => {
     const handleAccept = () => {
         if (testId) {
             // Navigate to the instruction screen for the specific test
-            navigate(`/instructionscreen/${testId}`);
+            navigate(`/Permission/${testId}`);
         } else {
             // This is a safety fallback
             alert("Error: Test ID is missing. Cannot proceed.");

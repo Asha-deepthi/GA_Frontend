@@ -8,7 +8,7 @@ const CameraOffAlert = ({ onDismiss,onEnable }) => {
           {/* Icon */}
           <div className="w-[92px] h-[92px] rounded-full bg-[#00A3981A] flex items-center justify-center">
             <img
-              src="images/camoff.png"
+              src="/images/camoff.png"
               alt="Camera off"
               className="w-[48px] h-[48px] object-contain"
             />

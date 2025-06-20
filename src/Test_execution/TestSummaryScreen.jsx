@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 
 
 // --- Global Styles for Body ---
@@ -154,84 +154,125 @@ const styles = {
   errorStatus: { color: '#e74c3c' }
 };
 
-const TestSummaryScreen = ({ session_id,  section_id }) => {
-    const [sections, setSections] = useState([]);
+const TestSummaryScreen = ({ session_id, section_id }) => {
+  const [sections, setSections] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showOnlyUnanswered, setShowOnlyUnanswered] = useState(false);
-
- useEffect(() => {
-  console.log("session_id:", session_id, "section_id:", section_id); // ✅ ADD THIS
-
-  if (!session_id || !section_id) {
-    console.log("⛔ Skipping fetch: session_id or section_id is missing");
-    return;
-  }
-
-  const API_URL = `http://127.0.0.1:8000/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`;
-
-  const loadTestData = async () => {
-    try {
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      console.log("📦 API Response:", data); // ✅ See if this runs
-
-      if (data.success) {
-        setSections(data.data.sections);
-      } else {
-        throw new Error('Failed to fetch test data.');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+const navigate = useNavigate();
+  useEffect(() => {
+    if (!session_id || !section_id) {
+      console.warn("session_id or section_id missing");
+      return;
     }
+
+    const API_URL = `http://127.0.0.1:8000/api/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`;
+
+    const fetchAnswers = async () => {
+  try {
+    const res = await fetch(
+      `http://127.0.0.1:8000/api/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`
+    );
+
+    if (res.status === 404) {
+      console.warn("No answers found for this section.");
+      setAnswers([]);
+      setSections([]);
+      return;
+    }
+
+    if (!res.ok) throw new Error("Failed to fetch answers");
+
+    const data = await res.json();
+    console.log("Fetched answers:", data);
+    setAnswers(data);
+
+    // Group questions by section
+    const sectionMap = {};
+    data.forEach((q) => {
+      const secId = q.section_id;
+const secName = q.section;
+
+if (!sectionMap[secId]) {
+  sectionMap[secId] = {
+    id: secId,
+    name: secName,
+    questions: []
   };
+}
 
-  loadTestData();
-}, [session_id, section_id]);
+      sectionMap[secId].questions.push(q);
+    });
 
+    const sectionArray = Object.values(sectionMap);
+    setSections(sectionArray);
+  } catch (err) {
+    console.error("Error fetching answers:", err);
+    setError("Failed to load answers.");
+  } finally {
+    setLoading(false);
+  }
+};
 
+    fetchAnswers();
+  }, [session_id, section_id]);
 
   const { displayedSections, totalQuestions, answeredQuestions } = useMemo(() => {
-    if (!sections || sections.length === 0)
-      return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
+    if (!sections?.length) return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
 
     let total = 0, answered = 0;
-    const sectionsToDisplay = sections.map(section => {
-      total += section.questions.length;
-      const answeredInSection = section.questions.filter(q => q.answer !== null);
+    const filteredSections = sections.map(section => {
+      const filteredQuestions = section.questions || [];
+
+      total += filteredQuestions.length;
+
+      const answeredInSection = filteredQuestions.filter(q => q.answer !== null && q.answer !== '');
       answered += answeredInSection.length;
 
-      if (showOnlyUnanswered) {
-        const unansweredQuestions = section.questions.filter(q => q.answer === null);
-        if (unansweredQuestions.length > 0)
-          return { ...section, questions: unansweredQuestions, answeredCount: answeredInSection.length };
-        return null;
-      }
+      const displayedQuestions = showOnlyUnanswered
+        ? filteredQuestions.filter(q => q.answer === null || q.answer === '')
+        : filteredQuestions;
 
-      return { ...section, answeredCount: answeredInSection.length };
+      if (!displayedQuestions.length) return null;
+
+      return {
+        ...section,
+        questions: displayedQuestions,
+        answeredCount: answeredInSection.length
+      };
     }).filter(Boolean);
 
-    return { displayedSections: sectionsToDisplay, totalQuestions: total, answeredQuestions: answered };
+    return { displayedSections: filteredSections, totalQuestions: total, answeredQuestions: answered };
   }, [sections, showOnlyUnanswered]);
 
-  const handleEditClick = (questionId) => alert(`Editing question ID: ${questionId}`);
-  const handleGoBack = () => alert("Going back to the test!");
+  const progressPercentage = totalQuestions ? (answeredQuestions / totalQuestions) * 100 : 0;
+
+  const handleEditClick = (questionId) => {
+  if (!questionId) {
+    console.warn("Invalid questionId:", questionId);
+    return;
+  }
+  navigate(`/test/${session_id}/section/${section_id}/question/${questionId}`);
+};
+
+  const handleGoBack = () => {
+    alert("Navigating back to test...");
+  };
+
   const handleSubmit = () => {
     if (window.confirm("Are you sure you want to submit your test?")) {
-      alert("Test Submitted!");
+      alert("Test submitted!");
+      // actual submission logic here
     }
   };
-  const handleFaqClick = () => alert("Displaying FAQs.");
 
-  const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+  const handleFaqClick = () => {
+    alert("FAQs Coming Soon...");
+  };
 
-  if (loading) return <div style={styles.statusContainer}><h2>Loading Test Summary...</h2></div>;
-  if (error) return <div style={{ ...styles.statusContainer, ...styles.errorStatus }}><h2>Error: {error}</h2></div>;
+  if (loading) return <div style={styles.statusContainer}><h2>Loading Summary...</h2></div>;
+  if (error) return <div style={{ ...styles.statusContainer, ...styles.errorStatus }}><h2>{error}</h2></div>;
 
   return (
     <>
@@ -247,7 +288,7 @@ const TestSummaryScreen = ({ session_id,  section_id }) => {
               <button style={styles.faqButton} onClick={handleFaqClick}>? FAQs</button>
               <div style={styles.userProfile}>
                 <div style={styles.avatar}></div>
-                <span>Arjun</span>
+                <span>Candidate</span>
               </div>
             </div>
           </div>
@@ -255,9 +296,7 @@ const TestSummaryScreen = ({ session_id,  section_id }) => {
 
         <main style={styles.reviewContent}>
           <h1 style={styles.reviewTitle}>Review Your Answers</h1>
-          <p style={styles.reviewSubtitle}>
-            Please review your answers by section. You can go back and edit any question before submitting.
-          </p>
+          <p style={styles.reviewSubtitle}>You can go back and edit any question before submitting.</p>
 
           <div style={styles.progressSection}>
             <div style={styles.progressHeader}>
@@ -271,21 +310,25 @@ const TestSummaryScreen = ({ session_id,  section_id }) => {
 
           <div style={styles.toggleSection}>
             <span>Show only unanswered questions</span>
-            <div style={styles.toggleSwitch} onClick={() => setShowOnlyUnanswered(!showOnlyUnanswered)}>
+            <div style={styles.toggleSwitch} onClick={() => setShowOnlyUnanswered(prev => !prev)}>
               <div style={{ ...styles.toggleSlider, ...(showOnlyUnanswered && styles.toggleSliderChecked) }}>
                 <span style={{ ...styles.sliderCircle, ...(showOnlyUnanswered && styles.sliderCircleChecked) }}></span>
               </div>
             </div>
           </div>
 
-          {displayedSections.map(section => (
-            <div key={section.name} style={styles.sectionGroup}>
+          {displayedSections.map((section) => (
+  <div key={section.id} style={styles.sectionGroup}>
+
               <h3 style={styles.sectionTitle}>
                 {section.name} ({section.answeredCount}/{section.questions.length} answered)
               </h3>
               {section.questions.map(q => (
                 <div key={q.id} style={styles.questionItem}>
-                  <div style={{ ...styles.questionStatusIcon, ...(q.answer ? styles.answeredIcon : styles.unansweredIcon) }}>
+                  <div style={{
+                    ...styles.questionStatusIcon,
+                    ...(q.answer ? styles.answeredIcon : styles.unansweredIcon)
+                  }}>
                     {q.answer ? '✓' : '✗'}
                   </div>
                   <div style={styles.questionDetails}>
@@ -302,14 +345,11 @@ const TestSummaryScreen = ({ session_id,  section_id }) => {
         </main>
 
         <footer style={styles.reviewFooter}>
-          <button style={{ ...styles.actionBtn, ...styles.btnSecondary }} onClick={handleGoBack}>
-            Go Back to Test
-          </button>
-          <button style={{ ...styles.actionBtn, ...styles.btnPrimary }} onClick={handleSubmit}>
-            Submit Test
-          </button>
+          <button style={{ ...styles.actionBtn, ...styles.btnSecondary }} onClick={handleGoBack}>Go Back to Test</button>
+          <button style={{ ...styles.actionBtn, ...styles.btnPrimary }} onClick={handleSubmit}>Submit Test</button>
         </footer>
       </div>
+
       <div style={styles.decorativeShape}></div>
     </>
   );
