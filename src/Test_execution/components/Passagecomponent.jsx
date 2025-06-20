@@ -10,11 +10,15 @@ const PassageComponent = ({ question, onAnswerUpdate, currentStatus }) => {
   const { passage_text, text, sub_questions = [] } = question;
 
   const renderSubQuestion = (subQ) => {
+    const handleSubAnswerUpdate = (answer, status) => {
+      onAnswerUpdate(subQ.id, answer, status);
+    };
+
     const props = {
       question: subQ,
-      onAnswerUpdate,
+      onAnswerUpdate: handleSubAnswerUpdate,
       currentStatus: currentStatus[subQ.id] || {},
-      onNext: () => {},
+      onNext: () => {}, // Can be customized if needed
     };
 
     switch (subQ.type) {

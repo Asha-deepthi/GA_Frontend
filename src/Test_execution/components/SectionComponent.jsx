@@ -381,11 +381,11 @@ const shouldBlur = () => {
 };
 
   return (
-    <div className="p-6 relative">
+    <div className="p-6 relative max-h-[calc(100vh-120px)] overflow-y-auto">
       {shouldBlur() && (
   <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"/>
 )}
-  <div className={`relative transition duration-300 ${shouldBlur() ? "blur-sm brightness-50" : ""}`}>
+  <div className={`relative transition duration-300 min-h-full ${shouldBlur() ? "blur-sm brightness-50" : ""}`}>
       {/* Top bar: violations + timer */}
       <div className="text-right text-lg font-bold mb-4">
         <p className="text-sm text-red-600">

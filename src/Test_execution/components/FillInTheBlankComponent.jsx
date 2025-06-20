@@ -1,24 +1,20 @@
-import React,{ useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const FillInTheBlankComponent = ({ 
-  question, 
-  onAnswerUpdate, 
+const FillInTheBlankComponent = ({
+  question,
+  onAnswerUpdate,
   currentStatus,
   onNext,
   isLast
 }) => {
-  const [answer, setAnswer] = useState('');
+  const [answer, setAnswer] = useState(currentStatus?.answer?.toString() || '');
 
-  // Load saved answer when component mounts or when question changes
+  // Load saved answer when question changes
   useEffect(() => {
-    if (currentStatus?.answer) {
-      setAnswer(currentStatus.answer);
-    } else {
-      setAnswer('');
-    }
-  }, [question.id]);
+    setAnswer(currentStatus?.answer?.toString() || '');
+  }, [question.id, currentStatus?.answer]);
 
-  const handleAction = async (markForReview = false) => {
+  const handleAction = (markForReview = false) => {
     const trimmedAnswer = answer.trim();
     const hasAnswer = trimmedAnswer !== '';
 
@@ -26,15 +22,15 @@ const FillInTheBlankComponent = ({
       ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
       : hasAnswer ? 'answered' : 'skipped';
 
-    // Notify parent with updated answer and status
     onAnswerUpdate(question.id, {
       answer: hasAnswer ? trimmedAnswer : null,
       markedForReview: markForReview,
-      status,
+      type: question.type,
     });
-    if (!isLast && onNext){
-       onNext();
-      }
+
+    if (!isLast && onNext) {
+      onNext();
+    }
   };
 
   return (
@@ -45,6 +41,7 @@ const FillInTheBlankComponent = ({
         className="border p-2 rounded w-full mb-4"
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
+        placeholder="Type your answer here"
       />
 
       <div className="flex gap-4">

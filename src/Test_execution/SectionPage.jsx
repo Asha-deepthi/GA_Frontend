@@ -199,30 +199,40 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
     if (selectedSectionId && !stopTimer) setStopTimer(false);
   }, [selectedSectionId]);
 
-  const handleSectionComplete = () => {
-    setCompletedSections((prev) => [...prev, selectedSectionId]);
+ const handleSectionComplete = () => {
+  // Add the current section to the new completed list
+  const updatedCompleted = [...completedSections, selectedSectionId];
+  setCompletedSections(updatedCompleted);
+  setStopTimer(true);
+
+  console.log("✅ Completed section:", selectedSectionId);
+  console.log("🧩 Updated completedSections:", updatedCompleted);
+
+  const currentIndex = sections.findIndex(
+    (sec) => sec.section_id === selectedSectionId
+  );
+  console.log("🔢 Current section index:", currentIndex);
+
+  // Use local updatedCompleted to find next unvisited section
+  const remainingSections = sections.slice(currentIndex + 1);
+  const nextSection = remainingSections.find(
+    (sec) => ![...completedSections, selectedSectionId].includes(sec.section_id)
+  );
+
+  console.log("➡️ Next section to navigate to:", nextSection);
+
+  if (nextSection) {
+    console.log("✅ Navigating to section ID:", nextSection.section_id);
+    setSelectedSectionId(nextSection.section_id);
+  } else {
+    console.log("🎉 All sections complete");
+    setTestCompleted(true);
+    setSelectedSectionId(null);
     setStopTimer(true);
-
-    // Find the index of the completed section
-    const currentIndex = sections.findIndex((sec) => sec.id === selectedSectionId);
-
-    // Find the next uncompleted section
-    const nextSection = sections.slice(currentIndex + 1).find(
-      (sec) => !completedSections.includes(sec.id)
-    );
-
-    if (nextSection) {
-      setSelectedSectionId(nextSection.id);
-    } else {
-      setTestCompleted(true);
-      setSelectedSectionId(null);
-      setStopTimer(true);
-      alert("✅ All sections completed! Submitting test...");
-      // Optionally navigate to a summary page here
-      navigate("/submission");
-    }
-  };
-
+    alert("✅ All sections completed! Submitting test...");
+    navigate("/submission");
+  }
+};
 
   const updateQuestionStatus = (qid, status, answer = null) => {
     setAnswersStatus((prev) => ({

@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
 const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(currentStatus?.answer?.toString() || '');
 
   useEffect(() => {
-    if (currentStatus?.answer !== undefined && currentStatus?.answer !== null) {
-      setValue(currentStatus.answer);
-    } else {
-      setValue('');
-    }
-  }, [question.id]);
+    setValue(currentStatus?.answer?.toString() || '');
+  }, [question.id, currentStatus?.answer]);
 
   const handleAction = (markForReview = false) => {
     const trimmedValue = value.trim();
@@ -21,11 +17,12 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isL
     onAnswerUpdate(question.id, {
       answer: hasAnswer ? trimmedValue : null,
       markedForReview: markForReview,
-      status
+      type: question.type,
     });
-    if (!isLast && onNext){
-       onNext();
-      }
+
+    if (!isLast && onNext) {
+      onNext();
+    }
   };
 
   return (
@@ -36,6 +33,7 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isL
         value={value}
         onChange={(e) => setValue(e.target.value)}
         className="border p-2 w-full mb-4 rounded"
+        placeholder="Enter a number"
       />
       <div className="flex gap-4">
         <button onClick={() => handleAction(false)} className="bg-green-600 text-white px-4 py-2 rounded">
