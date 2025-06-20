@@ -46,7 +46,7 @@ export default function VideoInterviewGuide() {
           <div className="h-6 w-[2px] bg-gray-300" />
           <div className="flex items-center gap-2 px-2">
             <img
-              src="images/profilepic.png"
+              src="/images/profilepic.png"
               alt="Avatar"
               className="w-6 h-6 rounded-full"
             />
