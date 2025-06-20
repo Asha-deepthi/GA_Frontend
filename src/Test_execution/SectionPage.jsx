@@ -264,7 +264,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
   if (!fullscreenReady) {
     return (
       <div className="min-h-screen bg-white text-[#00A398]">
-        <TopHeader />
+      <TopHeader userName={userName} />
         <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
           <div className="flex flex-col gap-4 items-center">
             <h1 className="text-3xl font-bold mb-4">Start Your Test</h1>
@@ -286,7 +286,7 @@ if (testCompleted) {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
-      <TopHeader />
+      <TopHeader userName={userName} />
       <div className="flex flex-1">
         <div className="border-r p-4">
           <SidebarLayout
