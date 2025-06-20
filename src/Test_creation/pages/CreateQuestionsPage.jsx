@@ -53,6 +53,7 @@ const QuestionForm = ({ sectionType, onSave, onCancel }) => {
             correctAnswer: '',
             videoTime: 60,
             audioTime: 60,
+            allowMultiple: false,
         };
         setSubQuestions([...subQuestions, newSubQuestion]);
     };
@@ -62,18 +63,43 @@ const QuestionForm = ({ sectionType, onSave, onCancel }) => {
     const handleSubQuestionOptionChange = (subQuestionId, optionId, field, value) => setSubQuestions(prev => prev.map(sq => sq.id === subQuestionId ? { ...sq, options: sq.options.map(opt => opt.id === optionId ? { ...opt, [field]: value } : opt) } : sq));
     const handleRemoveSubQuestionOption = (subQuestionId, optionId) => setSubQuestions(prev => prev.map(sq => (sq.id === subQuestionId && sq.options.length > 2) ? { ...sq, options: sq.options.filter(opt => opt.id !== optionId) } : sq));
 
+// =================== REPLACE YOUR ENTIRE handleSave FUNCTION WITH THIS ===================
     const handleSave = () => {
-        onSave({
+        const payload = {
             type: sectionType,
             text: questionText,
-            answers: sectionType === 'mcq' ? answers : (sectionType === 'fib' ? [{ text: fibAnswer }] : []),
-            paragraph: paragraphContent,
-            subQuestions: subQuestions,
+            allowMultiple: allowMultiple, // For the main MCQ question
+            fib_answer: null,
+            answers: [],
+            
+            // FIX #1: Correctly send the paragraph content.
+            paragraph: sectionType === 'paragraph' ? paragraphContent : null,
+            
+            // The subQuestions array now includes the new allowMultiple state.
+            subQuestions: subQuestions, 
+            
             videoTime: videoTime,
             audioTime: audioTime
-        });
-    };
+        };
 
+        // FIX #2: Correctly format fib_answer for multiple selections.
+        if (sectionType === 'mcq') {
+            payload.answers = answers; // Send all options to the backend.
+            const correctAnswers = answers
+                .filter(opt => opt.isCorrect)
+                .map(opt => opt.text);
+            
+            if (correctAnswers.length > 0) {
+                // Use a separator like '|||' to join multiple answers.
+                payload.fib_answer = correctAnswers.join('|');
+            }
+        } else if (sectionType === 'fib') {
+            payload.fib_answer = fibAnswer;
+        }
+
+        // Send the complete and correct payload.
+        onSave(payload);
+    };
     let formContent = null;
 
     if (sectionType === 'mcq') {
@@ -82,7 +108,7 @@ const QuestionForm = ({ sectionType, onSave, onCancel }) => {
                 <div className="form-group full-width"><label>Question Text</label><textarea value={questionText} onChange={e => setQuestionText(e.target.value)} /></div>
                 <h3 className="answer-options-header">Answer Options</h3>
                 {answers.map(opt => <AnswerOption key={opt.id} option={opt} onUpdate={handleAnswerUpdate} onDelete={handleDeleteOption} inputType={allowMultiple ? 'checkbox' : 'radio'} name="correct-answer" />)}
-            </>
+                                    </>
         );
     } else if (sectionType === 'fib') {
         formContent = (
@@ -118,6 +144,15 @@ const QuestionForm = ({ sectionType, onSave, onCancel }) => {
                                         </div>
                                     ))}
                                     <button type="button" className="action-btn btn-light btn-small" onClick={() => handleAddSubQuestionOption(sq.id)}>Add Option</button>
+                                 <div className="checkbox-group" style={{ marginTop: '10px' }}>
+                                        <input
+                                            type="checkbox"
+                                            id={`sq-allow-multiple-${sq.id}`} // 'sq' is correctly defined here
+                                            checked={sq.allowMultiple || false}
+                                            onChange={e => handleSubQuestionChange(sq.id, 'allowMultiple', e.target.checked)}
+                                        />
+                                        <label htmlFor={`sq-allow-multiple-${sq.id}`}>Allow Multiple Correct Answers</label>
+                                    </div>
                                 </div>
                             )}
                             {sq.type === 'fib' && (

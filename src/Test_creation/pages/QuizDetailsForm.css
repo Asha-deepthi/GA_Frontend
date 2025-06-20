@@ -28,10 +28,11 @@
     color: var(--gray-color);
 }
 
-.import-button {
+/* This is the corrected rule with a more specific selector */
+.quiz-details-header .import-button {
     background-color: var(--white-color);
     border: 1px dashed var(--border-color);
-    color: var(--text-color);
+    color: #888888; /* Light gray text color */
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
@@ -42,11 +43,11 @@
 .form-group { flex: 1; display: flex; flex-direction: column; }
 .form-group.full-width { width: 100%; margin-bottom: 25px; }
 
-label {
+.form-group label {
     margin-bottom: 8px;
     font-weight: 500;
     font-size: 0.9rem;
-    color: var(--label-color);
+    color: #000000; /* Pure black */
 }
 
 input[type="text"], input[type="number"], textarea {

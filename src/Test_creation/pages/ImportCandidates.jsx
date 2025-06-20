@@ -129,7 +129,7 @@ const ImportCandidates = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:8000/api/test_creation/create-candidate/', {
+      const response = await fetch('http://localhost:8000/api/test-creation/create-candidate/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ name: candidateToSave.name, email: candidateToSave.email, phone: candidateToSave.phone })

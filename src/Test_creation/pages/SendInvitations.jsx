@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './SendInvitations.css'; // We'll create this CSS file next
 import { useParams } from 'react-router-dom';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 // --- Helper Icon Components ---
 const BellIcon = () => (
@@ -19,6 +21,7 @@ const SendInvitations = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
     const [invitationMessage, setInvitationMessage] = useState("You have been invited to take an online assessment. Please log in to our platform to begin your test.");
+    const [expiryDate, setExpiryDate] = useState(new Date());
 
     const fetchAssignedCandidates = async () => {
         setIsLoading(true);
@@ -43,13 +46,17 @@ const SendInvitations = () => {
     }, [testId]);
 
     const handleSendInvitations = async () => {
+         if (!expiryDate) {
+            alert("Please select a test expiry date and time.");
+            return;
+        }
         setIsSending(true);
         const accessToken = sessionStorage.getItem("access_token");
         try {
             const response = await fetch(`http://localhost:8000/api/test-creation/send-invitations/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-                body: JSON.stringify({ test_id: testId, message: invitationMessage })
+                body: JSON.stringify({ test_id: testId, message: invitationMessage,expiry_date: expiryDate.toISOString()})
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Failed to send invitations.");
@@ -106,7 +113,15 @@ const SendInvitations = () => {
                         <div className="form-group">
                             <label htmlFor="expiry-date">Test Expiry Date & Time</label>
                             <div className="input-with-icon">
-                                <input type="text" id="expiry-date" placeholder="Select Date & Time" />
+                               <DatePicker
+                                    selected={expiryDate}
+                                    onChange={(date) => setExpiryDate(date)}
+                                    showTimeSelect
+                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                    className="date-picker-input" // Add a class for styling if needed
+                                    placeholderText="Select Date & Time"
+                                    minDate={new Date()} // Prevent selecting past dates
+                                />
                                 <span className="input-icon"><CalendarIcon /></span>
                             </div>
                         </div>
