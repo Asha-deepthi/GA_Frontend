@@ -24,7 +24,7 @@ export default function SectionComponent({
   apiurl,
   answerApiUrl,
   onSectionComplete,
-
+  mediaStream,
   // lifted state & setters from SectionPage
   questions,
   setQuestions,
@@ -33,6 +33,8 @@ export default function SectionComponent({
   answersStatus,
   setAnswersStatus,
   onQuestionAttempted,
+    videoRef, // ✅ Add this
+
 }) {
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
@@ -65,6 +67,8 @@ useEffect(() => {
   const { violationCount, webcamRef } = useProctoring({
     candidate_test_id: candidate_test_id,
     answerApiUrl,
+     mediaStream, 
+     videoElementRef: videoRef,
     onTabSwitch: () => setShowTabSwitchAlert(true),
     onFullscreenExit: () => setShowTabSwitchAlert(true),
     onLowNetwork: () => setShowLowNetworkAlert(true),

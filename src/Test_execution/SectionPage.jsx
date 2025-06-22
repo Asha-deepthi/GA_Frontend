@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef  } from "react";
 import { useParams } from "react-router-dom";
 import TopHeader from "./components/TopHeader";
 import SidebarLayout from "./components/SidebarLayout";
@@ -26,8 +26,9 @@ export default function SectionPage() {
   const [answersStatus, setAnswersStatus] = useState({});
   const [userName, setUserName] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [sharedStream, setSharedStream] = useState(null);
   //const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
-
+  const webcamRef = useRef(null);
   const [testCompleted, setTestCompleted] = useState(false);
   const fetchSectionProgress = () => {
   fetch(
@@ -314,6 +315,9 @@ if (testCompleted) {
             answersStatus={answersStatus}
             setAnswersStatus={setAnswersStatus}
             onQuestionAttempted={incrementAttempted}
+            mediaStream={sharedStream} 
+            videoRef={webcamRef}
+
           />
         </div>
 
@@ -328,7 +332,9 @@ if (testCompleted) {
           />
           <div className="absolute bottom-4 right-4">
             <CameraFeedPanel
-              candidate_test_id={realCandidateTestId} />
+              candidate_test_id={realCandidateTestId} 
+              setStream={setSharedStream} 
+  ref={webcamRef}                />
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, forwardRef } from "react";
 import { Mic, Video } from "lucide-react";
 
 const getSignalLevel = (value) => {
@@ -19,22 +19,35 @@ const SignalBars = ({ level }) => (
   </div>
 );
 
-const CameraFeedPanel = ({ candidate_test_id }) => {
-  const videoRef = useRef(null);
+const CameraFeedPanel = forwardRef(({ candidate_test_id, setStream }, forwardedRef) => {
+  const internalRef = useRef(null);
+  const videoRef = forwardedRef || internalRef;
   const canvasRef = useRef(null);
+
   const [audioStrength, setAudioStrength] = useState(0.1);
   const [videoStrength, setVideoStrength] = useState(0.8);
   const [ready, setReady] = useState(false);
+  const streamRef = useRef(null); // for cleanup
 
   useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then((stream) => {
+    let audioContext;
+
+    const initCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        streamRef.current = stream;
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.onloadeddata = () => {
+            videoRef.current.play().catch(err => console.warn("Video play failed:", err));
+          };
         }
 
-        // AUDIO ANALYSIS
-        const audioContext = new AudioContext();
+        if (setStream) setStream(stream);
+
+        // Audio analysis
+        audioContext = new AudioContext();
         const source = audioContext.createMediaStreamSource(stream);
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
@@ -49,7 +62,7 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
         };
         updateAudio();
 
-        // VIDEO QUALITY SCORE
+        // Video quality
         const videoTrack = stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
         const resolutionScore = ((settings.width || 0) * (settings.height || 0)) / (1920 * 1080);
@@ -58,10 +71,18 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
         setVideoStrength(overallScore);
 
         setTimeout(() => setReady(true), 1000);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("❌ Failed to access media devices", err);
-      });
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      if (audioContext) audioContext.close();
+      // Don't stop stream unless you own it
+      streamRef.current?.getTracks().forEach(track => track.stop());
+    };
   }, []);
 
   useEffect(() => {
@@ -71,8 +92,6 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
       const ctx = canvasRef.current.getContext("2d");
       ctx.drawImage(videoRef.current, 0, 0, 150, 100);
       const dataUrl = canvasRef.current.toDataURL("image/jpeg");
-
-      console.log("📸 Screenshot base64:", dataUrl.substring(0, 100));
 
       try {
         const blob = await fetch(dataUrl).then((res) => res.blob());
@@ -92,11 +111,10 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [ready,candidate_test_id]);
+  }, [ready, candidate_test_id]);
 
   return (
     <div className="fixed bottom-4 right-4 flex" style={{ width: "270px", height: "100px", gap: "15px" }}>
-      {/* Signal Bars */}
       <div className="flex flex-col justify-center gap-4 w-[66px]">
         <div className="flex items-center gap-[10px]">
           <Mic size={20} className="text-gray-600" />
@@ -108,7 +126,6 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
         </div>
       </div>
 
-      {/* Webcam Preview */}
       <div className="relative border border-gray-300 shadow-sm bg-black rounded-[5px] overflow-hidden">
         <video
           ref={videoRef}
@@ -120,10 +137,9 @@ const CameraFeedPanel = ({ candidate_test_id }) => {
           className="object-cover"
         />
         <canvas ref={canvasRef} width={150} height={100} style={{ display: "none" }} />
-        
       </div>
     </div>
   );
-};
+});
 
 export default CameraFeedPanel;
