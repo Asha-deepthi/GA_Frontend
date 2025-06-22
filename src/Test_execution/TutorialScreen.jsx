@@ -23,7 +23,7 @@ export default function VideoInterviewGuide() {
     }
   };
   return (
-    <div className="relative w-screen min-h-screen bg-white overflow-y-auto overflow-x-hidden font-overpass">
+    <div className="relative w-screen h-screen bg-white overflow-hidden font-overpass flex flex-col">
       {/* Top Colored Bar */}
       <div className="sticky top-0 left-0 w-full flex h-[10px] z-10">
         <div className="flex-1 bg-red-500" />
@@ -57,7 +57,7 @@ export default function VideoInterviewGuide() {
 
       {/* Main Content */}
 {/* Main Content */}
-<div className="w-full min-h-[728px] px-4 sm:px-8 lg:px-0 mx-auto flex flex-col items-center gap-[60px] mt-5 max-w-[856px]">
+<div className="w-full flex-1 px-4 sm:px-8 lg:px-0 mx-auto flex flex-col items-center gap-6 justify-center max-w-[856px] overflow-hidden">
   {/* Heading and Paragraph */}
   <div className="w-full flex flex-col items-center gap-[10px]">
     <h1 className="text-[32px] sm:text-[36px] md:text-[40px] leading-[44px] md:leading-[48px] font-extrabold text-gray-900 text-center">
@@ -74,7 +74,7 @@ export default function VideoInterviewGuide() {
     <img
       src="/images/video.png"
       alt="AI Interview Guide"
-      className="w-full h-full object-cover"
+      className="w-full max-h-[300px] object-contain"
     />
   </div>
 

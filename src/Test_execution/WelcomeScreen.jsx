@@ -21,7 +21,7 @@ const WelcomeScreen = () => {
         }
     };
   return (
-    <div className="w-screen min-h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
+    <div className="w-screen h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
       {/* Top Color Bar */}
       <div className="w-full h-[10px] flex absolute top-0 left-0 z-10">
         <div className="flex-1 bg-red-500" />
@@ -43,7 +43,7 @@ const WelcomeScreen = () => {
       </header>
 
       {/* Main Content */}
-      <div className="w-full flex flex-col items-center justify-center mt-8 px-4 md:px-0 max-w-[456px]">
+      <div className="w-full flex-1 flex flex-col items-center justify-center px-4 md:px-0 max-w-[456px] overflow-hidden">
         {/* Heading */}
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <h1 className="text-black font-extrabold text-[40px] leading-[48px] flex items-center gap-2">
@@ -60,7 +60,7 @@ const WelcomeScreen = () => {
         </div>
 
         {/* Interview Box */}
-        <div className="mt-20 mb-40 w-full h-[340px] p-6 rounded-xl border border-r-4 border-b-4 border-teal-500 shadow-[4px_4px_10px_rgba(0,0,0,0.1)] bg-teal-50 bg-opacity-[0.97] flex flex-col justify-between">
+        <div className="my-auto w-full max-h-[340px] p-6 rounded-xl border border-r-4 border-b-4 border-teal-500 shadow-[4px_4px_10px_rgba(0,0,0,0.1)] bg-teal-50 bg-opacity-[0.97] flex flex-col justify-between">
           <div>
             <h2 className="text-black font-bold text-[28px] leading-[36px] mb-2">
               Accept Your Interview
