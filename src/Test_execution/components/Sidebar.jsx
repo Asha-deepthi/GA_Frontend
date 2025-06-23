@@ -132,7 +132,7 @@ const Sidebar = ({ candidates, onSelect }) => {
         {filteredAndSortedCandidates.length > 0 ? (
           filteredAndSortedCandidates.map((candidate) => (
             <CandidateCard
-              key={candidate.id}
+              key={candidate.user}
               candidate={candidate}
               onClick={() => onSelect(candidate)}
             />

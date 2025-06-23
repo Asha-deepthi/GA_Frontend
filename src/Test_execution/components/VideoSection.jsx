@@ -108,37 +108,52 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
     }
   };
 
-  const renderProctoringScreenshots = () => {
-    const webcamShots = screenshots
-      .filter((s) => s.screenshot?.includes("webcam_"))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+ const renderProctoringScreenshots = () => {
+  console.log("renderProctoringScreenshots called");
+  console.log("screenshots:", screenshots);
 
-    const shotsToShow = showAllScreenshots ? webcamShots : webcamShots.slice(0, 3);
+  const webcamShots = screenshots
+    .filter((s) => s.screenshot?.includes("webcam_"))
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    return (
-      <div className="border rounded-lg p-4 shadow-sm bg-white">
-        <h4 className="font-medium text-gray-700 mb-4">Proctoring Screenshots:</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {shotsToShow.map((s, i) => (
+  console.log("webcamShots length:", webcamShots.length);
+
+  const shotsToShow = showAllScreenshots ? webcamShots : webcamShots.slice(0, 3);
+
+  console.log("shotsToShow length:", shotsToShow.length);
+  return (
+    <div className="border rounded-lg p-4 shadow-sm bg-white">
+      <h4 className="font-medium text-gray-700 mb-4">Proctoring Screenshots:</h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {shotsToShow.map((s, i) => {
+          console.log("Screenshot URL:", s.screenshot);  // <-- Add here
+          return (
             <div key={s?.id || i}>
-              <img src={`http://127.0.0.1:8000${s.screenshot}`} className="w-full rounded mb-1" />
-              <p className="text-xs text-gray-500">{new Date(s.timestamp).toLocaleString()}</p>
+              <img
+                src={`http://127.0.0.1:8000${s.screenshot}`}
+                className="w-full rounded mb-1"
+              />
+              <p className="text-xs text-gray-500">
+                {new Date(s.timestamp).toLocaleString()}
+              </p>
             </div>
-          ))}
-        </div>
-        {webcamShots.length > 3 && (
-          <div className="text-center mt-4">
-            <button
-              onClick={() => setShowAllScreenshots((p) => !p)}
-              className="px-4 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
-            >
-              {showAllScreenshots ? "Hide Extra Screenshots" : "View All Screenshots"}
-            </button>
-          </div>
-        )}
+          );
+        })}
       </div>
-    );
-  };
+      {webcamShots.length > 3 && (
+        <div className="text-center mt-4">
+          <button
+            onClick={() => setShowAllScreenshots((p) => !p)}
+            className="px-4 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
+          >
+            {showAllScreenshots ? "Hide Extra Screenshots" : "View All Screenshots"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
   //const currentSection = sections[activeSectionIndex];
   //const totalMarks = currentSection?.questions?.length * currentSection?.marks_per_question || 0;
