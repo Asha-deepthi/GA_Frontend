@@ -6,9 +6,10 @@ import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
 import { useNavigate } from "react-router-dom";
+import BASE_URL from "../config";
 
-const apiurl = "http://localhost:8000/api/test-creation";
-const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
+//const apiurl = "http://localhost:8000/api/test-creation";
+//const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
 
 export default function SectionPage() {
   const { testId } = useParams();
@@ -32,7 +33,7 @@ export default function SectionPage() {
   const [testCompleted, setTestCompleted] = useState(false);
   const fetchSectionProgress = () => {
   fetch(
-    `http://localhost:8000/api/test-execution/candidate-section-progress/?test_id=${testId}&candidate_test_id=${realCandidateTestId}`
+    `${BASE_URL}/test-execution/candidate-section-progress/?test_id=${testId}&candidate_test_id=${realCandidateTestId}`
   )
     .then((res) => res.json())
     .then((data) => setSections(data || []))
@@ -72,7 +73,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
     return;
   }
 
-  fetch("http://localhost:8000/api/me/", {
+  fetch(`${BASE_URL}/me/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -89,7 +90,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
       const candidateId = user.id;
 
       return fetch(
-        `${apiurl}/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
+        `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -139,7 +140,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
     const fetchTimer = async () => {
       try {
         const res = await fetch(
-          `${apiurl}/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
+          `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
         );
         if (!res.ok) throw new Error("Timer fetch failed");
         const data = await res.json();
@@ -175,7 +176,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
 
         localStorage.setItem(`timer_${selectedSectionId}`, next);
         if (next % 10 === 0) {
-          fetch(`${apiurl}/save-timer/`, {
+          fetch(`${BASE_URL}/test-creation/save-timer/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -305,8 +306,6 @@ if (testCompleted) {
             section_id={selectedSectionId}
             candidate_test_id={realCandidateTestId}
             test_id={testId}
-            apiurl={apiurl}
-            answerApiUrl={answerApiUrl}
             onSectionComplete={handleSectionComplete}
             questions={questions}
             setQuestions={setQuestions}

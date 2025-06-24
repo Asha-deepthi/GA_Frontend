@@ -14,6 +14,7 @@ import LowNetworkAlert from "../LowNetworkAlert";
 //import AudioAlert from "../AudioAlert";
 import VideoAlert from "../VideoAlert";
 import { useParams } from 'react-router-dom';
+import BASE_URL from "../config";
 
 //const SECTION_DURATION = 5 * 60; // default in seconds
 
@@ -21,8 +22,6 @@ export default function SectionComponent({
   section_id,
   test_id,
   candidate_test_id,
-  apiurl,
-  answerApiUrl,
   onSectionComplete,
   mediaStream,
   // lifted state & setters from SectionPage
@@ -127,7 +126,7 @@ const dismissAndUnblur = (setAlertFn) => {
      }
       setLoading(true);
       try {
-        const res = await fetch(`${apiurl}/tests/${test_id}/sections/${section_id}/questions/`);
+        const res = await fetch(`${BASE_URL}/test-creation/tests/${test_id}/sections/${section_id}/questions/`);
         if (!res.ok) throw new Error('Failed to fetch questions');
 
         const rawData = await res.json();
@@ -162,7 +161,7 @@ const dismissAndUnblur = (setAlertFn) => {
         }
 
         // ✅ Fetch saved answers
-        const ansRes = await fetch(`${answerApiUrl}/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section_id}`);
+        const ansRes = await fetch(`${BASE_URL}/test-execution/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section_id}`);
         if (!ansRes.ok) throw new Error('Failed to fetch answers');
         const ansData = await ansRes.json();
 
@@ -191,7 +190,7 @@ const dismissAndUnblur = (setAlertFn) => {
     };
 
     fetchSectionData();
-  }, [test_id, section_id, apiurl, answerApiUrl, setQuestions, setAnswersStatus, setCurrentQuestionId]);
+  }, [test_id, section_id, setQuestions, setAnswersStatus, setCurrentQuestionId]);
 
   useEffect(() => {
     if (!currentQuestionId && questions.length > 0) {
@@ -328,7 +327,7 @@ const dismissAndUnblur = (setAlertFn) => {
   form.append("status", status);
 
   latestAnswer.current = {
-    url: `${answerApiUrl}/answers/`,
+    url: `${BASE_URL}/test-execution/answers/`,
     options: { method: "POST", body: form },
   };
 
@@ -350,7 +349,7 @@ const dismissAndUnblur = (setAlertFn) => {
         form.append("section_id", section_id);
         form.append("answer_text", "");
         form.append("status", "skipped");
-        enqueueRequest(`${answerApiUrl}/answers/`, {
+        enqueueRequest(`${BASE_URL}/test-execution/answers/`, {
           method: "POST",
           body: form,
         });
