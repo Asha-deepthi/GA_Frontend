@@ -73,7 +73,7 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
     return;
   }
 
-  fetch(`${BASE_URL}/me/`, {
+  fetch(`http://localhost:8000/api/me/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -88,6 +88,11 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
       setUserName(user.name);  // ✅ This is what you display in JSX
 
       const candidateId = user.id;
+      console.log("🌍 BASE_URL:", BASE_URL);
+console.log("🧪 testId:", testId);
+console.log("🧑‍💻 Full fetch URL:",
+  `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`
+);
 
       return fetch(
         `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidateId}&test_id=${testId}`,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as faceapi from 'face-api.js';
+import BASE_URL from "../../config";
 
 const isFullscreenActive = () =>
   !!(
@@ -11,7 +12,6 @@ const isFullscreenActive = () =>
 
 const useProctoring = ({
   candidate_test_id,
-  answerApiUrl,
   mediaStream = null,
   videoElementRef = null, // ✅ NEW
 
@@ -61,7 +61,7 @@ const useProctoring = ({
       console.log("Logging violation with payload:", payload);
 
       try {
-        const res = await fetch(`${answerApiUrl}/proctoring-logs/`, {
+        const res = await fetch(`${BASE_URL}/test-execution/proctoring-logs/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -77,7 +77,7 @@ const useProctoring = ({
         console.error("Fetch error:", err);
       }
     },
-    [candidate_test_id, answerApiUrl]
+    [candidate_test_id]
   );
 
   const logWithCooldown = (eventType, remarks = "") => {

@@ -65,7 +65,6 @@ useEffect(() => {
   // Hook for proctoring events & violation count
   const { violationCount, webcamRef } = useProctoring({
     candidate_test_id: candidate_test_id,
-    answerApiUrl,
      mediaStream, 
      videoElementRef: videoRef,
     onTabSwitch: () => setShowTabSwitchAlert(true),
