@@ -5,7 +5,7 @@ import SignupPage from "./Test_creation/pages/signup";
 import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
 import Positions from "./Test_creation/pages/tests";
-{/*import JobImportForm from "./Test_creation/pages/importform";*/}
+import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import QuizPreview from "./Test_creation/pages/QuizPreview";
 import QuizSettings from "./Test_creation/pages/QuizSettings";

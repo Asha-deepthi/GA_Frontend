@@ -14,7 +14,7 @@ import LowNetworkAlert from "../LowNetworkAlert";
 //import AudioAlert from "../AudioAlert";
 import VideoAlert from "../VideoAlert";
 import { useParams } from 'react-router-dom';
-import BASE_URL from "../config";
+import BASE_URL from "../../config";
 
 //const SECTION_DURATION = 5 * 60; // default in seconds
 
