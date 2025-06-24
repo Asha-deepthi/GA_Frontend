@@ -125,7 +125,7 @@ const dismissAndUnblur = (setAlertFn) => {
      }
       setLoading(true);
       try {
-        const res = await fetch(`${BASE_URL}/test-creation/tests/${test_id}/sections/${section_id}/questions/`);
+        const res = await fetch(`${BASE_URL}/test-creation/tests/${test_id}/sections/${section_id}/questions/?candidate_test_id=${candidate_test_id}`);
         if (!res.ok) throw new Error('Failed to fetch questions');
 
         const rawData = await res.json();
