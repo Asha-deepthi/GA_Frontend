@@ -12,7 +12,7 @@ const Header = () => {
     { label: "Dashboard", path: "/dashboard", width: "w-[74px]" },
     { label: "Tests", path: "/tests", width: "w-[37px]" },
     { label: "Candidates", path: "/candidates", width: "w-[77px]" },
-    { label: "Create test", path: "/importform", width: "w-[78px]" },
+    { label: "Create test", path: "/QuizCreationFlow", width: "w-[78px]" },
   ];
 
   return (

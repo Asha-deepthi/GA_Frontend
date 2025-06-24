@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import NavBar from '../components/Navbar';
 
 const InterviewDashboard = () => {
   const [currentUser, setCurrentUser] = useState('');
@@ -599,95 +600,7 @@ const InterviewDashboard = () => {
 
  return (
     <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
-      {/* ===== UPDATED HEADER STARTS HERE ===== */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-3">
-            {/* Left Side: Logo */}
-            <div className="flex items-center gap-2 cursor-pointer">
-              {/* New SVG Logo */}
-              <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
-              <svg width="24" height="24" viewBox="0 0 24 24" className="text-teal-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 8L8 0L16 8L8 16L0 8Z" transform="translate(4 4)" />
-              </svg>
-               </Link>
-              <span className="font-bold text-teal-500 text-lg">GA Proctored Test</span>
-            </div>
-
-            <nav>
-              <div className="flex items-center gap-8 text-sm font-medium">
-                {['Dashboard', 'Tests', 'Candidates', 'Create Test'].map(item => (
-                  <button
-                    key={item}
-                    className={`pb-3 hover:text-teal-500 transition-colors duration-200 ${
-                      activeNav === item.toLowerCase().replace(' ', '')
-                        ? 'text-teal-500 border-b-2 border-teal-500'
-                        : 'text-gray-500'
-                    }`}
-                    // --- CHANGE: Use the new handler ---
-                    onClick={() => handleNavClick(item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </nav>
-
-            {/* Right Side: Actions and Profile */}
-            <div className="flex items-center gap-4">
-              <button className="text-gray-500 p-2 rounded-full hover:bg-gray-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-              </button>
-              
-              <div className="relative profile-dropdown">
-                <div
-                  className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                >
-                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm">
-                    {getInitials(currentUser)}
-                  </div>
-                  <span className="text-sm font-medium">{currentUser || 'Loading...'}</span>
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                </div>
-                
-                {showProfileMenu && (
-                  <div className="absolute right-0 top-full mt-3 bg-white min-w-48 shadow-lg rounded-md z-50 border border-gray-100">
-                    <button
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => {
-                        alert('Clicked on Profile');
-                        setShowProfileMenu(false);
-                      }}
-                    >
-                      Profile
-                    </button>
-                    <button
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => {
-                        alert('Clicked on Settings');
-                        setShowProfileMenu(false);
-                      }}
-                    >
-                      Settings
-                    </button>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button
-                      className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-      {/* ===== UPDATED HEADER ENDS HERE ===== */}
-
-
+      <NavBar />
       {/* Dashboard */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Grid */}

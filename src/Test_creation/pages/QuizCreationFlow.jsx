@@ -5,6 +5,7 @@ import SectionSetupPage from './SectionSetupPage';
 import CreateQuestionsPage from './CreateQuestionsPage';
 import QuizSettings from './QuizSettings'; 
 import QuizPreview from './QuizPreview';
+import NavBar from '../components/Navbar'; 
 
 const QuizCreationFlow = () => {
   // We still use internal steps 1, 2, 3, 4 for navigation
@@ -106,13 +107,7 @@ const handleSubmit = async () => {
 
   return (
     <>
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo"><span className="logo-square"></span> GA Proctored Test</div>
-          <nav className="header-nav"><a href="#">Dashboard</a><a href="#">Tests</a><a href="#">Candidates</a><a href="#" className="active-link">Create test</a></nav>
-          <div className="user-profile"><span className="notification-bell" role="img" aria-label="notifications">🔔</span><div className="avatar"></div><span>Arjun Pranan ▼</span></div>
-        </div>
-      </header>
+      <NavBar />
       <main className="main-content">
         <div className="stepper">
           {/* Step 1: Test Title */}
