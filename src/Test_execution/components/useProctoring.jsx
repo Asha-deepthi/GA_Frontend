@@ -13,7 +13,7 @@ const useProctoring = ({
   candidate_test_id,
   answerApiUrl,
   mediaStream = null,
-    videoElementRef = null, // ✅ NEW
+  videoElementRef = null, // ✅ NEW
 
   onTabSwitch = () => {
     console.log("⚠️ Tab switch alert triggered");
@@ -46,6 +46,7 @@ const useProctoring = ({
   const micAnalyserRef = useRef(null);
   const videoStreamRef = useRef(null);
   const violationCooldownMs = 60000;
+  const initialDescriptorRef = useRef(null); // stores the first face
 
   const logViolation = useCallback(
     async ({ eventType, remarks = "", confidence = 0.0 }) => {
@@ -144,7 +145,11 @@ const useProctoring = ({
     };
   }, [candidate_test_id, logViolation, onTabSwitch, onFullscreenExit, onLowNetwork]);
 
-  const alreadyAlertedRef = useRef(false); 
+  const alreadyAlertedRef = useRef(false);
+  const multiFaceAlertedRef = useRef(false);
+  const identityAlertedRef = useRef(false);
+  const noFaceAlertedRef = useRef(false);
+
   useEffect(() => {
     if (!candidate_test_id || !mediaStream) return;
     let faceCheckInterval;
@@ -152,7 +157,7 @@ const useProctoring = ({
 
     const startStreams = async () => {
       try {
-const stream = mediaStream.clone(); // Fix: prevent video freezing or black screen
+        const stream = mediaStream.clone(); // Fix: prevent video freezing or black screen
         if (!stream) {
           logWithCooldown("camera_off", "No shared media stream available");
           onCameraOff();
@@ -163,54 +168,88 @@ const stream = mediaStream.clone(); // Fix: prevent video freezing or black scre
 
         // FACE API: Setup for multiple face detection
 
-const video = videoElementRef?.current;
-if (!video || !video.srcObject) {
-  console.warn("Video element not ready for face-api detection.");
-  return;
-}
+        const video = videoElementRef?.current;
+        if (!video || !video.srcObject) {
+          console.warn("Video element not ready for face-api detection.");
+          return;
+        }
 
-console.log("📹 Video readyState:", video.readyState);
-console.log("📐 Video dimensions:", video.videoWidth, video.videoHeight);
+        console.log("📹 Video readyState:", video.readyState);
+        console.log("📐 Video dimensions:", video.videoWidth, video.videoHeight);
 
         try {
-await faceapi.nets.tinyFaceDetector.loadFromUri("/models/tiny_face_detector/");
-await faceapi.nets.faceLandmark68Net.loadFromUri("/models/face_landmark_68/");
-await faceapi.nets.faceRecognitionNet.loadFromUri("/models/face_recognition/");
-console.log("✅ All models loaded");
+          await faceapi.nets.tinyFaceDetector.loadFromUri("/models/tiny_face_detector/");
+          await faceapi.nets.faceLandmark68Net.loadFromUri("/models/face_landmark_68/");
+          await faceapi.nets.faceRecognitionNet.loadFromUri("/models/face_recognition/");
+          console.log("✅ All models loaded");
 
+          if (!initialDescriptorRef.current) {
+            const initialDetection = await faceapi
+              .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceDescriptor();
 
+            if (initialDetection && initialDetection.descriptor) {
+              initialDescriptorRef.current = initialDetection.descriptor;
+              console.log("✅ Initial face descriptor saved.");
+            } else {
+              console.warn("⚠️ No face detected at start.");
+            }
+          }
 
           faceCheckInterval = setInterval(async () => {
             try {
               const detections = await faceapi
-  .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-  //.withFaceLandmarks();
+                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
+                .withFaceLandmarks()
+                .withFaceDescriptors();
 
-  console.log("Faces detected:", detections.length);
-    detections.forEach((d, i) => {
-      if (d?.score !== undefined) {
-  console.log(`Face ${i + 1}: confidence ${d.score.toFixed(2)}`);
-} else {
-  console.warn(`Face ${i + 1}: no score available`, d);
-}
+              console.log("Faces detected:", detections.length);
 
-    });
-if (detections.length > 1) {
-  logWithCooldown("multiple_faces", `Detected ${detections.length} faces`);
-  if (!alreadyAlertedRef.current) {
-  alert("⚠ Multiple persons detected! Please stay alone during the exam.");
-  alreadyAlertedRef.current = true;
-  setTimeout(() => {
-    alreadyAlertedRef.current = false;
-  }, 15000); // Reset alert flag after 15 seconds
-}
+              // 🙈 No Face Detected
+              if (detections.length === 0 && !noFaceAlertedRef.current) {
+                alert("⚠ No face detected! Please stay in front of the camera.");
+                logWithCooldown("no_face_detected", "No face visible in webcam feed.");
+                noFaceAlertedRef.current = true;
+                setTimeout(() => {
+                  noFaceAlertedRef.current = false;
+                }, 15000); // Reset after 15 seconds
+              }
 
-}
+              // 🔍 Identity Check
+              if (detections.length === 1 && initialDescriptorRef.current) {
+                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.6);
+                const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
+
+                console.log("🧠 Face match result:", bestMatch.toString());
+
+                if (bestMatch.label === "unknown" && !identityAlertedRef.current) {
+                  alert("⚠ Identity mismatch! Please stay in front of the camera.");
+                  logWithCooldown("identity_mismatch", "Detected a different person.");
+                  identityAlertedRef.current = true;
+                  setTimeout(() => {
+                    identityAlertedRef.current = false;
+                  }, 15000);
+                }
+
+              }
+
+              // 👥 Multiple Faces Check
+              if (detections.length > 1 && !multiFaceAlertedRef.current) {
+                alert("⚠ Multiple persons detected! Please stay alone during the exam.");
+                logWithCooldown("multiple_faces", `Detected ${detections.length} faces`);
+                multiFaceAlertedRef.current = true;
+                setTimeout(() => {
+                  multiFaceAlertedRef.current = false;
+                }, 15000);
+              }
 
             } catch (faceErr) {
               console.error("Face detection error:", faceErr);
             }
-          }, 7000); // every 7 seconds
+          }, 2000);
+
+
         } catch (modelLoadErr) {
           logWithCooldown("face_api_error", "Failed to load face-api.js models");
           console.error("FaceAPI load error:", modelLoadErr);
