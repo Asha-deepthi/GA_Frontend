@@ -54,7 +54,7 @@ export default QuizDetailsForm;*/
 import React, { useState, useEffect } from 'react';
 
 // This component only knows how to display the form and tell the parent when it's done.
-const QuizDetailsForm = ({ onNext, onBack, initialData }) => {
+const QuizDetailsForm = ({ onNext, onBack, initialData, onOpenImportModal }) => {
   // Local state for the form fields
   const [title, setTitle] = useState('');
   const [level, setLevel] = useState('');
@@ -100,7 +100,11 @@ const QuizDetailsForm = ({ onNext, onBack, initialData }) => {
             Enter the basic information about your quiz
           </p>
         </div>
-        <button style={{ backgroundColor: 'transparent', border: '1px solid #d1d5db', color: '#6b7280', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+        <button 
+          type="button" 
+          onClick={onOpenImportModal} 
+          style={{ backgroundColor: 'transparent', border: '1px solid #d1d5db', color: '#6b7280', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}
+        >
           Import from Old Quiz
         </button>
       </div>

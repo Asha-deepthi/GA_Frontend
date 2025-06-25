@@ -5,13 +5,15 @@ import SectionSetupPage from './SectionSetupPage';
 import CreateQuestionsPage from './CreateQuestionsPage';
 import QuizSettings from './QuizSettings'; 
 import QuizPreview from './QuizPreview';
+import ImportQuizModal from './ImportQuizModal';
 
 const QuizCreationFlow = () => {
   // We still use internal steps 1, 2, 3, 4 for navigation
   const [currentStep, setCurrentStep] = useState(1);
    const [quizData, setQuizData] = useState({ details: {}, sections: [], settings: {} });
-  const [isLoading, setIsLoading] = useState(false); // For feedback during submission
-  const navigate = useNavigate(); // --- CHANGE: Initialize the navigate function
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleNext = (data) => {
     setQuizData(prev => ({ ...prev, ...data }));
@@ -84,28 +86,92 @@ const handleSubmit = async () => {
   }
 };
 
-  const renderStep = () => {
+const handleImportQuiz = async (testIdToImport) => {
+        setIsImportModalOpen(false); // Close the modal
+        setIsLoading(true);
+        console.log(`Importing data from test ID: ${testIdToImport}`);
+
+        const accessToken = sessionStorage.getItem("access_token");
+        try {
+            // Call the new "full-detail" endpoint you created in the backend
+            const response = await fetch(`http://localhost:8000/api/test-creation/tests/full-detail/${testIdToImport}/`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error("Failed to fetch quiz data for import.");
+
+            // --- 4. THIS IS THE MAGIC STEP ---
+            // It completely replaces the current `quizData` state with the imported data.
+            // The backend serializer was designed to match this structure exactly.
+            setQuizData({
+                details: {
+                    title: data.title,
+                    level: data.level,
+                    description: data.description,
+                    duration: data.duration,
+                    tags: data.tags,
+                },
+                settings: {
+                    passingPercentage: data.passingPercentage,
+                    scoring: data.scoring,
+                    negativeMarking: data.negativeMarking,
+                    backNavigation: data.backNavigation,
+                    results: data.results,
+                    attempts: data.attempts,
+                    numberOfAttempts: data.numberOfAttempts,
+                },
+                sections: data.sections || [] // Use empty array as a fallback
+            });
+
+             setCurrentStep(5);
+
+        alert(`Successfully imported quiz: ${data.title}. Review and publish.`);
+
+    } catch (error) {
+        alert(`Error during import: ${error.message}`);
+        console.error(error);
+    } finally {
+        setIsLoading(false); // Hide the loading indicator
+    }
+};
+     const renderStep = () => {
       switch(currentStep) {
           case 1:
-              return <QuizDetailsForm onNext={handleNext} />;
+              // We pass all the necessary props here
+              return (
+                <QuizDetailsForm 
+                  onNext={handleNext} 
+                  initialData={quizData.details}
+                  onOpenImportModal={() => setIsImportModalOpen(true)}
+                />
+              );
           case 2:
               return <SectionSetupPage onBack={handleBack} onNext={handleNext} initialQuizData={quizData} />;
           case 3:
               return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} />;
-           case 4:
-              return <QuizSettings onBack={handleBack} onNext={handleNext} />;
-          // --- NEW STEP 5: Render the QuizPreview component and pass the handleSubmit function ---
+          case 4:
+              return <QuizSettings onBack={handleBack} onNext={handleNext} initialData={quizData.settings} />;
           case 5:
-              // The preview component gets the final handleSubmit function
               return <QuizPreview onBack={handleBack} handleSubmit={handleSubmit} quizData={quizData} />;
-          // Fallback case
           default:
-              return <QuizDetailsForm onNext={handleNext} />;
+              // The default case should also have all props for safety
+              return (
+                <QuizDetailsForm 
+                  onNext={handleNext} 
+                  initialData={quizData.details}
+                  onOpenImportModal={() => setIsImportModalOpen(true)}
+                />
+              );
       }
   }
 
   return (
     <>
+     <ImportQuizModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportQuiz}
+      />
       <header className="app-header">
         <div className="header-content">
           <div className="logo"><span className="logo-square"></span> GA Proctored Test</div>

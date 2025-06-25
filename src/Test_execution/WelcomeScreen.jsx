@@ -1,16 +1,15 @@
-import React from "react";
+import React, { useState, useEffect  } from 'react';
 import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useParams } from 'react-router-dom';
 
 const WelcomeScreen = () => {
     const navigate = useNavigate();
-    
-    // --- FIX 2: Get the testId from this page's URL ---
-    // This works because your App.jsx has the route: /welcome/:testId
     const { testId } = useParams();
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
-    const handleAccept = () => {
+    /*const handleAccept = () => {
         // --- FIX 3: Include the testId when navigating to the next page ---
         if (testId) {
             navigate(`/basic-details/${testId}`);
@@ -18,6 +17,46 @@ const WelcomeScreen = () => {
             // This is a safety check in case the URL is wrong
             alert("Error: Test ID is missing. Cannot proceed.");
             console.error("testId is missing from URL parameters in WelcomeScreen.");
+        }
+    };*/
+
+const handleAccept = async () => {
+        setIsLoading(true);
+        setErrorMessage('');
+        const accessToken = sessionStorage.getItem("access_token");
+
+        if (!testId) {
+            setErrorMessage("Error: Test ID is missing. Cannot proceed.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            // Call the new "gatekeeper" endpoint you just created
+            const response = await fetch('http://localhost:8000/api/test-creation/validate-attempt/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ test_id: testId }) // Send the test_id
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // The gatekeeper said NO (expired, completed, etc.)
+                // The error message comes directly from your backend.
+                throw new Error(data.error);
+            }
+
+            // The gatekeeper said YES. Proceed exactly as before.
+            navigate(`/basic-details/${testId}`);
+
+        } catch (err) {
+            // Display any error message (e.g., "Your access to this test expired...")
+            setErrorMessage(err.message);
+            setIsLoading(false);
         }
     };
   return (
@@ -59,26 +98,37 @@ const WelcomeScreen = () => {
           </p>
         </div>
 
-        {/* Interview Box */}
-        <div className="mt-20 mb-40 w-full h-[340px] p-6 rounded-xl border border-r-4 border-b-4 border-teal-500 shadow-[4px_4px_10px_rgba(0,0,0,0.1)] bg-teal-50 bg-opacity-[0.97] flex flex-col justify-between">
-          <div>
-            <h2 className="text-black font-bold text-[28px] leading-[36px] mb-2">
-              Accept Your Interview
-            </h2>
-            <p className="text-gray-500 text-base leading-6">
-              Please confirm your availability to proceed with the interview or choose to reschedule.
-            </p>
-          </div>
+<div className="mt-20 mb-10 w-full min-h-[340px] p-6 rounded-xl border border-r-4 border-b-4 border-teal-500 shadow-[4px_4px_10px_rgba(0,0,0,0.1)] bg-teal-50 bg-opacity-[0.97] flex flex-col justify-between">
+                    <div>
+                        <h2 className="text-black font-bold text-[28px] leading-[36px] mb-2">
+                            Accept Your Interview
+                        </h2>
+                        <p className="text-gray-500 text-base leading-6">
+                            Please confirm your availability to proceed with the interview or choose to reschedule.
+                        </p>
+                    </div>
 
-          <div className="flex justify-end">
-            <button onClick={handleAccept} className="bg-[#00A398] text-white px-6 py-2 rounded-3xl font-bold text-[16px]">
-              Accept
-            </button>
-          </div>
+                    <div className="flex justify-end">
+                        <button 
+                            onClick={handleAccept} 
+                            disabled={isLoading} // --- Disable button while loading
+                            className="bg-[#00A398] text-white px-6 py-2 rounded-3xl font-bold text-[16px] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? 'Verifying...' : 'Accept'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* --- 3. This is where the error message will be displayed --- */}
+                {errorMessage && (
+                    <div className="w-full max-w-[456px] p-4 mb-20 text-center bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <p className="font-bold">Access Denied</p>
+                        <p>{errorMessage}</p>
+                    </div>
+                )}
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default WelcomeScreen;
