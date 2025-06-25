@@ -14,7 +14,7 @@ const useProctoring = ({
   candidate_test_id,
   mediaStream = null,
   videoElementRef = null, // ✅ NEW
-
+  isTestActive = true,
   onTabSwitch = () => {
     console.log("⚠️ Tab switch alert triggered");
     setShowTabSwitchAlert(true);
@@ -47,6 +47,11 @@ const useProctoring = ({
   const videoStreamRef = useRef(null);
   const violationCooldownMs = 60000;
   const initialDescriptorRef = useRef(null); // stores the first face
+  const isActiveRef = useRef(isTestActive);
+
+  const safeAlert = (message) => {
+    if (isTestActive) alert(message);
+  };
 
   const logViolation = useCallback(
     async ({ eventType, remarks = "", confidence = 0.0 }) => {
@@ -81,6 +86,7 @@ const useProctoring = ({
   );
 
   const logWithCooldown = (eventType, remarks = "") => {
+    if (!isTestActive) return;
     const now = Date.now();
     const lastTime = lastViolationTimeRef.current[eventType] || 0;
 
@@ -92,10 +98,14 @@ const useProctoring = ({
       console.log(`Skipped ${eventType} due to cooldown`);
     }
   };
+useEffect(() => {
+  isActiveRef.current = isTestActive;
+}, [isTestActive]);
 
 
   useEffect(() => {
-    if (!candidate_test_id) return;
+    if (!candidate_test_id || !isTestActive) return;
+
 
     const handleVisibility = () => {
       if (document.visibilityState === "hidden") {
@@ -149,15 +159,31 @@ const useProctoring = ({
   const multiFaceAlertedRef = useRef(false);
   const identityAlertedRef = useRef(false);
   const noFaceAlertedRef = useRef(false);
+  const faceIntervalRef = useRef(null);
+  const audioIntervalRef = useRef(null);
+  const videoIntervalRef = useRef(null);
+  const streamRef = useRef(null); // ← Needed for stream stop
 
+  const stopAll = () => {
+      clearInterval(faceIntervalRef.current);
+      clearInterval(audioIntervalRef.current);
+      clearInterval(videoIntervalRef.current);
+
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      if (audioContextRef.current?.state === "running") {
+        audioContextRef.current.close().catch(() => { });
+      }
+      console.log("🛑 Proctoring fully stopped");
+    };
   useEffect(() => {
     if (!candidate_test_id || !mediaStream) return;
-    let faceCheckInterval;
-    let audioCheck, videoCheck;
 
     const startStreams = async () => {
+      if (!isTestActive) return;
       try {
-        const stream = mediaStream.clone(); // Fix: prevent video freezing or black screen
+        const stream = mediaStream.clone();
+        // Fix: prevent video freezing or black screen
+        streamRef.current = stream;
         if (!stream) {
           logWithCooldown("camera_off", "No shared media stream available");
           onCameraOff();
@@ -197,7 +223,8 @@ const useProctoring = ({
             }
           }
 
-          faceCheckInterval = setInterval(async () => {
+          faceIntervalRef.current = setInterval(async () => {
+            if (!isTestActive) return;
             try {
               const detections = await faceapi
                 .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
@@ -208,8 +235,10 @@ const useProctoring = ({
 
               // 🙈 No Face Detected
               if (detections.length === 0 && !noFaceAlertedRef.current) {
-                alert("⚠ No face detected! Please stay in front of the camera.");
-                logWithCooldown("no_face_detected", "No face visible in webcam feed.");
+                if (isTestActive) {
+                  alert("⚠ No face detected! Please stay in front of the camera.");
+                }
+                logWithCooldown("face_not_detected", "No face visible in webcam feed.");
                 noFaceAlertedRef.current = true;
                 setTimeout(() => {
                   noFaceAlertedRef.current = false;
@@ -218,13 +247,14 @@ const useProctoring = ({
 
               // 🔍 Identity Check
               if (detections.length === 1 && initialDescriptorRef.current) {
-                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.6);
+                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.75);
                 const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
 
                 console.log("🧠 Face match result:", bestMatch.toString());
-
                 if (bestMatch.label === "unknown" && !identityAlertedRef.current) {
-                  alert("⚠ Identity mismatch! Please stay in front of the camera.");
+                  if (isTestActive) {
+                    alert("⚠ Identity mismatch! Please stay in front of the camera.");
+                  }
                   logWithCooldown("identity_mismatch", "Detected a different person.");
                   identityAlertedRef.current = true;
                   setTimeout(() => {
@@ -236,8 +266,8 @@ const useProctoring = ({
 
               // 👥 Multiple Faces Check
               if (detections.length > 1 && !multiFaceAlertedRef.current) {
-                alert("⚠ Multiple persons detected! Please stay alone during the exam.");
-                logWithCooldown("multiple_faces", `Detected ${detections.length} faces`);
+                safeAlert("⚠ Multiple persons detected! Please stay alone during the exam.");
+                logWithCooldown("multiple_people", `Detected ${detections.length} faces`);
                 multiFaceAlertedRef.current = true;
                 setTimeout(() => {
                   multiFaceAlertedRef.current = false;
@@ -247,7 +277,7 @@ const useProctoring = ({
             } catch (faceErr) {
               console.error("Face detection error:", faceErr);
             }
-          }, 2000);
+          }, 4000);
 
 
         } catch (modelLoadErr) {
@@ -263,7 +293,7 @@ const useProctoring = ({
         audioContextRef.current = ac;
         micAnalyserRef.current = analyser;
 
-        audioCheck = setInterval(() => {
+        audioIntervalRef.current = setInterval(() => {
           const data = new Uint8Array(analyser.fftSize);
           analyser.getByteTimeDomainData(data);
           let sum = 0;
@@ -275,7 +305,7 @@ const useProctoring = ({
           }
         }, 5000);
 
-        videoCheck = setInterval(() => {
+        videoIntervalRef.current = setInterval(() => {
           const track = stream.getVideoTracks()[0];
           const settings = track.getSettings();
           if (settings.frameRate && settings.frameRate < 10) {
@@ -292,6 +322,8 @@ const useProctoring = ({
     startStreams();
 
     return () => {
+     
+
       videoStreamRef.current?.getTracks().forEach((t) => t.stop());
       if (audioContextRef.current && audioContextRef.current.state === "running") {
         audioContextRef.current.close().catch((err) => {
@@ -299,15 +331,22 @@ const useProctoring = ({
         });
       }
 
-      clearInterval(audioCheck);
-      clearInterval(videoCheck);
-      clearInterval(faceCheckInterval);
+      clearInterval(audioIntervalRef.current);
+      clearInterval(videoIntervalRef.current);
+      clearInterval(faceIntervalRef.current);
+
+      console.log("🧹 React effect cleanup");
+
     };
   }, [candidate_test_id, logViolation, onLowAudioQuality, onLowVideoQuality, onCameraOff]);
 
+  useEffect(() => { if (!isTestActive) stopAll(); }, [isTestActive]);
+
   useEffect(() => {
     if (violationCount === 2) {
-      alert("⚠ Last warning: One more violation and your exam will be flagged.");
+      if (isTestActive) {
+        alert("⚠ Last warning: One more violation and your exam will be flagged.");
+      }
     }
   }, [violationCount]);
 
