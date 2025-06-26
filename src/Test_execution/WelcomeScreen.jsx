@@ -51,7 +51,7 @@ const handleAccept = async () => {
             }
 
             // The gatekeeper said YES. Proceed exactly as before.
-            navigate(`/basic-details/${testId}`);
+            navigate(`/tutorialscreen/${testId}`);
 
         } catch (err) {
             // Display any error message (e.g., "Your access to this test expired...")

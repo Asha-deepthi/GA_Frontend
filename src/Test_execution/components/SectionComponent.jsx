@@ -433,8 +433,13 @@ const shouldBlur = () => {
         };
 
         const isLast = currentIndex === questions.length - 1;
+  console.log("Current Question Type:", current?.type);
+const typeKey = {
+  "Multiple Choice": "mcq",
+  "Fill in the Blank": "fib",
+}[current.type] || current.type;
 
-        switch (current.type) {
+        switch (typeKey) {
           case "mcq":
             return <MultipleChoiceComponent {...props} isLast={isLast} />;
           case "fib":
