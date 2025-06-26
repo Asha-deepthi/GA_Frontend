@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ImportCandidatesModal from './ImportCandidatesModal'; 
 
 // --- Icon Component (for placeholder icons) ---
 const Icon = ({ name, className = '' }) => {
@@ -47,12 +48,6 @@ const Stepper = ({ currentStep }) => {
 
 // --- Main Page Component ---
 const ImportCandidates = () => {
-  /*const initialCandidates = [
-    { id: 1, name: 'Ethan Harper', email: 'ethan.harper@email.com', phone: '(555) 123-4567', isEditing: false },
-    { id: 2, name: 'Olivia Bennett', email: 'olivia.bennett@email.com', phone: '(555) 987-6543', isEditing: false },
-    { id: 3, name: 'Noah Carter', email: 'noah.carter@email.com', phone: '(555) 246-8013', isEditing: false },
-  ];*/
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const { testId } = useParams();
@@ -63,8 +58,66 @@ const ImportCandidates = () => {
   const [totalFiles, setTotalFiles] = useState(0);
   const [filesParsed, setFilesParsed] = useState(0);
   const [failedFiles, setFailedFiles] = useState([]);
-  
+  const [isImportModalOpen, setisImportModalOpen] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchAndSetCandidates();
+}, [testId]);
+
+const fetchAndSetCandidates = async () => {
+    const accessToken = sessionStorage.getItem("access_token");
+    try {
+        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/assigned-candidates/`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (!response.ok) throw new Error("Failed to fetch assigned candidates.");
+        
+        const assignments = await response.json();
+        const formattedCandidates = assignments.map(assignment => ({
+            id: assignment.candidate.email, // Using email as a unique key for display
+            name: assignment.candidate.name,
+            email: assignment.candidate.email,
+            phone: assignment.candidate.phone,
+            isEditing: false,
+            isSaved: true,
+        }));
+        setCandidates(formattedCandidates);
+    } catch (error) {
+        console.error("Error fetching candidates:", error);
+        // Not showing an alert here to avoid bothering the user on page load
+    }
+};
+
+  // --- CHANGE 3: This is the handler for the new feature ---
+  const handleImportFromTest = async (sourceTestId) => {
+    setisImportModalOpen(false); // Close the modal
+    setIsSubmitting(true); // Show loading state
+
+    const accessToken = sessionStorage.getItem("access_token");
+    try {
+        // We call the new backend endpoint we created
+        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/import-candidates/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ source_test_id: sourceTestId })
+        });
+        
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Failed to import candidates.");
+
+        alert(result.message);
+        fetchAndSetCandidates(); // This will refresh the table without a page reload
+
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
 
   const handleAddCandidate = () => {
     if (candidates.some(c => c.isEditing)) { alert("Please save or cancel the current candidate first."); return; }
@@ -76,51 +129,6 @@ const ImportCandidates = () => {
     setCandidates(prev => prev.map(c => (c.id === id ? { ...c, [field]: value } : c)));
   };
 
-    /*--- CHANGE: This function now saves a single candidate using fetch ---
-  const handleSaveCandidate = async (id) => {
-     const accessToken = sessionStorage.getItem("access_token");
-    const candidateToSave = candidates.find(c => c.id === id);
-    if (!candidateToSave.name || !candidateToSave.email) {
-      alert("Name and Email are required.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-    const response = await fetch('http://localhost:8000/api/import-candidate/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`},
-      body: JSON.stringify({
-          name: candidateToSave.name,
-          email: candidateToSave.email,
-          phone: candidateToSave.phone,
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle errors from the backend (e.g., validation errors)
-        const errorMsg = Object.values(data).join('\n');
-        throw new Error(errorMsg || 'Failed to save candidate.');
-      }
-      
-      // On success, update the local state
-      setCandidates(prev => prev.map(c => 
-          (c.id === id ? { ...c, isEditing: false, isSaved: true } : c)
-      ));
-      alert(data.message);
-
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };*/
-
-  // JOB 1: CREATE the candidate user in the backend (no password, no email)
   const handleSaveCandidate = async (id) => {
     const accessToken = sessionStorage.getItem("access_token");
     const candidateToSave = candidates.find(c => c.id === id);
@@ -204,6 +212,11 @@ const ImportCandidates = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
+      <ImportCandidatesModal
+            isOpen={isImportModalOpen}
+            onClose={() => setisImportModalOpen(false)}
+            onImport={handleImportFromTest}
+        />
         <header className="bg-white shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
                 <div className="text-teal-500 font-bold text-lg">■ GA Proctored Test</div>
@@ -220,7 +233,14 @@ const ImportCandidates = () => {
                 
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept=".pdf,.doc,.docx"/>
                 
-                <button onClick={handleUploadClick} className="border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md inline-flex items-center space-x-2"><Icon name="upload" className="font-bold text-gray-500"/><span>Upload Resumes</span></button>
+                <button onClick={handleUploadClick} className="border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md inline-flex items-center space-x-2"><Icon name="upload" className="font-bold text-gray-500"/>
+                <span>Upload Resumes</span></button>
+                 <button 
+                        onClick={() => setisImportModalOpen(true)}
+                        className="border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md inline-flex items-center space-x-2"
+                    >
+                        <span>Import from Previous Test</span>
+                    </button>
 
                 {isParsing && (
                     <div className="mt-8">
