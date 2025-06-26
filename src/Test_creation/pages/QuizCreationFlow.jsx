@@ -7,6 +7,7 @@ import QuizSettings from './QuizSettings';
 import QuizPreview from './QuizPreview';
 import NavBar from '../components/Navbar'; 
 import ImportQuizModal from './ImportQuizModal';
+import BASE_URL from "../../config";
 
 const QuizCreationFlow = () => {
   // We still use internal steps 1, 2, 3, 4 for navigation
@@ -57,7 +58,7 @@ const handleSubmit = async () => {
     console.log("Submitting cleaned quiz data:", finalQuizData);
 
   try {
-    const response = await fetch('http://localhost:8000/api/test-creation/tests/full-create/', {
+    const response = await fetch(`${BASE_URL}/test-creation/tests/full-create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -95,7 +96,7 @@ const handleImportQuiz = async (testIdToImport) => {
         const accessToken = sessionStorage.getItem("access_token");
         try {
             // Call the new "full-detail" endpoint you created in the backend
-            const response = await fetch(`http://localhost:8000/api/test-creation/tests/full-detail/${testIdToImport}/`, {
+            const response = await fetch(`${BASE_URL}/test-creation/tests/full-detail/${testIdToImport}/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
             const data = await response.json();

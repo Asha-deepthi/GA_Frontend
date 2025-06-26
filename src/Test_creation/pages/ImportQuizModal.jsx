@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BASE_URL from "../../config";
 
 const ImportQuizModal = ({ isOpen, onClose, onImport }) => {
     const [quizzes, setQuizzes] = useState([]);
@@ -11,7 +12,7 @@ const ImportQuizModal = ({ isOpen, onClose, onImport }) => {
                 setIsLoading(true);
                 const accessToken = sessionStorage.getItem("access_token");
                 // This uses your existing ListTestView endpoint
-                const response = await fetch('http://localhost:8000/api/test-creation/tests/', {
+                const response = await fetch(`${BASE_URL}/test-creation/tests/`, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
                 const data = await response.json();

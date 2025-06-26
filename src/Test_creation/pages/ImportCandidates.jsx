@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ImportCandidatesModal from './ImportCandidatesModal'; 
+import ImportCandidatesModal from './ImportCandidatesModal';
+import BASE_URL from "../../config"; 
 
 // --- Icon Component (for placeholder icons) ---
 const Icon = ({ name, className = '' }) => {
@@ -68,7 +69,7 @@ const ImportCandidates = () => {
 const fetchAndSetCandidates = async () => {
     const accessToken = sessionStorage.getItem("access_token");
     try {
-        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/assigned-candidates/`, {
+        const response = await fetch(`${BASE_URL}/test-creation/tests/${testId}/assigned-candidates/`, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         if (!response.ok) throw new Error("Failed to fetch assigned candidates.");
@@ -97,7 +98,7 @@ const fetchAndSetCandidates = async () => {
     const accessToken = sessionStorage.getItem("access_token");
     try {
         // We call the new backend endpoint we created
-        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/import-candidates/`, {
+        const response = await fetch(`${BASE_URL}/test-creation/tests/${testId}/import-candidates/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ const fetchAndSetCandidates = async () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:8000/api/test-creation/create-candidate/', {
+      const response = await fetch(`${BASE_URL}/test-creation/create-candidate/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ name: candidateToSave.name, email: candidateToSave.email, phone: candidateToSave.phone })
@@ -193,7 +194,7 @@ const fetchAndSetCandidates = async () => {
     let successfulAssignments = 0;
     const accessToken = sessionStorage.getItem("access_token");
     const assignmentPromises = candidatesToAssign.map(candidate =>
-      fetch(`http://localhost:8000/api/test-creation/assign-test/`, {
+      fetch(`${BASE_URL}/test-creation/assign-test/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ test_id: testId, candidate_email: candidate.email })

@@ -3,7 +3,8 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import BASE_URL from "../../config"; 
 
 const AuthContext = createContext();
 
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
   // 🟢 SIGNUP — used by Admins currently
   const signupUser = async (email, phone, password) => {
     try {
-      await axios.post("http://127.0.0.1:8000/api/signup/", {
+      await axios.post(`${BASE_URL}/api/signup/`, {
         email,
         phone_number: phone,
         password,
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
   // 🔵 LOGIN — generic, for both admin and candidate
   const loginUser = async (email, password) => {
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/token/", {
+      const res = await axios.post(`${BASE_URL}/api/token/`, {
         email,
         password,
       });
