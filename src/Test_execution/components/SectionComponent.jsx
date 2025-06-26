@@ -33,7 +33,7 @@ export default function SectionComponent({
   setAnswersStatus,
   onQuestionAttempted,
     videoRef, // ✅ Add this
-
+isTestActive, 
 }) {
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
@@ -73,7 +73,9 @@ useEffect(() => {
     //onLowAudioQuality: () => setShowLowAudioAlert(true),
     onLowVideoQuality: () => setShowLowVideoAlert(true),
     onCameraOff: () => setShowCameraOffAlert(true),
+    isTestActive,
   });
+
 
   // --- Timer State ---
   // const [timeLeft, setTimeLeft] = useState(SECTION_DURATION);

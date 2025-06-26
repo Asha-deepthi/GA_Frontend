@@ -31,6 +31,8 @@ export default function SectionPage() {
   //const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
   const webcamRef = useRef(null);
   const [testCompleted, setTestCompleted] = useState(false);
+  const [testStarted, setTestStarted] = useState(true);
+
   const fetchSectionProgress = () => {
   fetch(
     `${BASE_URL}/test-execution/candidate-section-progress/?test_id=${testId}&candidate_test_id=${realCandidateTestId}`
@@ -233,6 +235,12 @@ console.log("🧑‍💻 Full fetch URL:",
     setSelectedSectionId(nextSection.section_id);
   } else {
     console.log("🎉 All sections complete");
+    setSharedStream(null);
+  if (webcamRef.current?.srcObject) {
+    webcamRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    webcamRef.current.srcObject = null;
+  }
+  setTestStarted(false);
     setTestCompleted(true);
     setSelectedSectionId(null);
     setStopTimer(true);
@@ -288,8 +296,13 @@ console.log("🧑‍💻 Full fetch URL:",
   }
 
 if (testCompleted) {
-  return null; // 🛑 Prevent UI (including proctoring) from firing again
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-white text-[#00A398]">
+      <h1 className="text-2xl font-bold">✅ Test completed. Submitting...</h1>
+    </div>
+  );
 }
+
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
@@ -307,6 +320,7 @@ if (testCompleted) {
         </div>
 
         <div className="flex-1 p-4 overflow-auto relative">
+         {testStarted && !testCompleted && (
           <SectionComponent
             section_id={selectedSectionId}
             candidate_test_id={realCandidateTestId}
@@ -321,8 +335,9 @@ if (testCompleted) {
             onQuestionAttempted={incrementAttempted}
             mediaStream={sharedStream} 
             videoRef={webcamRef}
-
+           isTestActive={testStarted && !testCompleted}
           />
+           )}
         </div>
 
         <div className="relative border-l p-4 flex flex-col justify-between">
@@ -335,11 +350,14 @@ if (testCompleted) {
             initialSeconds={initialSeconds}
           />
           <div className="absolute bottom-4 right-4">
+            {testStarted && !testCompleted && (
             <CameraFeedPanel
               candidate_test_id={realCandidateTestId} 
               setStream={setSharedStream} 
   ref={webcamRef}                />
+  )}
           </div>
+          
         </div>
       </div>
     </div>
