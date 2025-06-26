@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import BASE_URL from "../../config";
 
 function debounce(func, delay) {
   let timer;
@@ -56,7 +57,7 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
   const saveMarksToBackend = async (answerId, marksValue) => {
     if (!answerId || marksValue === '' || isNaN(marksValue)) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/test-execution/manual-evaluate/`, {
+      const res = await fetch(`${BASE_URL}/test-execution/manual-evaluate/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer_id: answerId, marks: Number(marksValue) }),
