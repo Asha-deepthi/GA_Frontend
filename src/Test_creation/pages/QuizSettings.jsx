@@ -268,7 +268,7 @@ const QuizSettings = ({ onBack, onNext, initialData }) => {
             <div className="settings-content">
                 <div className="settings-header">
                     <h1>Settings</h1>
-                    <p>Configure quiz-wide settings</p>
+                    {/*<p>Configure quiz-wide settings</p>*/}
                 </div>
                 
                 <form className="settings-form" onSubmit={handleSubmit}>

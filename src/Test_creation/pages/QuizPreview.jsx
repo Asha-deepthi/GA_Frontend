@@ -189,8 +189,7 @@ const QuizPreview = ({ quizData = {}, onBack, handleSubmit }) => {
     return (
         <div className="preview-wrapper">
             <style>{styles}</style>
-            
-            {/* The .preview-header JSX block has been removed from here. */}
+           <nav className="creator-tabs"><a href="#" className="tab-item">Sections</a><a href="#" className="tab-item">Questions</a><a href="#" className="tab-item">Settings</a><a href="#" className="tab-item active">Preview</a></nav>
 
             <div className="details-section">
                 <div className="collapsible-header" onClick={() => setIsDetailsOpen(!isDetailsOpen)}>
