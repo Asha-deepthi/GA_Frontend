@@ -81,7 +81,7 @@ const AudioComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLas
 
   return (
     <div className="p-4">
-      <h3 className="text-lg font-semibold mb-4">{question.question}</h3>
+      <h3 className="text-lg font-semibold mb-4">{question.text}</h3>
 
       <div className="flex gap-4 mb-4">
         <button

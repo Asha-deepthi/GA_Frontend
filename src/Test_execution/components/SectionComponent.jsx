@@ -421,7 +421,7 @@ const shouldBlur = () => {
       </h2>
 
       {current.type !== 'paragraph' && (
-        <p className="mb-4">{current.question_text}</p>
+        <p className="mb-4">{current.text}</p>
       )}
 
       {(() => {
