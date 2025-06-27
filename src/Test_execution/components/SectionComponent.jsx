@@ -442,7 +442,11 @@ const shouldBlur = () => {
   console.log("Current Question Type:", current?.type);
 const typeKey = {
   "Multiple Choice": "mcq",
-  "Fill in the Blank": "fib",
+  "Fill in the blank": "fib",
+  "Subjective": "subjective",
+  "Audio based": "audio",
+  "Video based": "video",
+  "Paragraph": "paragraph",
 }[current.type] || current.type;
 
         switch (typeKey) {

@@ -3,6 +3,7 @@ import './SendInvitations.css'; // We'll create this CSS file next
 import { useParams } from 'react-router-dom';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import BASE_URL from "../../config";
 
 // --- Helper Icon Components ---
 const BellIcon = () => (
@@ -27,7 +28,7 @@ const SendInvitations = () => {
         setIsLoading(true);
         const accessToken = sessionStorage.getItem("access_token");
         try {
-            const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/assigned-candidates/`, {
+            const response = await fetch(`${BASE_URL}/test-creation/tests/${testId}/assigned-candidates/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
             if (!response.ok) throw new Error("Failed to fetch candidates.");

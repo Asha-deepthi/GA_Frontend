@@ -7,6 +7,7 @@ import 'uuid';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import BASE_URL from "../../config";
 
 export function SignupPage() {
   const [email, setEmail] = useState("")
@@ -91,7 +92,7 @@ const isPasswordValid = (password) => {
   try {
     // Signup API call
     const signupResponse = await fetch(
-      "http://localhost:8000/api/signup/",
+      `${BASE_URL}/signup/`,
       {
         method: "POST",
         headers: {
