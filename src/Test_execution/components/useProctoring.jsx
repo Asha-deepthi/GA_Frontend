@@ -15,6 +15,9 @@ const useProctoring = ({
   mediaStream = null,
   videoElementRef = null, // ✅ NEW
   isTestActive = true,
+  isCameraReady,
+  onNoFace = () => { },
+  onMultiplePersons = () => { },
   onTabSwitch = () => {
     console.log("⚠️ Tab switch alert triggered");
     setShowTabSwitchAlert(true);
@@ -48,6 +51,8 @@ const useProctoring = ({
   const violationCooldownMs = 60000;
   const initialDescriptorRef = useRef(null); // stores the first face
   const isActiveRef = useRef(isTestActive);
+  const graceStartRef = useRef(Date.now());
+  const GRACE_PERIOD_MS = 5000; // 5 seconds
 
   const safeAlert = (message) => {
     if (isTestActive) alert(message);
@@ -98,9 +103,9 @@ const useProctoring = ({
       console.log(`Skipped ${eventType} due to cooldown`);
     }
   };
-useEffect(() => {
-  isActiveRef.current = isTestActive;
-}, [isTestActive]);
+  useEffect(() => {
+    isActiveRef.current = isTestActive;
+  }, [isTestActive]);
 
 
   useEffect(() => {
@@ -163,43 +168,82 @@ useEffect(() => {
   const audioIntervalRef = useRef(null);
   const videoIntervalRef = useRef(null);
   const streamRef = useRef(null); // ← Needed for stream stop
+  const noFaceCountRef = useRef(0);
 
   const stopAll = () => {
-      clearInterval(faceIntervalRef.current);
-      clearInterval(audioIntervalRef.current);
-      clearInterval(videoIntervalRef.current);
+    clearInterval(faceIntervalRef.current);
+    clearInterval(audioIntervalRef.current);
+    clearInterval(videoIntervalRef.current);
 
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      if (audioContextRef.current?.state === "running") {
-        audioContextRef.current.close().catch(() => { });
-      }
-      console.log("🛑 Proctoring fully stopped");
-    };
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    if (audioContextRef.current?.state === "running") {
+      audioContextRef.current.close().catch(() => { });
+    }
+    console.log("🛑 Proctoring fully stopped");
+  };
   useEffect(() => {
     if (!candidate_test_id || !mediaStream) return;
 
     const startStreams = async () => {
       if (!isTestActive) return;
       try {
-        const stream = mediaStream.clone();
+        let stream;
+        try {
+          stream = mediaStream.clone();
+        } catch (err) {
+          console.warn("⚠️ mediaStream.clone() failed, using original stream", err);
+          stream = mediaStream;
+        }
+
         // Fix: prevent video freezing or black screen
         streamRef.current = stream;
-        if (!stream) {
-          logWithCooldown("camera_off", "No shared media stream available");
-          onCameraOff();
+        const tracks = stream?.getVideoTracks();
+        if (!tracks || tracks.length === 0) {
+          console.warn("🚫 No video tracks found in stream, starting retry check...");
+          let retries = 0;
+          const maxRetries = 5;
+
+          const retryCheck = async () => {
+            retries++;
+            const retryStream = mediaStream.clone();
+            const tracks = retryStream?.getVideoTracks();
+
+            if (tracks && tracks.length > 0) {
+              console.log("✅ Camera available after retry attempt", retries);
+              return;
+            }
+
+            if (retries >= maxRetries) {
+              logWithCooldown("camera_off", "Camera video track not found after retries");
+              onCameraOff();
+            } else {
+              setTimeout(retryCheck, 1000); // retry every 1 second
+            }
+          };
+
+          retryCheck();
           return;
         }
+
 
         videoStreamRef.current = stream;
 
         // FACE API: Setup for multiple face detection
 
         const video = videoElementRef?.current;
-        if (!video || !video.srcObject) {
-          console.warn("Video element not ready for face-api detection.");
+        if (!video) {
+          console.warn("Video element not found.");
           return;
         }
 
+        if (!video.srcObject) {
+          video.srcObject = stream;
+          console.log("🎥 Assigned stream to video element.");
+        }
+
+
+
+        await video.play();
         console.log("📹 Video readyState:", video.readyState);
         console.log("📐 Video dimensions:", video.videoWidth, video.videoHeight);
 
@@ -210,68 +254,93 @@ useEffect(() => {
           console.log("✅ All models loaded");
 
           if (!initialDescriptorRef.current) {
-            const initialDetection = await faceapi
-              .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-              .withFaceLandmarks()
-              .withFaceDescriptor();
+            let attempts = 0;
+            while (!initialDescriptorRef.current && attempts < 5) {
+              const detection = await faceapi
+                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512 }))
+                .withFaceLandmarks()
+                .withFaceDescriptor();
 
-            if (initialDetection && initialDetection.descriptor) {
-              initialDescriptorRef.current = initialDetection.descriptor;
-              console.log("✅ Initial face descriptor saved.");
-            } else {
-              console.warn("⚠️ No face detected at start.");
+              if (detection?.descriptor) {
+                initialDescriptorRef.current = detection.descriptor;
+                console.log("✅ Initial face descriptor saved.");
+                break;
+              } else {
+                console.warn(`⚠️ Attempt ${attempts + 1}: No face detected.`);
+                await new Promise((res) => setTimeout(res, 1000)); // Wait 1 second
+                attempts++;
+              }
             }
           }
 
+
           faceIntervalRef.current = setInterval(async () => {
-            if (!isTestActive) return;
+            if (!isTestActive) {
+              console.log("⏳ Skipping face detection: test inactive or camera not ready");
+              return;
+            }
+
+            const now = Date.now();
+            const graceOver = now - graceStartRef.current > GRACE_PERIOD_MS;
+            if (!graceOver) {
+              console.log("🕓 In grace period: skipping face violation checks");
+              return;
+            }
+
             try {
               const detections = await faceapi
-                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
+                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.7 }))
                 .withFaceLandmarks()
                 .withFaceDescriptors();
 
+
               console.log("Faces detected:", detections.length);
 
-              // 🙈 No Face Detected
-              if (detections.length === 0 && !noFaceAlertedRef.current) {
-                if (isTestActive) {
-                  alert("⚠ No face detected! Please stay in front of the camera.");
-                }
-                logWithCooldown("face_not_detected", "No face visible in webcam feed.");
-                noFaceAlertedRef.current = true;
+              // 👥 Multiple Faces Check - should be FIRST
+              if (detections.length > 1 && !multiFaceAlertedRef.current) {
+                console.log("👥 Multiple faces detected:", detections.length);
+                if (onMultiplePersons) onMultiplePersons();
+                logWithCooldown("multiple_people", `Detected ${detections.length} faces`);
+                multiFaceAlertedRef.current = true;
                 setTimeout(() => {
-                  noFaceAlertedRef.current = false;
-                }, 15000); // Reset after 15 seconds
+                  multiFaceAlertedRef.current = false;
+                }, 15000);
               }
 
-              // 🔍 Identity Check
+              // 🙈 No Face Detected
+              if (detections.length === 0) {
+                noFaceCountRef.current += 1;
+                console.log(`🙈 No face detected (count = ${noFaceCountRef.current})`);
+
+                if (noFaceCountRef.current >= 3 && !noFaceAlertedRef.current) {
+                  if (onNoFace) onNoFace();
+                  logWithCooldown("face_not_detected", "No face visible in webcam feed for 3+ intervals.");
+                  noFaceAlertedRef.current = true;
+                  setTimeout(() => {
+                    noFaceAlertedRef.current = false;
+                  }, 15000);
+                  noFaceCountRef.current = 0; // reset after alert
+                }
+              } else {
+                noFaceCountRef.current = 0; // reset on successful detection
+              }
+
+
+              // 🔍 Identity Check (only if 1 face)
               if (detections.length === 1 && initialDescriptorRef.current) {
-                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.75);
+                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.6); // tighter match
                 const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
 
                 console.log("🧠 Face match result:", bestMatch.toString());
+
                 if (bestMatch.label === "unknown" && !identityAlertedRef.current) {
-                  if (isTestActive) {
-                    alert("⚠ Identity mismatch! Please stay in front of the camera.");
-                  }
+                  safeAlert("⚠ Identity mismatch! Please stay in front of the camera.");
                   logWithCooldown("identity_mismatch", "Detected a different person.");
                   identityAlertedRef.current = true;
                   setTimeout(() => {
                     identityAlertedRef.current = false;
                   }, 15000);
                 }
-
-              }
-
-              // 👥 Multiple Faces Check
-              if (detections.length > 1 && !multiFaceAlertedRef.current) {
-                safeAlert("⚠ Multiple persons detected! Please stay alone during the exam.");
-                logWithCooldown("multiple_people", `Detected ${detections.length} faces`);
-                multiFaceAlertedRef.current = true;
-                setTimeout(() => {
-                  multiFaceAlertedRef.current = false;
-                }, 15000);
               }
 
             } catch (faceErr) {
@@ -319,10 +388,51 @@ useEffect(() => {
       }
     };
 
-    startStreams();
+    if (!videoElementRef?.current) {
+      console.log("⏳ Waiting for videoElementRef to be ready...");
+
+      let retries = 0;
+      const maxRetries = 10;
+
+      const waitForVideoRef = () => {
+        retries++;
+        if (videoElementRef?.current) {
+          const video = videoElementRef.current;
+
+          if (video.readyState >= 2) {
+            console.log("✅ Video already ready. Starting proctoring...");
+            startStreams();
+          } else {
+            video.onloadeddata = () => {
+              console.log("📸 Video loaded (after waiting). Starting proctoring stream...");
+              startStreams();
+            };
+          }
+        } else if (retries < maxRetries) {
+          setTimeout(waitForVideoRef, 500);
+        } else {
+          console.error("❌ videoElementRef still not available after retries.");
+        }
+      };
+
+      waitForVideoRef();
+    } else {
+      const video = videoElementRef.current;
+
+      if (video.readyState >= 2) {
+        console.log("✅ Video already ready. Starting proctoring...");
+        startStreams();
+      } else {
+        video.onloadeddata = () => {
+          console.log("📸 Video loaded. Starting proctoring stream...");
+          startStreams();
+        };
+      }
+    }
+
 
     return () => {
-     
+
 
       videoStreamRef.current?.getTracks().forEach((t) => t.stop());
       if (audioContextRef.current && audioContextRef.current.state === "running") {

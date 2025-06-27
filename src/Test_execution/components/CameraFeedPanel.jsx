@@ -19,7 +19,7 @@ const SignalBars = ({ level }) => (
   </div>
 );
 
-const CameraFeedPanel = forwardRef(({ candidate_test_id, setStream }, forwardedRef) => {
+const CameraFeedPanel = forwardRef(({ candidate_test_id, setStream, onReady }, forwardedRef) => {
   const internalRef = useRef(null);
   const videoRef = forwardedRef || internalRef;
   const canvasRef = useRef(null);
@@ -38,11 +38,17 @@ const CameraFeedPanel = forwardRef(({ candidate_test_id, setStream }, forwardedR
         streamRef.current = stream;
 
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadeddata = () => {
-            videoRef.current.play().catch(err => console.warn("Video play failed:", err));
-          };
-        }
+  videoRef.current.srcObject = stream;
+  videoRef.current.onloadeddata = () => {
+    videoRef.current.play().catch(err => console.warn("Video play failed:", err));
+    // ✅ Notify parent after short grace period
+    setTimeout(() => {
+      setReady(true);
+      if (onReady) onReady(); // Tell SectionPage we're good to detect faces
+    }, 1500); // wait ~1.5s to avoid false "no face" triggers
+  };
+}
+
 
         if (setStream) setStream(stream);
 

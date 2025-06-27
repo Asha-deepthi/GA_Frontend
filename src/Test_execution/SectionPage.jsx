@@ -6,7 +6,10 @@ import RightPanel from "./components/RightPanel";
 import CameraFeedPanel from "./components/CameraFeedPanel";
 import SectionComponent from "./components/SectionComponent";
 import { useNavigate } from "react-router-dom";
+import NoFaceAlert from "./NoFaceAlert";
+import MultiplePersonsAlert from "./MultiplePersonsAlert";
 import BASE_URL from "../config";
+import { useCallback } from "react";
 
 //const apiurl = "http://localhost:8000/api/test-creation";
 //const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
@@ -32,6 +35,18 @@ export default function SectionPage() {
   const webcamRef = useRef(null);
   const [testCompleted, setTestCompleted] = useState(false);
   const [testStarted, setTestStarted] = useState(true);
+  const [showNoFaceAlert, setShowNoFaceAlert] = useState(false);
+const [showMultiFaceAlert, setShowMultiFaceAlert] = useState(false);
+const [cameraReady, setCameraReady] = useState(false);
+
+const handleNoFace = useCallback(() => {
+  setShowNoFaceAlert(true);
+}, []);
+
+const handleMultiplePersons = useCallback(() => {
+  setShowMultiFaceAlert(true);
+}, []);
+const shouldBlur = () => showNoFaceAlert || showMultiFaceAlert;
 
   const fetchSectionProgress = () => {
   fetch(
@@ -303,9 +318,33 @@ if (testCompleted) {
   );
 }
 
-
   return (
-    <div className="h-screen w-screen overflow-hidden bg-white flex flex-col">
+  <>
+    {shouldBlur() && (
+  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    {showNoFaceAlert && (
+      <NoFaceAlert
+        onDismiss={() => setShowNoFaceAlert(false)}
+        onContinue={() => {
+          setShowNoFaceAlert(false);
+          requestFullscreen();
+        }}
+      />
+    )}
+
+    {showMultiFaceAlert && (
+      <MultiplePersonsAlert
+        onDismiss={() => setShowMultiFaceAlert(false)}
+        onContinue={() => {
+          setShowMultiFaceAlert(false);
+          requestFullscreen();
+        }}
+      />
+    )}
+  </div>
+)}
+
+    <div className={`h-screen w-screen overflow-hidden bg-white flex flex-col transition-all duration-300 ${shouldBlur() ? "blur-sm brightness-50" : ""}`}>
       <TopHeader userName={userName} />
       <div className="flex flex-1">
         <div className="border-r p-4">
@@ -320,24 +359,27 @@ if (testCompleted) {
         </div>
 
         <div className="flex-1 p-4 overflow-auto relative">
-         {testStarted && !testCompleted && (
-          <SectionComponent
-            section_id={selectedSectionId}
-            candidate_test_id={realCandidateTestId}
-            test_id={testId}
-            onSectionComplete={handleSectionComplete}
-            questions={questions}
-            setQuestions={setQuestions}
-            currentQuestionId={currentQuestionId}
-            setCurrentQuestionId={setCurrentQuestionId}
-            answersStatus={answersStatus}
-            setAnswersStatus={setAnswersStatus}
-            onQuestionAttempted={incrementAttempted}
-            mediaStream={sharedStream} 
-            videoRef={webcamRef}
-           isTestActive={testStarted && !testCompleted}
-          />
-           )}
+          {testStarted && !testCompleted && (
+            <SectionComponent
+              section_id={selectedSectionId}
+              candidate_test_id={realCandidateTestId}
+              test_id={testId}
+              onSectionComplete={handleSectionComplete}
+              questions={questions}
+              setQuestions={setQuestions}
+              currentQuestionId={currentQuestionId}
+              setCurrentQuestionId={setCurrentQuestionId}
+              answersStatus={answersStatus}
+              setAnswersStatus={setAnswersStatus}
+              onQuestionAttempted={incrementAttempted}
+              mediaStream={sharedStream}
+              videoRef={webcamRef}
+              isTestActive={testStarted && !testCompleted}
+               onNoFace={handleNoFace}                     
+  onMultiplePersons={handleMultiplePersons} 
+              isCameraReady={cameraReady}
+            />
+          )}
         </div>
 
         <div className="relative border-l p-4 flex flex-col justify-between">
@@ -351,17 +393,19 @@ if (testCompleted) {
           />
           <div className="absolute bottom-4 right-4">
             {testStarted && !testCompleted && (
-            <CameraFeedPanel
-              candidate_test_id={realCandidateTestId} 
-              setStream={setSharedStream} 
-  ref={webcamRef}                />
-  )}
+              <CameraFeedPanel
+                candidate_test_id={realCandidateTestId}
+                setStream={setSharedStream}
+                ref={webcamRef}
+                onReady={() => setCameraReady(true)}
+              />
+            )}
           </div>
-          
         </div>
       </div>
     </div>
-  );
+  </>
+);
 
 }
 

@@ -34,6 +34,9 @@ export default function SectionComponent({
   onQuestionAttempted,
     videoRef, // ✅ Add this
 isTestActive, 
+onNoFace,
+  onMultiplePersons,
+  isCameraReady,
 }) {
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
@@ -74,6 +77,9 @@ useEffect(() => {
     onLowVideoQuality: () => setShowLowVideoAlert(true),
     onCameraOff: () => setShowCameraOffAlert(true),
     isTestActive,
+    onNoFace,           // 👈 Add this
+  onMultiplePersons, 
+  isCameraReady,
   });
 
 
