@@ -2,10 +2,10 @@ import React from 'react';
 import './App.css';
 import { Routes, Route } from 'react-router-dom';
 import SignupPage from "./Test_creation/pages/signup";
-import VerifyEmail from "./Test_creation/pages/VerifyEmail";
+//import VerifyEmail from "./Test_creation/pages/VerifyEmail";
 import LoginPage from "./Test_creation/pages/login";
-import Positions from "./Test_creation/pages/tests";
-import JobImportForm from "./Test_creation/pages/importform";
+//import Positions from "./Test_creation/pages/tests";
+//import JobImportForm from "./Test_creation/pages/importform";
 import InterviewDashboard from "./Test_creation/pages/dashboard";
 import QuizPreview from "./Test_creation/pages/QuizPreview";
 import QuizSettings from "./Test_creation/pages/QuizSettings";
@@ -47,7 +47,7 @@ function App() {
     <Routes>
       <Route path="/" element={<SignupPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/verify-email/:uuid" element={<VerifyEmail />} />
+      {/*<Route path="/verify-email/:uuid" element={<VerifyEmail />} />*/}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/QuizPreview" element={<QuizPreview />} />
       <Route path="/QuizSettings" element={< QuizSettings/>} />
@@ -61,7 +61,7 @@ function App() {
         </PrivateRoute>
         }
       />
-    <Route path="/tests" element={<Positions />} />
+     {/*<Route path="/tests" element={<Positions />} />*/}
      {/*<Route path="/interviewquestions" element={<InterviewQuestions />} />*/}
       <Route
         path="/dashboard"

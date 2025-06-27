@@ -289,12 +289,10 @@ const useProctoring = ({
 
             try {
               const detections = await faceapi
-                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.7 }))
+                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
                 .withFaceLandmarks()
                 .withFaceDescriptors();
-
-
-              console.log("Faces detected:", detections.length);
+            console.log(`🎯 Detections: ${detections.length}`, detections.map(d => d.detection.score.toFixed(2)))
 
               // 👥 Multiple Faces Check - should be FIRST
               if (detections.length > 1 && !multiFaceAlertedRef.current) {

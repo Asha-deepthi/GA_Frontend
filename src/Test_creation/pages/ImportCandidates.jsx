@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ImportCandidatesModal from './ImportCandidatesModal';
-import BASE_URL from "../../config"; 
+import ImportCandidatesModal from './ImportCandidatesModal'; 
 
 // --- Icon Component (for placeholder icons) ---
 const Icon = ({ name, className = '' }) => {
@@ -49,6 +48,7 @@ const Stepper = ({ currentStep }) => {
 
 // --- Main Page Component ---
 const ImportCandidates = () => {
+  const MAX_CANDIDATES = 5; 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const { testId } = useParams();
@@ -69,7 +69,7 @@ const ImportCandidates = () => {
 const fetchAndSetCandidates = async () => {
     const accessToken = sessionStorage.getItem("access_token");
     try {
-        const response = await fetch(`${BASE_URL}/test-creation/tests/${testId}/assigned-candidates/`, {
+        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/assigned-candidates/`, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         if (!response.ok) throw new Error("Failed to fetch assigned candidates.");
@@ -82,6 +82,7 @@ const fetchAndSetCandidates = async () => {
             phone: assignment.candidate.phone,
             isEditing: false,
             isSaved: true,
+            source: 'manual'
         }));
         setCandidates(formattedCandidates);
     } catch (error) {
@@ -98,7 +99,7 @@ const fetchAndSetCandidates = async () => {
     const accessToken = sessionStorage.getItem("access_token");
     try {
         // We call the new backend endpoint we created
-        const response = await fetch(`${BASE_URL}/test-creation/tests/${testId}/import-candidates/`, {
+        const response = await fetch(`http://localhost:8000/api/test-creation/tests/${testId}/import-candidates/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ const fetchAndSetCandidates = async () => {
       return;
     }
     try {
-      const response = await fetch(`${BASE_URL}/test-creation/create-candidate/`, {
+      const response = await fetch('http://localhost:8000/api/test-creation/create-candidate/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ name: candidateToSave.name, email: candidateToSave.email, phone: candidateToSave.phone })
@@ -159,31 +160,73 @@ const fetchAndSetCandidates = async () => {
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
-  // --- END OF FIX ---
-  
-    const handleFileChange = (event) => {
+// REPLACE your old handleFileChange function with this new one:
+
+const handleFileChange = (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    
+    const uploadedCandidatesCount = candidates.filter(c => c.source === 'upload').length;
+    const slotsAvailable = MAX_CANDIDATES - uploadedCandidatesCount;
+
+    if (slotsAvailable <= 0) {
+        alert("You have already reached the maximum number of uploaded resumes.");
+        return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, slotsAvailable);
+    
+    if (files.length > filesToProcess.length) {
+        alert(`You can only upload ${slotsAvailable} more resumes. Only the first ${slotsAvailable} files will be processed.`);
+    }
 
     setIsParsing(true);
-    setTotalFiles(files.length);
+    setTotalFiles(filesToProcess.length);
     setFilesParsed(0);
     setParsingProgress(0);
-    setFailedFiles([]);
+    setFailedFiles([]); // Clear previous failures at the start of a new upload
 
-    Array.from(files).forEach((file, index) => {
-      setTimeout(() => {
-        const newFilesParsed = index + 1;
-        setFilesParsed(newFilesParsed);
-        setParsingProgress((newFilesParsed / files.length) * 100);
-        if (newFilesParsed === files.length) {
-            setTimeout(() => setIsParsing(false), 500);
-        }
-      }, (index + 1) * 700);
+    filesToProcess.forEach((file, index) => {
+        setTimeout(() => {
+            // This part runs for every file, successful or not
+            setFilesParsed(prevParsed => {
+                const newParsedCount = prevParsed + 1;
+                setParsingProgress((newParsedCount / filesToProcess.length) * 100);
+                return newParsedCount;
+            });
+
+            // *** THE NEW LOGIC STARTS HERE ***
+            // Simulate a failure if the filename includes "fail"
+            if (file.name.toLowerCase().includes('fail')) {
+                // FAILURE CASE: Add the file name to the failedFiles array
+                setFailedFiles(prevFailed => [...prevFailed, file.name]);
+
+            } else {
+                // SUCCESS CASE: Create and add the new candidate as before
+                const newCandidate = {
+                    id: `file-${Date.now()}-${index}`,
+                    name: file.name.replace(/\.[^/.]+$/, ""),
+                    email: `${file.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
+                    phone: `(555) 123-456${index}`,
+                    isEditing: false,
+                    isSaved: true,
+                    source: 'upload'
+                };
+                setCandidates(prevCandidates => [...prevCandidates, newCandidate]);
+            }
+            // *** THE NEW LOGIC ENDS HERE ***
+
+            // After the last file is processed, hide the temporary text
+            if (index === filesToProcess.length - 1) {
+                setTimeout(() => {
+                    setIsParsing(false);
+                }, 1000);
+            }
+        }, (index + 1) * 700);
     });
-    event.target.value = null; // Allows re-uploading the same file
-  };
-  // JOB 2: ASSIGN candidates to the test and NAVIGATE to the next step
+    
+    event.target.value = null;
+};
   const handleNext = async () => {
     const candidatesToAssign = candidates.filter(c => c.isSaved && !c.isEditing);
     if (candidatesToAssign.length === 0) {
@@ -194,7 +237,7 @@ const fetchAndSetCandidates = async () => {
     let successfulAssignments = 0;
     const accessToken = sessionStorage.getItem("access_token");
     const assignmentPromises = candidatesToAssign.map(candidate =>
-      fetch(`${BASE_URL}/test-creation/assign-test/`, {
+      fetch(`http://localhost:8000/api/test-creation/assign-test/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ test_id: testId, candidate_email: candidate.email })
@@ -210,6 +253,8 @@ const fetchAndSetCandidates = async () => {
         alert("No candidates were assigned. Please check for errors in the console.");
     }
   };
+
+  const uploadedCandidatesCount = candidates.filter(c => c.source === 'upload').length;
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
@@ -229,7 +274,7 @@ const fetchAndSetCandidates = async () => {
         <main className="max-w-4xl mx-auto py-12 px-4">
             <div className="mb-16"><Stepper currentStep={3} /></div>
 
-            <div className="bg-white p-8 rounded-lg shadow-md">
+            <div>
                 <h1 className="text-3xl font-bold mb-6">Import Candidates</h1>
                 
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept=".pdf,.doc,.docx"/>
@@ -243,23 +288,43 @@ const fetchAndSetCandidates = async () => {
                         <span>Import from Previous Test</span>
                     </button>
 
-                {isParsing && (
-                    <div className="mt-8">
-                        <p className="text-sm font-medium mb-1">Parsing resumes...</p>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-teal-500 h-2 rounded-full transition-all duration-500" style={{ width: `${parsingProgress}%`}}></div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{filesParsed}/{totalFiles} resumes processed</p>
-                    </div>
-                )}
-
-                <div className="mt-8 border border-gray-200 rounded-lg">
-                    <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+{/* --- Parsing Resumes Section --- */}
+<div className="my-8">
+    <p className="text-sm font-semibold mb-2 text-gray-800">
+        {uploadedCandidatesCount}/{MAX_CANDIDATES} Resumes Uploaded
+    </p>
+    <div className="w-full bg-gray-200 rounded-full h-1.5">
+        {/* The main progress bar driven by the total uploaded candidates */}
+        <div 
+            className="bg-teal-500 h-1.5 rounded-full transition-all duration-500" 
+            style={{ width: `${(uploadedCandidatesCount / MAX_CANDIDATES) * 100}%` }}
+        ></div>
+    </div>
+    
+    {/* This is the temporary progress bar that shows DURING an upload animation */}
+    {isParsing && (
+        <div className="mt-4">
+            <p className="text-xs text-gray-500 mb-1">Processing {filesParsed}/{totalFiles} new resumes...</p>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                    // THIS IS THE KEY: Use the 'parsingProgress' state here
+                    style={{ width: `${parsingProgress}%` }}
+                ></div>
+            </div>
+        </div>
+    )}
+</div>
+                {/* --- Candidate Table Container --- */}
+                <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    {/* Table Header */}
+<div className="grid grid-cols-12 gap-4 px-6 py-4 bg-white text-left text-sm font-semibold text-gray-900">
                         <div className="col-span-4">Name</div>
                         <div className="col-span-4">Email</div>
-                        <div className="col-span-3">Phone Number</div>
+                        <div className="col-span-4">Phone Number</div>
                         <div className="col-span-1"></div>
                     </div>
+                    {/* Table Rows */}
                     <div className="divide-y divide-gray-200">
                         {candidates.map(candidate => (
                             <div key={candidate.id} className="grid grid-cols-12 gap-4 px-6 py-4 text-sm items-center">
@@ -268,23 +333,39 @@ const fetchAndSetCandidates = async () => {
                                         <div className="col-span-4"><input type="text" placeholder="Name" value={candidate.name} onChange={(e) => handleCandidateChange(candidate.id, 'name', e.target.value)} className="w-full p-1 border rounded"/></div>
                                         <div className="col-span-4"><input type="email" placeholder="Email" value={candidate.email} onChange={(e) => handleCandidateChange(candidate.id, 'email', e.target.value)} className="w-full p-1 border rounded"/></div>
                                         <div className="col-span-3"><input type="tel" placeholder="Phone" value={candidate.phone} onChange={(e) => handleCandidateChange(candidate.id, 'phone', e.target.value)} className="w-full p-1 border rounded"/></div>
-                                        <div className="col-span-1 flex space-x-2 justify-end"><button onClick={() => handleSaveCandidate(candidate.id)} className="text-green-500 hover:text-green-700" title="Save"disabled={isSubmitting}><Icon name="check" className="font-bold"/></button><button onClick={() => handleDeleteCandidate(candidate.id)} className="text-red-500 hover:text-red-700" title="Cancel"><Icon name="close" className="font-bold"/></button></div>
+                                        <div className="col-span-1 flex space-x-2 justify-end"><button onClick={() => handleSaveCandidate(candidate.id)} className="text-green-500 hover:text-green-700" title="Save" disabled={isSubmitting}><Icon name="check" className="font-bold"/></button><button onClick={() => handleDeleteCandidate(candidate.id)} className="text-red-500 hover:text-red-700" title="Cancel"><Icon name="close" className="font-bold"/></button></div>
                                     </>
                                 ) : (
                                     <>
                                         <div className="col-span-4 font-medium text-gray-900">{candidate.name}</div>
                                         <div className="col-span-4 text-gray-500">{candidate.email}</div>
                                         <div className="col-span-3 text-gray-500">{candidate.phone}</div>
-                                        <div className="col-span-1 flex justify-end"><button onClick={() => handleDeleteCandidate(candidate.id)} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded hover:bg-gray-200" title="Delete Candidate"><Icon name="close" className="font-bold text-gray-500"/></button></div>
+                                        <div className="col-span-1 flex justify-end">
+                                          {/* We don't show a delete button in view mode to match the design */}
+                                        </div>
                                     </>
                                 )}
                             </div>
                         ))}
                     </div>
-                    <button onClick={handleAddCandidate} className="w-full text-left px-6 py-4 text-sm font-semibold text-gray-600 hover:bg-gray-50 flex items-center space-x-2"disabled={isSubmitting}><Icon name="plus" className="bg-gray-200 rounded-full p-0.5"/><span>Add Candidate Manually</span></button>
                 </div>
-                
-                {failedFiles.length > 0 && (<p className="mt-4 text-sm text-red-600">Failed to parse: {failedFiles.join(', ')}</p>)}
+
+                {/* --- Add Candidate Button (now outside the table) --- */}
+                <button 
+                    onClick={handleAddCandidate} 
+                    className="mt-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg inline-flex items-center space-x-2 disabled:opacity-50"
+                    disabled={isSubmitting || isParsing}
+                >
+                    <Icon name="plus" className="font-bold"/>
+                    <span>Add Candidate Manually</span>
+                </button>
+
+                {/* --- Failed Files Message --- */}
+                {failedFiles.length > 0 && (
+                    <p className="mt-4 text-sm text-red-600">
+                        Failed to parse: {failedFiles.join(', ')}
+                    </p>
+                )}
             </div>
 
             <div className="mt-8 flex justify-end">
