@@ -8,6 +8,7 @@ import SectionComponent from "./components/SectionComponent";
 import { useNavigate } from "react-router-dom";
 import NoFaceAlert from "./NoFaceAlert";
 import MultiplePersonsAlert from "./MultiplePersonsAlert";
+import IdentityMismatchAlert from "./IdentityMismatchAlert";
 import BASE_URL from "../config";
 import { useCallback } from "react";
 
@@ -38,6 +39,7 @@ export default function SectionPage() {
   const [showNoFaceAlert, setShowNoFaceAlert] = useState(false);
 const [showMultiFaceAlert, setShowMultiFaceAlert] = useState(false);
 const [cameraReady, setCameraReady] = useState(false);
+const [showIdentityAlert, setShowIdentityAlert] = useState(false); 
 
 const handleNoFace = useCallback(() => {
   setShowNoFaceAlert(true);
@@ -46,7 +48,12 @@ const handleNoFace = useCallback(() => {
 const handleMultiplePersons = useCallback(() => {
   setShowMultiFaceAlert(true);
 }, []);
-const shouldBlur = () => showNoFaceAlert || showMultiFaceAlert;
+
+const handleIdentityMismatch = useCallback(() => {                     
+  setShowIdentityAlert(true);
+}, []);
+
+const shouldBlur = () => showNoFaceAlert || showMultiFaceAlert || showIdentityAlert;
 
   const fetchSectionProgress = () => {
   fetch(
@@ -341,6 +348,16 @@ if (testCompleted) {
         }}
       />
     )}
+
+{showIdentityAlert && (                                           
+      <IdentityMismatchAlert
+       onDismiss={() => setShowIdentityAlert(false)}
+       onContinue={() => {
+          setShowIdentityAlert(false);
+         requestFullscreen();
+        }}
+      />
+    )}
   </div>
 )}
 
@@ -375,8 +392,9 @@ if (testCompleted) {
               mediaStream={sharedStream}
               videoRef={webcamRef}
               isTestActive={testStarted && !testCompleted}
-               onNoFace={handleNoFace}                     
-  onMultiplePersons={handleMultiplePersons} 
+              onNoFace={handleNoFace}                     
+              onMultiplePersons={handleMultiplePersons} 
+              onIdentityMismatch={handleIdentityMismatch}
               isCameraReady={cameraReady}
             />
           )}

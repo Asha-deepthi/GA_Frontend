@@ -37,6 +37,7 @@ isTestActive,
 onNoFace,
   onMultiplePersons,
   isCameraReady,
+  onIdentityMismatch,
 }) {
   // --- Proctoring & Alerts State ---
   const [showTabSwitchAlert, setShowTabSwitchAlert] = useState(false);
@@ -78,7 +79,8 @@ useEffect(() => {
     onCameraOff: () => setShowCameraOffAlert(true),
     isTestActive,
     onNoFace,           // 👈 Add this
-  onMultiplePersons, 
+  onMultiplePersons,
+  onIdentityMismatch, 
   isCameraReady,
   });
 

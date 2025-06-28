@@ -18,6 +18,7 @@ const useProctoring = ({
   isCameraReady,
   onNoFace = () => { },
   onMultiplePersons = () => { },
+  onIdentityMismatch = () => {},
   onTabSwitch = () => {
     console.log("⚠️ Tab switch alert triggered");
     setShowTabSwitchAlert(true);
@@ -44,19 +45,16 @@ const useProctoring = ({
   },
 }) => {
   const [violationCount, setViolationCount] = useState(0);
-  const lastViolationTimeRef = useRef({}); // ✅ an object to hold keys like 'low_audio'
+  const lastViolationTimeRef = useRef({}); 
   const audioContextRef = useRef(null);
   const micAnalyserRef = useRef(null);
   const videoStreamRef = useRef(null);
   const violationCooldownMs = 60000;
-  const initialDescriptorRef = useRef(null); // stores the first face
+  const initialDescriptorRef = useRef(null); 
   const isActiveRef = useRef(isTestActive);
   const graceStartRef = useRef(Date.now());
-  const GRACE_PERIOD_MS = 5000; // 5 seconds
+  const GRACE_PERIOD_MS = 5000;
 
-  const safeAlert = (message) => {
-    if (isTestActive) alert(message);
-  };
 
   const logViolation = useCallback(
     async ({ eventType, remarks = "", confidence = 0.0 }) => {
@@ -167,8 +165,9 @@ const useProctoring = ({
   const faceIntervalRef = useRef(null);
   const audioIntervalRef = useRef(null);
   const videoIntervalRef = useRef(null);
-  const streamRef = useRef(null); // ← Needed for stream stop
-  const noFaceCountRef = useRef(0);
+  const streamRef = useRef(null); 
+  // const noFaceCountRef = useRef(0);
+  const noFaceStartRef = useRef(null);
 
   const stopAll = () => {
     clearInterval(faceIntervalRef.current);
@@ -195,7 +194,6 @@ const useProctoring = ({
           stream = mediaStream;
         }
 
-        // Fix: prevent video freezing or black screen
         streamRef.current = stream;
         const tracks = stream?.getVideoTracks();
         if (!tracks || tracks.length === 0) {
@@ -217,19 +215,14 @@ const useProctoring = ({
               logWithCooldown("camera_off", "Camera video track not found after retries");
               onCameraOff();
             } else {
-              setTimeout(retryCheck, 1000); // retry every 1 second
+              setTimeout(retryCheck, 1000); 
             }
           };
 
           retryCheck();
           return;
         }
-
-
         videoStreamRef.current = stream;
-
-        // FACE API: Setup for multiple face detection
-
         const video = videoElementRef?.current;
         if (!video) {
           console.warn("Video element not found.");
@@ -240,8 +233,6 @@ const useProctoring = ({
           video.srcObject = stream;
           console.log("🎥 Assigned stream to video element.");
         }
-
-
 
         await video.play();
         console.log("📹 Video readyState:", video.readyState);
@@ -267,19 +258,16 @@ const useProctoring = ({
                 break;
               } else {
                 console.warn(`⚠️ Attempt ${attempts + 1}: No face detected.`);
-                await new Promise((res) => setTimeout(res, 1000)); // Wait 1 second
+                await new Promise((res) => setTimeout(res, 1000)); 
                 attempts++;
               }
             }
           }
-
-
           faceIntervalRef.current = setInterval(async () => {
             if (!isTestActive) {
               console.log("⏳ Skipping face detection: test inactive or camera not ready");
               return;
             }
-
             const now = Date.now();
             const graceOver = now - graceStartRef.current > GRACE_PERIOD_MS;
             if (!graceOver) {
@@ -292,7 +280,7 @@ const useProctoring = ({
                 .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
                 .withFaceLandmarks()
                 .withFaceDescriptors();
-            console.log(`🎯 Detections: ${detections.length}`, detections.map(d => d.detection.score.toFixed(2)))
+              console.log(`🎯 Detections: ${detections.length}`, detections.map(d => d.detection.score.toFixed(2)))
 
               // 👥 Multiple Faces Check - should be FIRST
               if (detections.length > 1 && !multiFaceAlertedRef.current) {
@@ -307,32 +295,33 @@ const useProctoring = ({
 
               // 🙈 No Face Detected
               if (detections.length === 0) {
-                noFaceCountRef.current += 1;
-                console.log(`🙈 No face detected (count = ${noFaceCountRef.current})`);
-
-                if (noFaceCountRef.current >= 3 && !noFaceAlertedRef.current) {
-                  if (onNoFace) onNoFace();
-                  logWithCooldown("face_not_detected", "No face visible in webcam feed for 3+ intervals.");
-                  noFaceAlertedRef.current = true;
-                  setTimeout(() => {
-                    noFaceAlertedRef.current = false;
-                  }, 15000);
-                  noFaceCountRef.current = 0; // reset after alert
+                if (!noFaceStartRef.current) {
+                  noFaceStartRef.current = Date.now();
+                  console.log("🙈 No face detected: timer started");
+                } else {
+                  const duration = Date.now() - noFaceStartRef.current;
+                  console.log("🕒 Loop time:", new Date().toLocaleTimeString());
+                  console.log(`🙈 No face for ${(duration / 1000).toFixed(1)} seconds`);
+                  if (duration > 10000 && !noFaceAlertedRef.current) {
+                    if (onNoFace) onNoFace();
+                    logWithCooldown("face_not_detected", "No face visible for over 10 seconds.");
+                    noFaceAlertedRef.current = true;
+                    setTimeout(() => {
+                      noFaceAlertedRef.current = false;
+                    }, 15000);
+                  }
                 }
               } else {
-                noFaceCountRef.current = 0; // reset on successful detection
+                noFaceStartRef.current = null; 
               }
 
-
-              // 🔍 Identity Check (only if 1 face)
+              // 🔍 Identity Check 
               if (detections.length === 1 && initialDescriptorRef.current) {
-                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.6); // tighter match
+                const faceMatcher = new faceapi.FaceMatcher(initialDescriptorRef.current, 0.7); 
                 const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
-
                 console.log("🧠 Face match result:", bestMatch.toString());
-
                 if (bestMatch.label === "unknown" && !identityAlertedRef.current) {
-                  safeAlert("⚠ Identity mismatch! Please stay in front of the camera.");
+                  if (typeof onIdentityMismatch === "function") onIdentityMismatch(); 
                   logWithCooldown("identity_mismatch", "Detected a different person.");
                   identityAlertedRef.current = true;
                   setTimeout(() => {
@@ -345,21 +334,16 @@ const useProctoring = ({
               console.error("Face detection error:", faceErr);
             }
           }, 4000);
-
-
         } catch (modelLoadErr) {
           logWithCooldown("face_api_error", "Failed to load face-api.js models");
           console.error("FaceAPI load error:", modelLoadErr);
         }
-
         const ac = new AudioContext();
         const mic = ac.createMediaStreamSource(stream);
         const analyser = ac.createAnalyser();
         mic.connect(analyser);
-
         audioContextRef.current = ac;
         micAnalyserRef.current = analyser;
-
         audioIntervalRef.current = setInterval(() => {
           const data = new Uint8Array(analyser.fftSize);
           analyser.getByteTimeDomainData(data);
@@ -391,7 +375,6 @@ const useProctoring = ({
 
       let retries = 0;
       const maxRetries = 10;
-
       const waitForVideoRef = () => {
         retries++;
         if (videoElementRef?.current) {
@@ -427,11 +410,7 @@ const useProctoring = ({
         };
       }
     }
-
-
     return () => {
-
-
       videoStreamRef.current?.getTracks().forEach((t) => t.stop());
       if (audioContextRef.current && audioContextRef.current.state === "running") {
         audioContextRef.current.close().catch((err) => {
@@ -450,13 +429,13 @@ const useProctoring = ({
 
   useEffect(() => { if (!isTestActive) stopAll(); }, [isTestActive]);
 
-  useEffect(() => {
+ /* useEffect(() => {
     if (violationCount === 2) {
       if (isTestActive) {
         alert("⚠ Last warning: One more violation and your exam will be flagged.");
       }
     }
-  }, [violationCount]);
+  }, [violationCount]);*/
 
   return { violationCount, isFullscreenActive };
 };
