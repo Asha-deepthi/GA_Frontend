@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import BASE_URL from "../../config";
+import NavBar from '../components/Navbar';
 
 // --- Helper Icon Components ---
 const BellIcon = () => (
@@ -73,19 +74,7 @@ const SendInvitations = () => {
     return (
         <div className="invitations-page-container">
             {/* --- Header --- */}
-            <header className="page-header">
-                <div className="logo-container">
-                    <span className="logo-icon">GA</span><span className="logo-text">GA Proctored Test</span>
-                </div>
-                <nav className="main-nav">
-                    <a href="#">Dashboard</a><a href="#">Tests</a><a href="#">Candidates</a><a href="#" className="active">Create test</a>
-                </nav>
-                <div className="user-controls">
-                    <button className="icon-button"><BellIcon /></button>
-                    <div className="user-profile"><div className="avatar"></div><span>Arjun Pavan</span><span className="dropdown-arrow">▼</span></div>
-                </div>
-            </header>
-
+            <NavBar />
             {/* --- Main Content --- */}
             <main className="main-content">
                 {/* --- Stepper --- */}

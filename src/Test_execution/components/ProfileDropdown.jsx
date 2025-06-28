@@ -25,7 +25,7 @@ const ProfileDropdown = () => {
         {/* Image */}
         <div className="w-[30px] h-[30px] rounded-full overflow-hidden">
           <img
-            src="images/profilepic.png"
+            src="/images/profilepic.png"
             alt="Profile"
             className="w-full h-full object-cover"
           />

@@ -5,6 +5,7 @@ import { useStream } from './StreamContext';
 import { FaMicrophone, FaVideo } from 'react-icons/fa';
 import { FiRefreshCw } from 'react-icons/fi';
 import AuthContext from "../Test_creation/contexts/AuthContext";
+import TopHeader from './components/TopHeader';
 
 const DemoQuestion = () => {
   const { user } = useContext(AuthContext);
@@ -203,26 +204,9 @@ const DemoQuestion = () => {
   }, [micStream]);
 
   return (
-    <div className="w-screen min-h-screen bg-white font-overpass relative overflow-x-hidden overflow-y-auto">
-      {/* Top Colored Progress Bar */}
-      <div className="top-0 left-0 w-full h-[10px] flex z-50">
-        <div className="flex-1 bg-red-500" />
-        <div className="flex-1 bg-orange-400" />
-        <div className="flex-1 bg-yellow-400" />
-        <div className="flex-1 bg-green-500" />
-        <div className="flex-1 bg-cyan-500" />
-      </div>
-
-      {/* Header */}
+     <div className="w-screen h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
+      <TopHeader userName={userName} />
       <div className="relative max-w-[1250px] mx-auto px-4 pt-[70px] pb-12">
-        <header className="flex justify-between items-center h-[44px] px-8 mb-12">
-          <div className="w-[197.78px] h-[40px] bg-gray-300" />
-          <div className="flex items-center gap-2">
-            <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-base font-medium text-gray-900">{userName ?? 'Loading...'}</span>
-          </div>
-        </header>
-
         {/* Main Content */}
         <main className="flex flex-col items-center text-center px-4">
           <h2 className="font-extrabold text-[40px] leading-[48px] text-black mb-10">Demo Question</h2>

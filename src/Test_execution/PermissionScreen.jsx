@@ -4,6 +4,7 @@ import { FaQuestionCircle } from "react-icons/fa";
 import { useStream } from './StreamContext';  // Your custom context hook
 import { useContext } from "react";
 import AuthContext from "../Test_creation/contexts/AuthContext";
+import TopHeader from './components/TopHeader'; // Adjust path if in a different folder
 
 export default function PermissionScreen() {
   const { user } = useContext(AuthContext);
@@ -78,31 +79,7 @@ export default function PermissionScreen() {
 
   return (
     <div className="w-screen min-h-screen bg-white flex flex-col items-center justify-start px-4 relative overflow-hidden font-overpass overflow-x-hidden overflow-y-auto">
-      {/* Top Colored Bar */}
-      <div className="absolute top-0 left-0 w-full h-[10px] flex">
-        <div className="flex-1 bg-red-500" />
-        <div className="flex-1 bg-orange-400" />
-        <div className="flex-1 bg-yellow-400" />
-        <div className="flex-1 bg-green-500" />
-        <div className="flex-1 bg-cyan-500" />
-      </div>
-
-      {/* Header */}
-      <header className="absolute top-[50px] left-1/2 transform -translate-x-1/2 w-[90vw] max-w-[1250px] h-[44px] flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-12">
-        <div className="w-[198px] h-[40px] bg-gray-300 md:w-[250px]" />
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2.5 px-4 py-2 bg-[#E0302D0D] border border-[#E0302D] rounded-full text-sm sm:text-base">
-            <FaQuestionCircle className="text-[#E0302D] text-[18px]" />
-            <span className="font-overpass font-medium leading-6 text-[#E0302D]">FAQs</span>
-          </button>
-          <div className="h-6 w-[2px] bg-gray-300" />
-          <div className="w-[90px] h-[44px] flex items-center justify-between gap-1.5 px-2">
-            <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="font-overpass font-medium text-[16px] text-[#1A1A1A]  max-w-[60px]">{userName ?? 'Loading...'}</span>
-          </div>
-        </div>
-      </header>
-
+      <TopHeader userName={userName} />
       {/* Main Content */}
       <div className="absolute top-[174px] left-1/2 transform -translate-x-1/2 w-[90vw] max-w-[1100px] min-h-[706px] flex flex-col gap-[60px]">
         <div className="flex flex-col gap-2 w-full max-w-[700px] mx-auto text-center px-2 sm:px-4">
