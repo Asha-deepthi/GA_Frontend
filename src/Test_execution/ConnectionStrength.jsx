@@ -3,6 +3,7 @@ import { FaQuestionCircle } from 'react-icons/fa';
 import { useNavigate, useParams} from "react-router-dom";
 import { useContext } from "react";
 import AuthContext from "../Test_creation/contexts/AuthContext";
+import TopHeader from './components/TopHeader';
 
 export default function ConnectionStrengthScreen() {
   const { user } = useContext(AuthContext);
@@ -175,28 +176,8 @@ export default function ConnectionStrengthScreen() {
             }
   };
   return (
-    <div className="relative w-screen h-screen bg-white overflow-auto font-overpass">
-      <div className="sticky top-0 w-full flex h-1 z-10">
-        <div className="flex-1 bg-red-500" />
-        <div className="flex-1 bg-orange-500" />
-        <div className="flex-1 bg-green-500" />
-        <div className="flex-1 bg-lime-400" />
-        <div className="flex-1 bg-cyan-500" />
-      </div>
-      <header className="flex items-center justify-between px-20 py-4">
-        <div className="w-40 h-6 bg-gray-300" />
-        <div className="flex items-center gap-4">
-          <button className="flex items-center px-5 py-2 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2">
-            <FaQuestionCircle className="text-[#E0302D] text-xl" />
-            <span className="text-[#E0302D] text-base font-medium">FAQs</span>
-          </button>
-          <div className="h-6 w-px bg-gray-300" />
-          <div className="flex items-center gap-2">
-            <img src="/images/profilepic.png" alt="Avatar" className="w-6 h-6 rounded-full" />
-            <span className="text-gray-900 text-base font-medium">{userName ?? 'Loading...'}</span>
-          </div>
-        </div>
-      </header>
+    <div className="relative w-screen h-screen bg-gray-50 overflow-hidden font-overpass flex flex-col">
+      <TopHeader userName={userName} />
       <div className="text-center mt-12">
         <h1 className="text-4xl font-bold text-gray-900">Check Your Connection Strength</h1>
         <p className="mt-2 text-lg text-gray-600 max-w-xl mx-auto">Ensure optimal performance by checking your video, microphone, and internet connection strengths.</p>
