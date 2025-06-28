@@ -62,11 +62,27 @@ export default function InstructionScreen({ onNext, onBack }) {
 
       const candidateTestId = testData.id;
 
+      try {
+        const elem = document.documentElement;
+        const fullscreenPromise =
+          elem.requestFullscreen?.() ||
+          elem.webkitRequestFullscreen?.() ||
+          elem.msRequestFullscreen?.();
+
+        if (fullscreenPromise instanceof Promise) {
+          await fullscreenPromise;
+        }
+      } catch (e) {
+        console.warn("⚠️ Fullscreen request failed or was blocked:", e);
+      }
+
       navigate(`/sectionpage/${testId}/${candidateTestId}`);
     } catch (err) {
       console.error("Error in handleAccept:", err);
       alert("Something went wrong. Please try again.");
     }
+
+
   };
   return (
     <div className="relative w-screen h-screen bg-gray-50 overflow-hidden font-overpass flex flex-col">
@@ -104,7 +120,7 @@ export default function InstructionScreen({ onNext, onBack }) {
           className="px-10 py-2.5 rounded-full text-white text-[16px] leading-[24px] font-semibold shadow-md hover:shadow-lg transition-all"
           style={{ background: '#00A398' }}
         >
-          Next
+          Start Exam
         </button>
       </div>
 

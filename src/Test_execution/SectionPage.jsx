@@ -65,6 +65,12 @@ const shouldBlur = () => showNoFaceAlert || showMultiFaceAlert || showIdentityAl
 };
 
 useEffect(() => {
+  if (document.fullscreenElement) {
+    setFullscreenReady(true);
+  }
+}, []);
+
+useEffect(() => {
   if (testId && realCandidateTestId) {
     const timeoutId = setTimeout(() => {
       fetchSectionProgress();
@@ -298,7 +304,7 @@ console.log("🧑‍💻 Full fetch URL:",
     //updateQuestionStatus(qid, "visited");
   };
 
-  if (!fullscreenReady) {
+  {/*if (!fullscreenReady) {
     return (
       <div className="min-h-screen bg-white text-[#00A398]">
       <TopHeader userName={userName} />
@@ -315,7 +321,7 @@ console.log("🧑‍💻 Full fetch URL:",
         </div>
       </div>
     );
-  }
+  } */}
 
 if (testCompleted) {
   return (
