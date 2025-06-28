@@ -64,7 +64,7 @@ const handleAccept = async () => {
         }
     };
   return (
-    <div className="relative w-screen h-screen bg-gray-50 overflow-hidden font-overpass flex flex-col">
+    <div className="w-screen h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
       <TopHeader userName={userName} />
       {/* Main Content */}
       <div className="w-full flex-1 flex flex-col items-center justify-center px-4 md:px-0 max-w-[456px] overflow-hidden">
