@@ -78,18 +78,18 @@ export default function PermissionScreen() {
   };
 
   return (
-    <div className="w-screen min-h-screen bg-white flex flex-col items-center justify-start px-4 relative overflow-hidden font-overpass overflow-x-hidden overflow-y-auto">
+    <div className="w-screen h-screen bg-white flex flex-col items-center justify-start px-2 relative overflow-hidden font-overpass overflow-x-hidden">
       <TopHeader userName={userName} />
       {/* Main Content */}
-      <div className="absolute top-[174px] left-1/2 transform -translate-x-1/2 w-[90vw] max-w-[1100px] min-h-[706px] flex flex-col gap-[60px]">
+      <div className="absolute top-[140px] left-1/2 transform -translate-x-1/2 w-[92vw] max-w-[1100px] min-h-[600px] flex flex-col gap-[40px]">
         <div className="flex flex-col gap-2 w-full max-w-[700px] mx-auto text-center px-2 sm:px-4">
-          <h1 className="font-overpass font-extrabold text-[28px] sm:text-[32px] md:text-[40px] text-black">Enable Camera and Microphone</h1>
-          <p className="font-overpass text-[16px] sm:text-[18px] md:text-[20px] text-gray-500 max-w-[600px] mx-auto">
+          <h1 className="font-overpass font-extrabold text-[20px] sm:text-[24px] md:text-[28px] text-black">Enable Camera and Microphone</h1>
+          <p className="font-overpass text-[14px] sm:text-[16px] md:text-[18px] text-gray-500 max-w-[600px] mx-auto">
             To proceed with the interview, we need access to your camera and microphone. Please grant the necessary permissions.
           </p>
         </div>
 
-        <div className="flex flex-col gap-[30px] w-full max-w-[600px] mx-auto">
+        <div className="flex flex-col gap-[20px] w-full max-w-[600px] mx-auto">
           <PermissionToggle
             label="Grant permission to WebCam"
             image="/images/Webcam.png"
@@ -112,7 +112,7 @@ export default function PermissionScreen() {
 
         <div className="flex justify-center pb-10">
           <button
-            className="w-[117px] h-[44px] px-[40px] py-[10px] rounded-[40px] bg-teal-500 hover:bg-teal-600 text-white font-semibold"
+            className="w-[90px] h-[34px] px-[20px] py-[6px] rounded-[25px] bg-teal-500 hover:bg-teal-600 text-white font-semibold"
             onClick={handleNext}
           >
             Next
@@ -125,10 +125,10 @@ export default function PermissionScreen() {
 
 function PermissionToggle({ label, image, checked, onChange }) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 rounded-xl w-full h-[105px] gap-[10px] pr-[5px] pb-[5px] border-r-4 border-b-4 border-gray-400 bg-gray-50 shadow-lg">
+    <div className="flex items-center justify-between px-6 py-4 rounded-xl w-full h-[90px] gap-[10px] pr-[4px] pb-[4px] border-r-4 border-b-4 border-gray-400 bg-gray-50 shadow-lg">
       <div className="flex items-center gap-3">
         <img src={image} alt={label} className="w-10 h-10" />
-        <span className="text-gray-700">{label}</span>
+        <span className="text-sm text-gray-700">{label}</span>
       </div>
       <label className="relative inline-flex items-center cursor-pointer">
         <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" />
