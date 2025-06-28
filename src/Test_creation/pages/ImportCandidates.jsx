@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ImportCandidatesModal from './ImportCandidatesModal'; 
+import NavBar from '../components/Navbar'; 
 
 // --- Icon Component (for placeholder icons) ---
 const Icon = ({ name, className = '' }) => {
@@ -258,19 +259,12 @@ const handleFileChange = (event) => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
+        <NavBar />
       <ImportCandidatesModal
             isOpen={isImportModalOpen}
             onClose={() => setisImportModalOpen(false)}
             onImport={handleImportFromTest}
         />
-        <header className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-                <div className="text-teal-500 font-bold text-lg">■ GA Proctored Test</div>
-                <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-600"><a href="#" className="hover:text-teal-500">Dashboard</a><a href="#" className="hover:text-teal-500">Tests</a><a href="#" className="hover:text-teal-500">Candidates</a><a href="#" className="text-teal-500 font-semibold">Create test</a></nav>
-                <div className="flex items-center space-x-4"><div className="relative"><Icon name="notification" className="text-xl text-gray-500" /></div><div className="flex items-center space-x-2"><div className="h-8 w-8 rounded-full bg-gray-300"></div><span className="text-sm">Arjun Pawan ▾</span></div></div>
-            </div>
-        </header>
-
         <main className="max-w-4xl mx-auto py-12 px-4">
             <div className="mb-16"><Stepper currentStep={3} /></div>
 

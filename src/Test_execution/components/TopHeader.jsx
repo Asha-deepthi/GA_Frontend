@@ -1,19 +1,7 @@
-import React, { useEffect, useState} from 'react';
+import React from 'react';
 import { FaQuestionCircle } from "react-icons/fa";
 
 const TopHeader = ({ userName }) => {
-  {/*const [userName, setUserName] = useState(null);*/}
-
-  {/*useEffect(() => {
-    const id = localStorage.getItem('userId');
-    if (!id) return setUserName('Guest');
-
-    fetch(`http://127.0.0.1:8000/api/test-execution/get-user/${id}/`)
-      .then(res => res.json())
-      .then(profile => setUserName(profile.name))
-      .catch(() => setUserName('Guest'));
-  }, []);*/}
-
   return (
     <div className="relative w-full bg-white font-lexend">
       {/* Top Multi-Colored Bar */}
@@ -27,26 +15,19 @@ const TopHeader = ({ userName }) => {
 
       {/* Main Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-[#E5E7EB] h-[64px]">
-        {/* Logo and Title */}
         <div className="flex items-center gap-2">
           <img src="/images/pin-icon.png" alt="Pin" className="w-4 h-4" />
           <span className="text-[#008080] text-sm font-semibold">GA Proctored Test</span>
         </div>
 
-        {/* Right Side */}
         <div className="flex items-center gap-6">
-          {/* FAQs Button */}
-          <button
-            className="flex items-center px-4 py-1.5 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2"
-          >
+          <button className="flex items-center px-4 py-1.5 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2">
             <FaQuestionCircle className="text-[#E0302D] text-sm" />
             <span className="text-[#E0302D] text-sm font-medium">FAQs</span>
           </button>
 
-          {/* Divider */}
           <div className="h-5 w-[1px] bg-gray-300" />
 
-          {/* User Profile */}
           <div className="flex items-center gap-2">
             <img
               src="/images/profilepic.png"

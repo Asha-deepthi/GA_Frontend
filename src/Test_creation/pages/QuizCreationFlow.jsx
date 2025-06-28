@@ -175,13 +175,6 @@ const handleImportQuiz = async (testIdToImport) => {
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImportQuiz}
       />
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo"><span className="logo-square"></span> GA Proctored Test</div>
-          <nav className="header-nav"><a href="#">Dashboard</a><a href="#">Tests</a><a href="#">Candidates</a><a href="#" className="active-link">Create test</a></nav>
-          <div className="user-profile"><span className="notification-bell" role="img" aria-label="notifications">🔔</span><div className="avatar"></div><span>Arjun Pranan ▼</span></div>
-        </div>
-      </header>
       <main className="main-content">
         <div className="stepper">
           {/* Step 1: Test Title */}

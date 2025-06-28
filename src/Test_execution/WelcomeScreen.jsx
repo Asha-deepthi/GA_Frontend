@@ -2,9 +2,13 @@ import React, { useState, useEffect  } from 'react';
 import { useNavigate } from "react-router-dom";
 import { FaQuestionCircle } from "react-icons/fa";
 import { useParams } from 'react-router-dom';
+import AuthContext from "../Test_creation/contexts/AuthContext"; // Adjust path as needed
+import TopHeader from './components/TopHeader'; // Adjust path if in a different folder
 
 const WelcomeScreen = () => {
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+    const userName = user?.name || 'Guest';
     const { testId } = useParams();
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -61,26 +65,7 @@ const handleAccept = async () => {
     };
   return (
     <div className="w-screen h-screen bg-white flex flex-col items-center px-4 pt-6 font-overpass relative overflow-hidden">
-      {/* Top Color Bar */}
-      <div className="w-full h-[10px] flex absolute top-0 left-0 z-10">
-        <div className="flex-1 bg-red-500" />
-        <div className="flex-1 bg-orange-400" />
-        <div className="flex-1 bg-yellow-400" />
-        <div className="flex-1 bg-green-500" />
-        <div className="flex-1 bg-cyan-500" />
-      </div>
-
-      {/* Header */}
-      <header className="w-full max-w-[1250px] flex items-center justify-between px-4 md:px-10 py-4 mt-12 z-10 h-11">
-        <div className="w-[197.78px] h-[40px] bg-black/20" />
-        <button className="flex items-center gap-2 px-5 py-2.5 border border-[#E0302D] bg-[#E0302D0D] rounded-full">
-          <FaQuestionCircle className="text-[#E0302D] text-lg" />
-          <span className="font-medium text-base text-center text-[#E0302D]">
-            FAQs
-          </span>
-        </button>
-      </header>
-
+      <TopHeader userName={userName} />
       {/* Main Content */}
       <div className="w-full flex-1 flex flex-col items-center justify-center px-4 md:px-0 max-w-[456px] overflow-hidden">
         {/* Heading */}
