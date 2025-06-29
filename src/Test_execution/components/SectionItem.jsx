@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react';
 
 const SectionItem = ({ title, progress, onClick, disabled, isActive }) => {
   const containerClasses = `
-    flex items-center justify-between w-[320px] h-[56px] px-4 rounded 
+    flex items-center justify-between px-4 py-3 rounded-md transition
     ${isActive ? 'bg-[#00A3981A] border border-[#00A398]' : 'border border-transparent'}
     ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}
     ${isActive && !disabled ? 'text-[#0F1417] font-semibold' : ''}
