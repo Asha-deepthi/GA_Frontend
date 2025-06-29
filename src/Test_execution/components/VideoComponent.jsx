@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
+const VideoComponent = ({
+  question,
+  onAnswerUpdate,
+  currentStatus,
+  onNext,
+  isLast,
+  onLocalAnswerChange
+}) => {
   const [blobUrl, setBlobUrl] = useState(null);
   const [stream, setStream] = useState(null);
   const [recording, setRecording] = useState(false);
@@ -18,11 +25,29 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLas
     }
   }, [question.id]);
 
+  useEffect(() => {
+    if (blobUrl && onLocalAnswerChange) {
+      fetch(blobUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const filename = `video_${question.id}_${Date.now()}.webm`;
+          onLocalAnswerChange({
+            type: "video",
+            url: blobUrl,
+            blob,
+            filename
+          });
+        });
+    }
+  }, [blobUrl]);
+
   const startRecording = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setStream(mediaStream);
-      videoRef.current.srcObject = mediaStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
 
       mediaRecorderRef.current = new MediaRecorder(mediaStream);
       chunksRef.current = [];
@@ -49,38 +74,6 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLas
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
     stream?.getTracks().forEach((track) => track.stop());
-  };
-
-  const handleAction = (markForReview = false) => {
-    const hasAnswer = !!blobUrl;
-    const status = markForReview
-      ? hasAnswer ? "reviewed_with_answer" : "reviewed"
-      : hasAnswer ? "answered" : "skipped";
-
-    if (!hasAnswer) {
-      onAnswerUpdate(question.id, {
-        answer: null,
-        markedForReview: markForReview,
-        type: question.type,
-      });
-      if (!isLast && onNext) onNext();
-      return;
-    }
-
-    fetch(blobUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const filename = `video_${question.id}_${Date.now()}.webm`;
-        onAnswerUpdate(question.id, {
-          answer: { type: "video", url: blobUrl, blob, filename },
-          markedForReview: markForReview,
-          type: question.type,
-        });
-        if (!isLast && onNext) onNext();
-      })
-      .catch((err) => {
-        console.error("Failed to fetch video blob from URL:", err);
-      });
   };
 
   return (
@@ -113,21 +106,6 @@ const VideoComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLas
           <video controls src={blobUrl} className="w-full h-64 bg-black" />
         </div>
       )}
-
-      <div className="flex gap-4">
-        <button
-          onClick={() => handleAction(false)}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Save & Next
-        </button>
-        <button
-          onClick={() => handleAction(true)}
-          className="bg-purple-600 text-white px-4 py-2 rounded"
-        >
-          Mark for Review & Next
-        </button>
-      </div>
     </div>
   );
 };

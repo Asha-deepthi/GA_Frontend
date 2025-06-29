@@ -78,7 +78,7 @@ export default function PermissionScreen() {
   };
 
   return (
-    <div className="w-screen h-screen bg-white flex flex-col items-center justify-start px-2 relative overflow-hidden font-overpass overflow-x-hidden">
+    <div className="w-screen h-screen bg-white flex flex-col items-center justify-start  relative overflow-hidden font-overpass overflow-x-hidden">
       <TopHeader userName={userName} />
       {/* Main Content */}
       <div className="absolute top-[140px] left-1/2 transform -translate-x-1/2 w-[92vw] max-w-[1100px] min-h-[600px] flex flex-col gap-[40px]">

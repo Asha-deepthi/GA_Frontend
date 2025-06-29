@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
+const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast, onLocalAnswerChange }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(currentStatus?.answer?.toString() || '');
 
   useEffect(() => {
@@ -8,7 +8,9 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
   }, [question.id, currentStatus?.answer]);
 
   const handleOptionClick = (option) => {
-    setSelectedAnswer((prev) => (prev === option.id.toString() ? '' : option.id.toString()));
+    const newAnswer = selectedAnswer === option.id.toString() ? '' : option.id.toString();
+    setSelectedAnswer(newAnswer);
+    if (onLocalAnswerChange) onLocalAnswerChange(newAnswer);
   };
 
   const handleSaveAndNext = () => {
@@ -50,21 +52,6 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
             {opt.text}
           </div>
         ))}
-      </div>
-
-      <div className="mt-4 flex gap-4">
-        <button
-          onClick={handleSaveAndNext}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          Save and Next
-        </button>
-        <button
-          onClick={handleMarkForReview}
-          className="bg-violet-600 text-white px-4 py-2 rounded hover:bg-violet-700"
-        >
-          Mark for Review
-        </button>
       </div>
     </div>
   );

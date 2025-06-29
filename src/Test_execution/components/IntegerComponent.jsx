@@ -1,27 +1,28 @@
 import React, { useEffect, useState } from 'react';
 
-const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isLast }) => {
+const IntegerComponent = ({
+  question,
+  onAnswerUpdate,
+  currentStatus,
+  onNext,
+  isLast,
+  onLocalAnswerChange 
+}) => {
   const [value, setValue] = useState(currentStatus?.answer?.toString() || '');
 
   useEffect(() => {
-    setValue(currentStatus?.answer?.toString() || '');
+    const initial = currentStatus?.answer?.toString() || '';
+    setValue(initial);
+    if (onLocalAnswerChange) {
+      onLocalAnswerChange(initial);
+    }
   }, [question.id, currentStatus?.answer]);
 
-  const handleAction = (markForReview = false) => {
-    const trimmedValue = value.trim();
-    const hasAnswer = trimmedValue !== '';
-    const status = markForReview
-      ? hasAnswer ? 'reviewed_with_answer' : 'reviewed'
-      : hasAnswer ? 'answered' : 'skipped';
-
-    onAnswerUpdate(question.id, {
-      answer: hasAnswer ? trimmedValue : null,
-      markedForReview: markForReview,
-      type: question.type,
-    });
-
-    if (!isLast && onNext) {
-      onNext();
+  const handleChange = (e) => {
+    const updated = e.target.value;
+    setValue(updated);
+    if (onLocalAnswerChange) {
+      onLocalAnswerChange(updated);
     }
   };
 
@@ -31,18 +32,10 @@ const IntegerComponent = ({ question, onAnswerUpdate, currentStatus, onNext, isL
       <input
         type="number"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         className="border p-2 w-full mb-4 rounded"
         placeholder="Enter a number"
       />
-      <div className="flex gap-4">
-        <button onClick={() => handleAction(false)} className="bg-green-600 text-white px-4 py-2 rounded">
-          Save & Next
-        </button>
-        <button onClick={() => handleAction(true)} className="bg-purple-600 text-white px-4 py-2 rounded">
-          Mark for Review & Next
-        </button>
-      </div>
     </div>
   );
 };

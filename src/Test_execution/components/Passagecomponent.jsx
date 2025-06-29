@@ -6,19 +6,31 @@ import SubjectiveComponent from './SubjectiveComponent';
 import AudioComponent from './AudioComponent';
 import VideoComponent from './VideoComponent';
 
-const PassageComponent = ({ question, onAnswerUpdate, currentStatus }) => {
+const PassageComponent = ({
+  question,
+  onAnswerUpdate,
+  currentStatus,
+  onLocalAnswerChange 
+}) => {
   const { passage_text, text, sub_questions = [] } = question;
 
   const renderSubQuestion = (subQ) => {
-    const handleSubAnswerUpdate = (answer, status) => {
-      onAnswerUpdate(subQ.id, answer, status);
+    const handleSubAnswerUpdate = (subQId, payload) => {
+      onAnswerUpdate(subQId, payload, question.id); 
+    };
+
+    const handleLocalChange = (answer) => {
+      if (onLocalAnswerChange) {
+        onLocalAnswerChange(answer);
+      }
     };
 
     const props = {
       question: subQ,
       onAnswerUpdate: handleSubAnswerUpdate,
       currentStatus: currentStatus[subQ.id] || {},
-      onNext: () => {}, // Can be customized if needed
+      onNext: () => {}, // not needed for sub-questions
+      onLocalAnswerChange: handleLocalChange, 
     };
 
     switch (subQ.type) {

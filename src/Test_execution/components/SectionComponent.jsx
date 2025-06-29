@@ -46,8 +46,8 @@ onNoFace,
   const [showLowVideoAlert, setShowLowVideoAlert] = useState(false);
   const [showCameraOffAlert, setShowCameraOffAlert] = useState(false);
   //const { testId } = useParams();
-  const [loading, setLoading] = useState(true); 
-
+  const [loading, setLoading] = useState(true);
+  const [currentAnswer, setCurrentAnswer] = useState(null); 
  const [blurOverlayActive, setBlurOverlayActive] = useState(false);
 
 useEffect(() => {
@@ -383,6 +383,19 @@ const dismissAndUnblur = (setAlertFn) => {
   const current = questions[currentIndex];
 
 const shouldBlur = () => {
+  const goToPrevious = () => {
+  if (currentIndex > 0) {
+    setCurrentQuestionId(questions[currentIndex - 1]?.id);
+  }
+};
+
+const goToNext = () => {
+  if (currentIndex < questions.length - 1) {
+    setCurrentQuestionId(questions[currentIndex + 1]?.id);
+  } else {
+    handleFinalSubmit();
+  }
+};
   return (
     showTabSwitchAlert === true ||
     showLowNetworkAlert === true ||
@@ -390,6 +403,19 @@ const shouldBlur = () => {
     showLowVideoAlert === true ||
     showCameraOffAlert === true
   );
+};
+const goToPrevious = () => {
+  if (currentIndex > 0) {
+    setCurrentQuestionId(questions[currentIndex - 1]?.id);
+  }
+};
+
+const goToNext = () => {
+  if (currentIndex < questions.length - 1) {
+    setCurrentQuestionId(questions[currentIndex + 1]?.id);
+  } else {
+    handleFinalSubmit();
+  }
 };
 
   return (
@@ -438,6 +464,7 @@ const shouldBlur = () => {
               handleFinalSubmit(); // ✅ Last question
             }
           },
+          onLocalAnswerChange: setCurrentAnswer,
         };
 
         const isLast = currentIndex === questions.length - 1;
@@ -513,6 +540,19 @@ const typeKey = {
                   return <p>Unsupported sub-question type: {subQuestion.type}</p>;
               }
             };
+            const goToPrevious = () => {
+  if (currentIndex > 0) {
+    setCurrentQuestionId(questions[currentIndex - 1]?.id);
+  }
+};
+
+const goToNext = () => {
+  if (currentIndex < questions.length - 1) {
+    setCurrentQuestionId(questions[currentIndex + 1]?.id);
+  } else {
+    handleFinalSubmit();
+  }
+};
 
             return (
               <div>
@@ -529,6 +569,69 @@ const typeKey = {
       })()}
     </>
   )}
+  
+  {/* Unified Navigation Buttons */}
+<div className="mt-6 grid grid-cols-2 sm:flex sm:justify-between gap-4">
+  <button
+    disabled={currentIndex <= 0}
+    onClick={goToPrevious}
+    className="bg-[#E8EDF5] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-95 disabled:opacity-50"
+  >
+    Previous
+  </button>
+   {currentIndex < questions.length - 1 ? (
+    <button
+      className="bg-[#00A398] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-110"
+      onClick={() => {
+                      const current = questions[currentIndex];
+                      //const currentAnswer = answersStatus[current.id]?.answer || null;
+                      updateAnswer(current.id, {
+                        answer: currentAnswer,
+                        markedForReview: false,
+                        type: current.type,
+                      });
+                      goToNext();
+                    }}
+    >
+     Next
+    </button>
+  ) : (
+    <button
+      className="bg-[#00A398] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-110"
+      onClick={handleFinalSubmit}
+    >
+      Submit
+    </button>
+  )}
+   <button
+    className="bg-[#E8EDF5] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-95"
+    onClick={() => {
+      const current = questions[currentIndex];
+      updateAnswer(current.id, {
+        answer: null,
+        markedForReview: false,
+        type: current.type,
+      });
+      setCurrentAnswer(null);
+    }}
+  >
+    Clear Response
+  </button>
+  <button
+    className="bg-[#E8EDF5] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-95"
+    onClick={() => {
+      const current = questions[currentIndex];
+      updateAnswer(current.id, {
+        answer: currentAnswer,
+        markedForReview: true,
+        type: current.type,
+      });
+      goToNext();
+    }}
+  >
+    Mark as Review
+  </button>
+</div>
   </div>
 </div>
       {/* Alerts */}
@@ -553,37 +656,6 @@ const typeKey = {
           onEnable={() => dismissAndUnblur(setShowCameraOffAlert)}
         />
       )}
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <button
-          disabled={currentIndex <= 0}
-          onClick={() =>
-            setCurrentQuestionId(questions[currentIndex - 1]?.id)
-          }
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Previous
-        </button>
-
-        {currentIndex < questions.length - 1 ? (
-          <button
-            onClick={() =>
-              setCurrentQuestionId(questions[currentIndex + 1]?.id)
-            }
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Next
-          </button>
-        ) : (
-          <button
-            onClick={handleFinalSubmit}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Submit Section
-          </button>
-        )}
-      </div>
     </div>
   );
 }
