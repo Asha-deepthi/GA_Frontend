@@ -91,7 +91,7 @@ function App() {
         <Route path="/popup" element={<Popupalert_5 />} />
         <Route path="/submission/:candidateTestId" element={<TestSubmission/>}/>
         <Route path="/timeupscreen" element={<Timeupscreen/>}/>
-        <Route path="/summaryscreen" element={<TestSummaryScreen/>}/>
+       <Route path="/test/:testId/section/:sectionId/review" element={<TestSummaryScreen />} />
         <Route path="/faqpage" element={<FaqPage/>}/>
       </Routes>
     </StreamProvider>

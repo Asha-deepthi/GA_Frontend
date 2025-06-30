@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import BASE_URL from '../config';
 
-
-// --- Global Styles for Body ---
 const GlobalStyles = () => (
   <style>{`
     body {
@@ -14,7 +13,6 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-// --- Inline Styles Object ---
 const styles = {
   reviewPageContainer: { maxWidth: '800px', margin: '0 auto', padding: '20px' },
   reviewHeader: {
@@ -154,125 +152,147 @@ const styles = {
   errorStatus: { color: '#e74c3c' }
 };
 
-const TestSummaryScreen = ({ session_id, section_id }) => {
+
+const TestSummaryScreen = () => {
+  const { testId} = useParams();
+  const navigate = useNavigate();
+const [realCandidateTestId, setRealCandidateTestId] = useState(null);
+
   const [sections, setSections] = useState([]);
-  const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showOnlyUnanswered, setShowOnlyUnanswered] = useState(false);
-const navigate = useNavigate();
+
   useEffect(() => {
-    if (!session_id || !section_id) {
-      console.warn("session_id or section_id missing");
-      return;
-    }
-
-    const API_URL = `http://127.0.0.1:8000/api/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`;
-
-    const fetchAnswers = async () => {
-  try {
-    const res = await fetch(
-      `http://127.0.0.1:8000/api/test-execution/get-answers/?session_id=${session_id}&section_id=${section_id}`
-    );
-
-    if (res.status === 404) {
-      console.warn("No answers found for this section.");
-      setAnswers([]);
-      setSections([]);
-      return;
-    }
-
-    if (!res.ok) throw new Error("Failed to fetch answers");
-
-    const data = await res.json();
-    console.log("Fetched answers:", data);
-    setAnswers(data);
-
-    // Group questions by section
-    const sectionMap = {};
-    data.forEach((q) => {
-      const secId = q.section_id;
-const secName = q.section;
-
-if (!sectionMap[secId]) {
-  sectionMap[secId] = {
-    id: secId,
-    name: secName,
-    questions: []
-  };
-}
-
-      sectionMap[secId].questions.push(q);
-    });
-
-    const sectionArray = Object.values(sectionMap);
-    setSections(sectionArray);
-  } catch (err) {
-    console.error("Error fetching answers:", err);
-    setError("Failed to load answers.");
-  } finally {
-    setLoading(false);
+  const token = sessionStorage.getItem('access_token');
+  if (!testId || !token) {
+    setError("Missing testId or auth token.");
+    return;
   }
-};
 
-    fetchAnswers();
-  }, [session_id, section_id]);
+  const fetchSummaryData = async () => {
+    try {
+      // Step 1: Get candidate ID
+      const meRes = await fetch(`${BASE_URL}/me/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const me = await meRes.json();
+      const candidate_id = me.id;
+
+      // Step 2: Get candidate_test_id
+      const ctRes = await fetch(
+        `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidate_id}&test_id=${testId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const ctData = await ctRes.json();
+      const candidate_test_id = ctData.id;
+setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
+
+      // Step 3: Get all sections
+      const sectionRes = await fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/`);
+      const sectionList = await sectionRes.json();
+
+      // Step 4: Fetch all answers and questions for each section
+      const sectionsResults = await Promise.all(
+        sectionList.map(section =>
+          Promise.all([
+            fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/${section.id}/questions/`)
+              .then(res => res.json()),
+            fetch(`${BASE_URL}/test-execution/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then(res => res.json())
+          ])
+        )
+      );
+
+      // Step 5: Merge answers with questions per section
+      const finalSections = sectionList.map((section, index) => {
+        const [questions, answers] = sectionsResults[index];
+        const enrichedQuestions = questions.map(q => {
+          const answerObj = answers.find(a => String(a.question_id) === String(q.id));
+          return {
+            ...q,
+            answer: answerObj?.answer_text || answerObj?.answer || '',
+          };
+        });
+
+        return {
+          id: section.id,
+          name: section.section_name,
+          questions: enrichedQuestions,
+        };
+      });
+
+      setSections(finalSections);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading test summary.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchSummaryData();
+}, [testId]);
 
   const { displayedSections, totalQuestions, answeredQuestions } = useMemo(() => {
-    if (!sections?.length) return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
+    if (!sections.length) return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
 
-    let total = 0, answered = 0;
-    const filteredSections = sections.map(section => {
-      const filteredQuestions = section.questions || [];
+    let total = 0;
+    let answered = 0;
 
-      total += filteredQuestions.length;
+    const filtered = sections
+      .map((section) => {
+        const qs = section.questions || [];
+        total += qs.length;
+        const answeredQs = qs.filter((q) => q.answer !== null && q.answer !== '');
+        answered += answeredQs.length;
 
-      const answeredInSection = filteredQuestions.filter(q => q.answer !== null && q.answer !== '');
-      answered += answeredInSection.length;
+        const displayQs = showOnlyUnanswered
+          ? qs.filter((q) => q.answer === null || q.answer === '')
+          : qs;
 
-      const displayedQuestions = showOnlyUnanswered
-        ? filteredQuestions.filter(q => q.answer === null || q.answer === '')
-        : filteredQuestions;
+        if (!displayQs.length) return null;
 
-      if (!displayedQuestions.length) return null;
+        return {
+          ...section,
+          questions: displayQs,
+          answeredCount: answeredQs.length,
+        };
+      })
+      .filter(Boolean);
 
-      return {
-        ...section,
-        questions: displayedQuestions,
-        answeredCount: answeredInSection.length
-      };
-    }).filter(Boolean);
-
-    return { displayedSections: filteredSections, totalQuestions: total, answeredQuestions: answered };
+    return { displayedSections: filtered, totalQuestions: total, answeredQuestions: answered };
   }, [sections, showOnlyUnanswered]);
 
   const progressPercentage = totalQuestions ? (answeredQuestions / totalQuestions) * 100 : 0;
 
   const handleEditClick = (questionId) => {
-  if (!questionId) {
-    console.warn("Invalid questionId:", questionId);
-    return;
-  }
-  navigate(`/test/${session_id}/section/${section_id}/question/${questionId}`);
-};
+    navigate(`/test/${testId}/section/${sectionId}/question/${questionId}`);
+  };
 
   const handleGoBack = () => {
-    alert("Navigating back to test...");
-  };
+  if (sections.length > 0) {
+    navigate(`/test/${testId}/section/${sections[0].id}`);
+  } else {
+    navigate(`/test/${testId}`);
+  }
+};
+
 
   const handleSubmit = () => {
     if (window.confirm("Are you sure you want to submit your test?")) {
       alert("Test submitted!");
-      // actual submission logic here
+      navigate(`/submission/${realCandidateTestId}`);
     }
   };
 
-  const handleFaqClick = () => {
-    alert("FAQs Coming Soon...");
-  };
+  const handleFaqClick = () => alert("FAQs Coming Soon...");
 
-  if (loading) return <div style={styles.statusContainer}><h2>Loading Summary...</h2></div>;
-  if (error) return <div style={{ ...styles.statusContainer, ...styles.errorStatus }}><h2>{error}</h2></div>;
+  if (loading)
+    return <div style={styles.statusContainer}><h2>Loading Summary...</h2></div>;
+  if (error)
+    return <div style={{ ...styles.statusContainer, ...styles.errorStatus }}><h2>{error}</h2></div>;
 
   return (
     <>
@@ -318,8 +338,7 @@ if (!sectionMap[secId]) {
           </div>
 
           {displayedSections.map((section) => (
-  <div key={section.id} style={styles.sectionGroup}>
-
+            <div key={section.id} style={styles.sectionGroup}>
               <h3 style={styles.sectionTitle}>
                 {section.name} ({section.answeredCount}/{section.questions.length} answered)
               </h3>
@@ -337,7 +356,9 @@ if (!sectionMap[secId]) {
                       {q.answer ? `Answer: ${q.answer}` : 'Not Answered'}
                     </p>
                   </div>
-                  <button style={styles.editButton} onClick={() => handleEditClick(q.id)}>Edit</button>
+                  <button style={styles.editButton} onClick={() => handleEditClick(q.id)}>
+  {q.answer ? 'Review' : 'Answer'}
+</button>
                 </div>
               ))}
             </div>

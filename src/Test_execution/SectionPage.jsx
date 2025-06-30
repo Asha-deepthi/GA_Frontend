@@ -273,7 +273,8 @@ console.log("🧑‍💻 Full fetch URL:",
     setSelectedSectionId(null);
     setStopTimer(true);
     alert("✅ All sections completed! Submitting test...");
-    navigate(`/submission/${realCandidateTestId}`);
+   // navigate(`/submission/${realCandidateTestId}`);
+   navigate(`/test/${testId}/section/${selectedSectionId}/review`);
   }
 };
 
@@ -326,7 +327,7 @@ console.log("🧑‍💻 Full fetch URL:",
 if (testCompleted) {
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-white text-[#00A398]">
-      <h1 className="text-2xl font-bold">✅ Test completed. Submitting...</h1>
+      <h1 className="text-2xl font-bold">✅ Test completed. Submitting...</h1> 
     </div>
   );
 }
