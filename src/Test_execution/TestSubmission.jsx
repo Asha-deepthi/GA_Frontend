@@ -43,7 +43,7 @@ const TestSubmission = () => {
 
                 <div className="flex flex-col items-center justify-center flex-1 gap-4 px-2 py-10">
                     <img
-                        src="images/checkmark.png"
+                        src="/images/checkmark.png"
                         alt="Checkmark"
                         className="w-[350px] h-[250px] max-w-full"
                     />
