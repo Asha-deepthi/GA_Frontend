@@ -275,7 +275,7 @@ const CandidateEvaluation = () => {
               {!loading && !error && responses.length > 0 && sections.length > 0 && (
                 <>
                   <div className="mb-4 text-center font-semibold text-lg">
-                    Section Name: {currentSection?.section_name || "Unknown"}
+                    Section Name: {currentSection?.name || "Unknown"}
                   </div>
                   {currentSection && (
                     <div className="mb-4 text-center text-sm text-gray-700">
