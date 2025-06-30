@@ -273,7 +273,7 @@ console.log("🧑‍💻 Full fetch URL:",
     setSelectedSectionId(null);
     setStopTimer(true);
     alert("✅ All sections completed! Submitting test...");
-    navigate("/submission");
+    navigate(`/submission/${realCandidateTestId}`);
   }
 };
 

@@ -37,7 +37,6 @@ const MultipleChoiceComponent = ({ question, onAnswerUpdate, currentStatus, onNe
 
   return (
     <div>
-      <p className="mb-4 font-semibold">{question.text}</p>
       <div className="flex flex-col gap-2">
         {question.options.map((opt, index) => (
           <div

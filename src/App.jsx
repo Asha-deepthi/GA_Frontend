@@ -89,7 +89,7 @@ function App() {
         <Route path="/evaluation" element={<CandidateEvaluation />} />
         <Route path="/test-candidates" element={<Test_CandidatePage />} />
         <Route path="/popup" element={<Popupalert_5 />} />
-        <Route path="/submission" element={<TestSubmission/>}/>
+        <Route path="/submission/:candidateTestId" element={<TestSubmission/>}/>
         <Route path="/timeupscreen" element={<Timeupscreen/>}/>
         <Route path="/summaryscreen" element={<TestSummaryScreen/>}/>
         <Route path="/faqpage" element={<FaqPage/>}/>
