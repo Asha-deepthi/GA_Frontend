@@ -14,6 +14,7 @@ const QuizCreationFlow = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [questionPageStartIndex, setQuestionPageStartIndex] = useState(0);
 
   const handleNext = (data) => {
     setQuizData(prev => ({ ...prev, ...data }));
@@ -21,9 +22,21 @@ const QuizCreationFlow = () => {
   };
 
   const handleBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
+  // If we are currently on the Settings page (step 4) and going back...
+  if (currentStep === 4) {
+    // ...calculate the index of the last section and save it.
+    const lastIndex = quizData.sections.length > 0 ? quizData.sections.length - 1 : 0;
+    setQuestionPageStartIndex(lastIndex);
+  }
   
+  // If we are currently on the Questions page (step 3) and going back...
+  if (currentStep === 3) {
+    // ...reset the start index to 0 for the next time we come forward.
+    setQuestionPageStartIndex(0);
+  }
+
+  setCurrentStep(prev => Math.max(prev - 1, 1));
+};
     // --- CHANGE: This is the core logic for publishing the quiz ---
 const handleSubmit = async () => {
     const accessToken = sessionStorage.getItem("access_token");
@@ -148,7 +161,7 @@ const handleImportQuiz = async (testIdToImport) => {
           case 2:
               return <SectionSetupPage onBack={handleBack} onNext={handleNext} initialQuizData={quizData} />;
           case 3:
-              return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} />;
+    return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} initialSectionIndex={questionPageStartIndex} />;
           case 4:
               return <QuizSettings onBack={handleBack} onNext={handleNext} initialData={quizData.settings} />;
           case 5:

@@ -309,23 +309,52 @@ const QuestionForm = ({ sectionType, onSave, onCancel }) => {
         </div>
     );
 };
-const CreateQuestionsPage = ({ quizData, onNext, onBack }) => {
+const CreateQuestionsPage = ({ quizData, onNext, onBack, initialSectionIndex = 0 }) => {
     
     // --- FIX 1: SIMPLIFIED STATE AND USEEFFECT ---
     const [sections, setSections] = useState(quizData?.sections || []);
-    const [activeSectionId, setActiveSectionId] = useState(null);
+  const [activeSectionId, setActiveSectionId] = useState(quizData?.sections?.[initialSectionIndex]?.id || quizData?.sections?.[0]?.id || null);
     const [addingQuestionTo, setAddingQuestionTo] = useState(null);
     
-    useEffect(() => {
-        // This effect correctly re-syncs with the parent data
-        setSections(quizData?.sections || []);
-        const activeSectionStillExists = quizData?.sections?.some(s => s.id === activeSectionId);
-        if (quizData?.sections?.length > 0 && !activeSectionStillExists) {
-            setActiveSectionId(quizData.sections[0].id);
-        }
-    }, [quizData]);
+useEffect(() => {
+    setSections(quizData?.sections || []);
+}, [quizData]);
 
-    const activeSection = sections.find(s => s.id === activeSectionId);
+    // --- NEW: LOGIC TO FIND CURRENT POSITION ---
+    // Find the index of the currently active section. This is crucial for navigation.
+    const activeSectionIndex = sections.findIndex(s => s.id === activeSectionId);
+    
+    const activeSection = sections[activeSectionIndex]; // Directly get the active section using the index
+
+    // --- NEW: HANDLER FOR THE "NEXT" BUTTON ---
+    const handleNextClick = () => {
+        const isLastSection = activeSectionIndex === sections.length - 1;
+
+        // If it's the last section, call the final onNext prop to go to the Settings page.
+        if (isLastSection) {
+            onNext({ sections }); 
+        } else {
+            // Otherwise, just move to the next section in the array.
+            const nextSectionId = sections[activeSectionIndex + 1].id;
+            setActiveSectionId(nextSectionId);
+            setAddingQuestionTo(null); // Close question form when changing section
+        }
+    };
+
+    // --- NEW: HANDLER FOR THE "BACK" BUTTON ---
+    const handleBackClick = () => {
+        const isFirstSection = activeSectionIndex === 0;
+
+        // If it's the first section, call the final onBack prop to go to the Section Setup page.
+        if (isFirstSection) {
+            onBack();
+        } else {
+            // Otherwise, just move to the previous section.
+            const prevSectionId = sections[activeSectionIndex - 1].id;
+            setActiveSectionId(prevSectionId);
+            setAddingQuestionTo(null); // Close question form when changing section
+        }
+    };
     
     const handleSaveQuestion = (questionData) => {
         const updatedSections = sections.map(sec => {
@@ -339,44 +368,48 @@ const CreateQuestionsPage = ({ quizData, onNext, onBack }) => {
         setAddingQuestionTo(null);
     };
 return (
-        <div className="page-container">
-            <style>{styles}</style>
-            <div className="container-header"><h1 className="container-title">Create a quiz</h1></div>
-            <nav className="creator-tabs"><a href="#">Sections</a><a href="#" className="active">Questions</a><a href="#">Settings</a><a href="#">Preview</a></nav>
-            
-            {/* FIX 2a: Use correct property `sec.name` */}
-            <nav className="section-tabs">{sections.map(sec => <button key={sec.id} className={`section-tab-item ${sec.id === activeSectionId ? 'active' : ''}`} onClick={() => { setActiveSectionId(sec.id); setAddingQuestionTo(null); }}>{sec.name}</button>)}</nav>
-            
-            {activeSection ? <>
-                {/* FIX 2b: Use correct properties `name`, `type`, `numQuestions`, etc. */}
-                <div className="section-details-card">
-                    <div className="form-row">
-                        <div className="form-group"><label>Section name</label><input type="text" value={activeSection.name || ''} readOnly /></div>
-                        <div className="form-group"><label>Section type</label><input type="text" value={activeSection.type || ''} readOnly /></div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group"><label>Time limit</label><input type="text" value={activeSection.timeLimit || ''} readOnly /></div>
-                        <div className="form-group"><label>No of Questions</label><input type="text" value={activeSection.numQuestions || ''} readOnly /></div>
-                    </div>
-                    <div className="form-group" style={{marginTop: '16px'}}><label>Section instructions</label><textarea value={activeSection.instructions || ''} readOnly rows="2"></textarea></div>
-                </div>
-
-                {activeSection.questions?.map((q, i) => <div className="saved-question-card" key={q.id}><strong>Question {i + 1}:</strong> {q.text || q.paragraph || 'Media-based Question'}</div>)}
-                
-                {addingQuestionTo === activeSection.id ? (
-                    <QuestionForm sectionType={activeSection.type} onSave={handleSaveQuestion} onCancel={() => setAddingQuestionTo(null)} />
-                ) : (
-                    <div className="add-question-btn-container"><button className="action-btn btn-secondary" onClick={() => setAddingQuestionTo(activeSection.id)}>Add question</button></div>
-                )}
-            </> : <p>No section selected. Please go back and create a section first.</p>}
-            
-            {/* FIX 3: Correctly pass the updated sections data up to the parent */}
-            <div className="main-nav-actions">
-                <button className="action-btn btn-secondary" onClick={onBack}>Back</button>
-                <button className="action-btn btn-primary" onClick={() => onNext({ sections })}>Next</button>
+    <div className="page-container">
+        <style>{styles}</style>
+        <div className="container-header"><h1 className="container-title">Create a quiz</h1></div>
+        <nav className="creator-tabs"><a href="#">Sections</a><a href="#" className="active">Questions</a><a href="#">Settings</a><a href="#">Preview</a></nav>
+        
+        {/* CHANGE 1: The old section tabs are gone, replaced with this status display */}
+        {activeSection && (
+            <div style={{ margin: '16px 0', fontSize: '18px', fontWeight: '600', color: '#595959' }}>
+                Section {activeSectionIndex + 1} of {sections.length}: <span style={{ color: '#00A99D' }}>{activeSection.name}</span>
             </div>
+        )}
+        
+        {activeSection ? <>
+            {/* All this content remains exactly the same */}
+            <div className="section-details-card">
+                <div className="form-row">
+                    <div className="form-group"><label>Section name</label><input type="text" value={activeSection.name || ''} readOnly /></div>
+                    <div className="form-group"><label>Section type</label><input type="text" value={activeSection.type || ''} readOnly /></div>
+                </div>
+                <div className="form-row">
+                    <div className="form-group"><label>Time limit</label><input type="text" value={activeSection.timeLimit || ''} readOnly /></div>
+                    <div className="form-group"><label>No of Questions</label><input type="text" value={activeSection.numQuestions || ''} readOnly /></div>
+                </div>
+                <div className="form-group" style={{marginTop: '16px'}}><label>Section instructions</label><textarea value={activeSection.instructions || ''} readOnly rows="2"></textarea></div>
+            </div>
+
+            {activeSection.questions?.map((q, i) => <div className="saved-question-card" key={q.id}><strong>Question {i + 1}:</strong> {q.text || q.paragraph || 'Media-based Question'}</div>)}
+            
+            {addingQuestionTo === activeSection.id ? (
+                <QuestionForm sectionType={activeSection.type} onSave={handleSaveQuestion} onCancel={() => setAddingQuestionTo(null)} />
+            ) : (
+                <div className="add-question-btn-container"><button className="action-btn btn-secondary" onClick={() => setAddingQuestionTo(activeSection.id)}>Add question</button></div>
+            )}
+        </> : <p>No section selected. Please go back and create a section first.</p>}
+        
+        {/* CHANGE 2: The onClick handlers for these buttons are updated */}
+        <div className="main-nav-actions">
+            <button className="action-btn btn-secondary" onClick={handleBackClick}>Back</button>
+            <button className="action-btn btn-primary" onClick={handleNextClick}>Next</button>
         </div>
-    );
+    </div>
+);
 };
 
 export default CreateQuestionsPage;
