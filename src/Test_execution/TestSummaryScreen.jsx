@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BASE_URL from '../config';
+import TopHeader from './components/TopHeader';
 
 const GlobalStyles = () => (
   <style>{`
@@ -152,11 +153,10 @@ const styles = {
   errorStatus: { color: '#e74c3c' }
 };
 
-
 const TestSummaryScreen = () => {
-  const { testId} = useParams();
+  const { testId } = useParams();
   const navigate = useNavigate();
-const [realCandidateTestId, setRealCandidateTestId] = useState(null);
+  const [realCandidateTestId, setRealCandidateTestId] = useState(null);
 
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,76 +164,76 @@ const [realCandidateTestId, setRealCandidateTestId] = useState(null);
   const [showOnlyUnanswered, setShowOnlyUnanswered] = useState(false);
 
   useEffect(() => {
-  const token = sessionStorage.getItem('access_token');
-  if (!testId || !token) {
-    setError("Missing testId or auth token.");
-    return;
-  }
+    const token = sessionStorage.getItem('access_token');
+    if (!testId || !token) {
+      setError("Missing testId or auth token.");
+      return;
+    }
 
-  const fetchSummaryData = async () => {
-    try {
-      // Step 1: Get candidate ID
-      const meRes = await fetch(`${BASE_URL}/me/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const me = await meRes.json();
-      const candidate_id = me.id;
+    const fetchSummaryData = async () => {
+      try {
+        // Step 1: Get candidate ID
+        const meRes = await fetch(`${BASE_URL}/me/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const me = await meRes.json();
+        const candidate_id = me.id;
 
-      // Step 2: Get candidate_test_id
-      const ctRes = await fetch(
-        `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidate_id}&test_id=${testId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const ctData = await ctRes.json();
-      const candidate_test_id = ctData.id;
-setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
+        // Step 2: Get candidate_test_id
+        const ctRes = await fetch(
+          `${BASE_URL}/test-creation/candidate-test-id/?candidate_id=${candidate_id}&test_id=${testId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const ctData = await ctRes.json();
+        const candidate_test_id = ctData.id;
+        setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
 
-      // Step 3: Get all sections
-      const sectionRes = await fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/`);
-      const sectionList = await sectionRes.json();
+        // Step 3: Get all sections
+        const sectionRes = await fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/`);
+        const sectionList = await sectionRes.json();
 
-      // Step 4: Fetch all answers and questions for each section
-      const sectionsResults = await Promise.all(
-        sectionList.map(section =>
-          Promise.all([
-            fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/${section.id}/questions/`)
-              .then(res => res.json()),
-            fetch(`${BASE_URL}/test-execution/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then(res => res.json())
-          ])
-        )
-      );
+        // Step 4: Fetch all answers and questions for each section
+        const sectionsResults = await Promise.all(
+          sectionList.map(section =>
+            Promise.all([
+              fetch(`${BASE_URL}/test-creation/tests/${testId}/sections/${section.id}/questions/`)
+                .then(res => res.json()),
+              fetch(`${BASE_URL}/test-execution/get-answers/?candidate_test_id=${candidate_test_id}&section_id=${section.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              }).then(res => res.json())
+            ])
+          )
+        );
 
-      // Step 5: Merge answers with questions per section
-      const finalSections = sectionList.map((section, index) => {
-        const [questions, answers] = sectionsResults[index];
-        const enrichedQuestions = questions.map(q => {
-          const answerObj = answers.find(a => String(a.question_id) === String(q.id));
+        // Step 5: Merge answers with questions per section
+        const finalSections = sectionList.map((section, index) => {
+          const [questions, answers] = sectionsResults[index];
+          const enrichedQuestions = questions.map(q => {
+            const answerObj = answers.find(a => String(a.question_id) === String(q.id));
+            return {
+              ...q,
+              answer: answerObj?.answer_text ?? answerObj?.answer ?? '',
+            };
+          });
+
           return {
-            ...q,
-            answer: answerObj?.answer_text || answerObj?.answer || '',
+            id: section.id,
+            name: section.section_name,
+            questions: enrichedQuestions,
           };
         });
 
-        return {
-          id: section.id,
-          name: section.section_name,
-          questions: enrichedQuestions,
-        };
-      });
+        setSections(finalSections);
+      } catch (err) {
+        console.error(err);
+        setError("Error loading test summary.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setSections(finalSections);
-    } catch (err) {
-      console.error(err);
-      setError("Error loading test summary.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchSummaryData();
-}, [testId]);
+    fetchSummaryData();
+  }, [testId]);
 
   const { displayedSections, totalQuestions, answeredQuestions } = useMemo(() => {
     if (!sections.length) return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
@@ -267,18 +267,14 @@ setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
 
   const progressPercentage = totalQuestions ? (answeredQuestions / totalQuestions) * 100 : 0;
 
-  const handleEditClick = (questionId) => {
-    navigate(`/test/${testId}/section/${sectionId}/question/${questionId}`);
-  };
-
-  const handleGoBack = () => {
-  if (sections.length > 0) {
-    navigate(`/test/${testId}/section/${sections[0].id}`);
-  } else {
-    navigate(`/test/${testId}`);
-  }
+ const handleEditClick = (sectionId, questionId) => {
+  navigate(`/test/${testId}/section/${sectionId}/question/${questionId}`);
 };
 
+
+  const handleGoBack = () => {
+    navigate(`/sectionpage/${testId}/${realCandidateTestId}`);
+  };
 
   const handleSubmit = () => {
     if (window.confirm("Are you sure you want to submit your test?")) {
@@ -287,7 +283,19 @@ setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
     }
   };
 
-  const handleFaqClick = () => alert("FAQs Coming Soon...");
+ 
+  const renderAnswer = (answer) => {
+    if (!answer) return 'Not Answered';
+    if (typeof answer === 'string' || typeof answer === 'number') return answer;
+    if (Array.isArray(answer)) return answer.join(', ');
+    if (typeof answer === 'object') {
+      if ('answer_text' in answer) return answer.answer_text;
+      if ('value' in answer) return answer.value;
+      return JSON.stringify(answer); // fallback
+    }
+    return String(answer);
+  };
+
 
   if (loading)
     return <div style={styles.statusContainer}><h2>Loading Summary...</h2></div>;
@@ -297,22 +305,9 @@ setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
   return (
     <>
       <GlobalStyles />
+       <TopHeader />
       <div style={styles.reviewPageContainer}>
-        <header style={styles.reviewHeader}>
-          <div style={styles.headerColorBar}></div>
-          <div style={styles.headerContent}>
-            <div style={styles.logo}>
-              <span style={styles.logoSquare}></span> GA Proctored Test
-            </div>
-            <div style={styles.headerActions}>
-              <button style={styles.faqButton} onClick={handleFaqClick}>? FAQs</button>
-              <div style={styles.userProfile}>
-                <div style={styles.avatar}></div>
-                <span>Candidate</span>
-              </div>
-            </div>
-          </div>
-        </header>
+        
 
         <main style={styles.reviewContent}>
           <h1 style={styles.reviewTitle}>Review Your Answers</h1>
@@ -351,14 +346,16 @@ setRealCandidateTestId(candidate_test_id);  // ✅ Save it to state
                     {q.answer ? '✓' : '✗'}
                   </div>
                   <div style={styles.questionDetails}>
-                    <h4 style={styles.questionDetailsH4}>{q.title}</h4>
+                    <h4 style={styles.questionDetailsH4}>
+                      {q.question_text || q.text || q.title || 'Untitled Question'}
+                    </h4>
                     <p style={styles.questionDetailsP}>
-                      {q.answer ? `Answer: ${q.answer}` : 'Not Answered'}
+                      Answer: {renderAnswer(q.answer)}
                     </p>
                   </div>
-                  <button style={styles.editButton} onClick={() => handleEditClick(q.id)}>
-  {q.answer ? 'Review' : 'Answer'}
-</button>
+                  <button style={styles.editButton} onClick={() => handleEditClick(section.id, q.id)} >
+                   Edit
+                  </button>
                 </div>
               ))}
             </div>
