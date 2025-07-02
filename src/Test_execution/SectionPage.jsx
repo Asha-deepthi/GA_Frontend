@@ -11,11 +11,14 @@ import MultiplePersonsAlert from "./MultiplePersonsAlert";
 import IdentityMismatchAlert from "./IdentityMismatchAlert";
 import BASE_URL from "../config";
 import { useCallback } from "react";
+import { useContext } from "react";
+import AuthContext from "../Test_creation/contexts/AuthContext";
 
 //const apiurl = "http://localhost:8000/api/test-creation";
 //const answerApiUrl = "http://127.0.0.1:8000/api/test-execution";
 
 export default function SectionPage() {
+  const { setUser } = useContext(AuthContext);
   const { testId } = useParams();
   const [sections, setSections] = useState([]);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
@@ -115,8 +118,8 @@ const incrementAttempted = (sectionId, incrementBy = 1) => {
     })
     .then((user) => {
       console.log("✅ User from /api/me/:", user);
-      setUserName(user.name);  // ✅ This is what you display in JSX
-
+      setUserName(user.name);
+      setUser(user); 
       const candidateId = user.id;
       console.log("🌍 BASE_URL:", BASE_URL);
 console.log("🧪 testId:", testId);

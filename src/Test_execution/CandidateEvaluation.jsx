@@ -157,6 +157,18 @@ const CandidateEvaluation = () => {
       });
   }, [selectedCandidate]);
 
+  useEffect(() => {
+  if (responses.length === 0) return;
+  const initialEvaluatedMarks = {};
+  responses.forEach((resp) => {
+    if (resp.answer_id) {
+      // Use marks_allotted if present, else 0
+      initialEvaluatedMarks[resp.answer_id] = resp.marks_allotted ?? 0;
+    }
+  });
+  setEvaluatedMarks(initialEvaluatedMarks);
+}, [responses]);
+
   const currentSection = sections[currentSectionIndex];
   const currentSectionQuestions = responses.filter(
     (r) => r.section_id === currentSection?.id
@@ -277,27 +289,37 @@ const CandidateEvaluation = () => {
                   <div className="mb-4 text-center font-semibold text-lg">
                     Section Name: {currentSection?.name || "Unknown"}
                   </div>
+                  {console.log("🧪 Evaluated Marks State:", evaluatedMarks)}
+{console.log(
+  "🧪 Current Section Questions:",
+  currentSectionQuestions.map((q) => ({
+    id: q.id,
+    answer_id: q.answer_id,
+    evaluated: evaluatedMarks[q.answer_id],
+  }))
+)}
                   {currentSection && (
-                    <div className="mb-4 text-center text-sm text-gray-700">
-                      Section Marks:{" "}
-                      <span
-                        className={
-                          currentSectionQuestions.every(
-                            (q) => (evaluatedMarks[q.answer_id] ?? 0) === 0
-                          )
-                            ? "text-red-500 font-semibold"
-                            : "text-green-600 font-semibold"
-                        }
-                      >
-                        {currentSectionQuestions.reduce((sum, q) => {
-                          return sum + Number(evaluatedMarks[q.answer_id] ?? 0);
-                        }, 0)}
-                      </span>{" "}
-                      out of{" "}
-                      {currentSection?.marks_per_question *
-                        currentSectionQuestions.length}
-                    </div>
-                  )}
+  <div className="mb-4 text-center text-sm text-gray-700">
+    Section Marks:{" "}
+    <span
+      className={
+        currentSectionQuestions
+          .filter((q) => q.answer_id !== null)
+          .every((q) => (evaluatedMarks[q.answer_id] ?? 0) === 0)
+          ? "text-red-500 font-semibold"
+          : "text-green-600 font-semibold"
+      }
+    >
+      {currentSectionQuestions
+        .filter((q) => q.answer_id !== null)
+        .reduce((sum, q) => sum + Number(evaluatedMarks[q.answer_id] ?? 0), 0)}
+    </span>{" "}
+    out of{" "}
+    {currentSection?.marks_per_question *
+      currentSectionQuestions.filter((q) => q.answer_id !== null).length}
+  </div>
+)}
+
 
                   <VideoSection
                     screenshots={screenshots}

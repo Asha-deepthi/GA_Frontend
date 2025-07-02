@@ -44,11 +44,12 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
     sections.forEach((section, sIdx) => {
       section.questions.forEach((q, qIdx) => {
         const key = `${sIdx}_${qIdx}`;
-        if (q.marks_allotted !== undefined) {
-          initialMarks[key] = q.marks_allotted.toString();
+        if (q.marks_allotted !== null && q.marks_allotted !== undefined) {
+         initialMarks[key] = q.marks_allotted.toString();
         } else if (requiresManualEvaluation(q.type)) {
-          initialMarks[key] = '';
+          initialMarks[key] = "";
         }
+
       });
     });
     setMarks(initialMarks);
@@ -75,17 +76,31 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
   );
 
   const handleMarkChange = (sectionIdx, questionIdx, value) => {
-    const key = `${sectionIdx}_${questionIdx}`;
-    if (/^\d{0,2}$/.test(value) && Number(value) <= 10) {
-      setMarks((prev) => ({ ...prev, [key]: value }));
-      const answerId = sections[sectionIdx]?.questions[questionIdx]?.answer_id;
-      if (answerId) debounceSaveMarks(answerId, value);
+  const key = `${sectionIdx}_${questionIdx}`;
+  if (/^\d{0,2}$/.test(value) && Number(value) <= 10) {
+    setMarks((prev) => ({ ...prev, [key]: value }));
+    const answerId = sections[sectionIdx]?.questions[questionIdx]?.answer_id;
+    if (answerId) {
+      debounceSaveMarks(answerId, value);
+      onMarkChange?.(answerId, Number(value));  //ensure parent is updated
     }
-  };
+  }
+};
+
 
   const renderAnswer = (q) => {
-    const answer = q.answer || {};
-    switch ((q.type || "").toLowerCase()) {
+    const answer = q.answer
+    const type = (q.type || "").toLowerCase();
+
+    if (!answer) {
+      return <span className="text-red-500">No answer provided.</span>;
+    }
+
+    if (typeof answer === "string") {
+      return <span>{answer}</span>;
+    }
+
+    switch (type) {
       case "multiple-choice":
       case "fill-in-blanks":
       case "integer":

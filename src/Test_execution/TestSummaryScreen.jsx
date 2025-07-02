@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BASE_URL from '../config';
 import TopHeader from './components/TopHeader';
@@ -160,6 +160,7 @@ const TestSummaryScreen = () => {
   const [realCandidateTestId, setRealCandidateTestId] = useState(null);
   const { user } = useContext(AuthContext);
   const userName = user?.name || 'Guest';
+  console.log("AuthContext user:", user);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
