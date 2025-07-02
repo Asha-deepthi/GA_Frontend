@@ -237,6 +237,18 @@ const TestSummaryScreen = () => {
     fetchSummaryData();
   }, [testId]);
 
+  const isAnswered = (answer) => {
+    if (answer === null || answer === undefined) return false;
+    if (typeof answer === 'string') return answer.trim() !== '';
+    if (typeof answer === 'number') return true;
+    if (Array.isArray(answer)) return answer.length > 0;
+    if (typeof answer === 'object') {
+      return Object.values(answer).some(value =>
+        typeof value === 'string' ? value.trim() !== '' : !!value
+      );
+    }
+    return false;
+  };
   const { displayedSections, totalQuestions, answeredQuestions } = useMemo(() => {
     if (!sections.length) return { displayedSections: [], totalQuestions: 0, answeredQuestions: 0 };
 
@@ -247,13 +259,12 @@ const TestSummaryScreen = () => {
       .map((section) => {
         const qs = section.questions || [];
         total += qs.length;
-        const answeredQs = qs.filter((q) => q.answer !== null && q.answer !== '');
+        const answeredQs = qs.filter((q) => isAnswered(q.answer));
+
         answered += answeredQs.length;
-
         const displayQs = showOnlyUnanswered
-          ? qs.filter((q) => q.answer === null || q.answer === '')
+          ? qs.filter(q => !isAnswered(q.answer))
           : qs;
-
         if (!displayQs.length) return null;
 
         return {
@@ -270,9 +281,8 @@ const TestSummaryScreen = () => {
   const progressPercentage = totalQuestions ? (answeredQuestions / totalQuestions) * 100 : 0;
 
  const handleEditClick = (sectionId, questionId) => {
-  navigate(`/test/${testId}/section/${sectionId}/question/${questionId}`);
+  navigate(`/sectionpage/${testId}/${realCandidateTestId}?sectionId=${sectionId}&questionId=${questionId}`);
 };
-
 
   const handleGoBack = () => {
     navigate(`/sectionpage/${testId}/${realCandidateTestId}`);
@@ -285,7 +295,7 @@ const TestSummaryScreen = () => {
     }
   };
 
- 
+
   const renderAnswer = (answer) => {
     if (!answer) return 'Not Answered';
     if (typeof answer === 'string' || typeof answer === 'number') return answer;
@@ -309,7 +319,7 @@ const TestSummaryScreen = () => {
       <GlobalStyles />
        <TopHeader userName={userName} />
       <div style={styles.reviewPageContainer}>
-        
+
 
         <main style={styles.reviewContent}>
           <h1 style={styles.reviewTitle}>Review Your Answers</h1>
@@ -337,15 +347,21 @@ const TestSummaryScreen = () => {
           {displayedSections.map((section) => (
             <div key={section.id} style={styles.sectionGroup}>
               <h3 style={styles.sectionTitle}>
-                {section.name} ({section.answeredCount}/{section.questions.length} answered)
-              </h3>
+  {section.name} (
+  {showOnlyUnanswered
+    ? `${section.questions.length}/${section.questions.length + section.answeredCount} unanswered`
+    : `${section.answeredCount}/${section.questions.length} answered`
+  })
+</h3>
+
+
               {section.questions.map(q => (
                 <div key={q.id} style={styles.questionItem}>
                   <div style={{
                     ...styles.questionStatusIcon,
-                    ...(q.answer ? styles.answeredIcon : styles.unansweredIcon)
+                    ...(isAnswered(q.answer) ? styles.answeredIcon : styles.unansweredIcon)
                   }}>
-                    {q.answer ? '✓' : '✗'}
+                    {isAnswered(q.answer) ? '✓' : '✗'}
                   </div>
                   <div style={styles.questionDetails}>
                     <h4 style={styles.questionDetailsH4}>
@@ -356,7 +372,7 @@ const TestSummaryScreen = () => {
                     </p>
                   </div>
                   <button style={styles.editButton} onClick={() => handleEditClick(section.id, q.id)} >
-                   Edit
+                    Edit
                   </button>
                 </div>
               ))}
