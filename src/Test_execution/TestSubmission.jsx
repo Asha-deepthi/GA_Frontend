@@ -1,12 +1,14 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopHeader from './components/TopHeader';
+import AuthContext from "../Test_creation/contexts/AuthContext";
 import BASE_URL from "../config";
 
 const TestSubmission = () => {
     const { candidateTestId } = useParams();
     const navigate = useNavigate();
-
+    const { user } = useContext(AuthContext);
+    const userName = user?.name || 'Guest';
     const handleSubmit = async () => {
     console.log("Submit button clicked");
     try {
@@ -39,7 +41,7 @@ const TestSubmission = () => {
     return (
         <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
             <div className="min-h-screen flex flex-col">
-                <TopHeader />
+                <TopHeader userName={userName} />
 
                 <div className="flex flex-col items-center justify-center flex-1 gap-4 px-2 py-10">
                     <img

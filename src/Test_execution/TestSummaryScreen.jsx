@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BASE_URL from '../config';
 import TopHeader from './components/TopHeader';
+import AuthContext from "../Test_creation/contexts/AuthContext";
 
 const GlobalStyles = () => (
   <style>{`
@@ -157,7 +158,8 @@ const TestSummaryScreen = () => {
   const { testId } = useParams();
   const navigate = useNavigate();
   const [realCandidateTestId, setRealCandidateTestId] = useState(null);
-
+  const { user } = useContext(AuthContext);
+  const userName = user?.name || 'Guest';
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -305,7 +307,7 @@ const TestSummaryScreen = () => {
   return (
     <>
       <GlobalStyles />
-       <TopHeader />
+       <TopHeader userName={userName} />
       <div style={styles.reviewPageContainer}>
         
 
