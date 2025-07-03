@@ -1,14 +1,15 @@
 import React from 'react';
 
-import { useState } from "react";
-
 const InterviewFeedback = ({ onSubmit, initialData = {} }) => {
-  const [score, setScore] = useState(initialData.score || 0);
-  const [recommendation, setRecommendation] = useState(initialData.recommendation || "");
-  const [comment, setComment] = useState(initialData.comment || "");
+  const [recommendation, setRecommendation] = React.useState(initialData.recommendation || "");
+  const [comment, setComment] = React.useState(initialData.comment || "");
 
   const handleSubmit = () => {
-    onSubmit({ score, recommendation, comment });
+    onSubmit({
+      score: initialData.score || 0, // totalScore from parent
+      recommendation,
+      comment,
+    });
   };
 
   return (
@@ -17,11 +18,9 @@ const InterviewFeedback = ({ onSubmit, initialData = {} }) => {
         <label className="block font-medium">Score</label>
         <input
           type="number"
-          max={100}
-          min={0}
-          value={score}
-          onChange={e => setScore(e.target.value)}
-          className="w-full mt-1 px-3 py-2 border rounded-lg"
+          value={initialData.score || 0}
+          disabled
+          className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-100"
         />
       </div>
 
@@ -33,7 +32,7 @@ const InterviewFeedback = ({ onSubmit, initialData = {} }) => {
               type="radio"
               value="Pass"
               checked={recommendation === "Pass"}
-              onChange={e => setRecommendation(e.target.value)}
+              onChange={(e) => setRecommendation(e.target.value)}
             />{" "}
             Pass
           </label>
@@ -42,7 +41,7 @@ const InterviewFeedback = ({ onSubmit, initialData = {} }) => {
               type="radio"
               value="No Pass"
               checked={recommendation === "No Pass"}
-              onChange={e => setRecommendation(e.target.value)}
+              onChange={(e) => setRecommendation(e.target.value)}
             />{" "}
             No Pass
           </label>
@@ -55,7 +54,7 @@ const InterviewFeedback = ({ onSubmit, initialData = {} }) => {
           maxLength={1000}
           rows={5}
           value={comment}
-          onChange={e => setComment(e.target.value)}
+          onChange={(e) => setComment(e.target.value)}
           className="w-full mt-1 px-3 py-2 border rounded-lg"
         />
       </div>

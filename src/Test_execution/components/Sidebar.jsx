@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import CandidateCard from "./CandidateCard";
 import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
-const Sidebar = ({ candidates, onSelect }) => {
+const Sidebar = ({ candidates, onSelect, selectedCandidate }) => {
   const [sortBy, setSortBy] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -132,9 +132,10 @@ const Sidebar = ({ candidates, onSelect }) => {
         {filteredAndSortedCandidates.length > 0 ? (
           filteredAndSortedCandidates.map((candidate) => (
             <CandidateCard
-              key={candidate.user}
-              candidate={candidate}
-              onClick={() => onSelect(candidate)}
+             key={candidate.user}
+             candidate={candidate}
+             isSelected={selectedCandidate?.user === candidate.user}
+             onClick={() => onSelect(candidate)}
             />
           ))
         ) : (

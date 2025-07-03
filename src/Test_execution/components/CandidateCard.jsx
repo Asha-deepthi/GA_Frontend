@@ -1,6 +1,6 @@
 import React from "react";
 
-const CandidateCard = ({ candidate, onClick }) => {
+const CandidateCard = ({ candidate, onClick, isSelected }) => {
   const fullStars = Math.floor(candidate.rating);
   const halfStar = candidate.rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
@@ -18,9 +18,11 @@ const CandidateCard = ({ candidate, onClick }) => {
 
   return (
     <div
-      className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
-      onClick={onClick}
-    >
+     className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors duration-150 ${
+     isSelected ? "bg-teal-100 border border-teal-500 shadow" : "hover:bg-gray-100"
+     }`}
+     onClick={onClick}
+     >
       <img
         src={candidate.avatar || "/avatar-placeholder.png"}
         alt={candidate.name}
