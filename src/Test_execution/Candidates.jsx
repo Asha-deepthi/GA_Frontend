@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 
 const candidates = [
@@ -96,6 +97,7 @@ const candidates = [
 ];
 
 const CandidatesPage = () => {
+  const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const filteredCandidates = candidates.filter((c) => {
     const search = searchText.toLowerCase();
@@ -111,15 +113,20 @@ const CandidatesPage = () => {
 
       <div className="min-w-[1024px] max-w-7xl mx-auto px-4 py-6">
         {/* Search */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <input
             type="text"
             placeholder="Search by name, email, or ID"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary 
-              text-[#0F1417] text-[14px] leading-[21px] tracking-[0px] font-[400] font-['Public_Sans']"
-          />
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary 
+      text-[#0F1417] text-[14px] leading-[21px] tracking-[0px] font-[400] font-['Public_Sans']"/>
+          <button
+    onClick={() => navigate("/evaluation")}
+    className="whitespace-nowrap px-5 py-2 bg-[#1479F2] text-white rounded-lg font-['Public_Sans'] text-[14px] font-medium hover:bg-[#0f5fd0] transition"
+  >
+    Evaluation
+  </button>
         </div>
 
         {/* Table */}
