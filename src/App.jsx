@@ -40,6 +40,7 @@ import Timeupscreen from './Test_execution/TimeupScreen';
 import TestSummaryScreen from './Test_execution/TestSummaryScreen';
 import { AuthProvider } from './Test_creation/contexts/AuthContext';
 import FaqPage from './Test_execution/faqpage';
+import Candidates from './Test_execution/Candidates';
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
         <Route path="/timeupscreen" element={<Timeupscreen/>}/>
        <Route path="/test/:testId/section/:sectionId/review" element={<TestSummaryScreen />} />
         <Route path="/faqpage" element={<FaqPage/>}/>
+        <Route path="/candidates" element={<Candidates />} />
       </Routes>
     </StreamProvider>
     </AuthProvider>
