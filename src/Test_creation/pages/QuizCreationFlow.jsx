@@ -5,7 +5,9 @@ import SectionSetupPage from './SectionSetupPage';
 import CreateQuestionsPage from './CreateQuestionsPage';
 import QuizSettings from './QuizSettings'; 
 import QuizPreview from './QuizPreview';
+import NavBar from '../components/Navbar'; 
 import ImportQuizModal from './ImportQuizModal';
+import BASE_URL from "../../config";
 
 const QuizCreationFlow = () => {
   // We still use internal steps 1, 2, 3, 4 for navigation
@@ -14,7 +16,6 @@ const QuizCreationFlow = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [questionPageStartIndex, setQuestionPageStartIndex] = useState(0);
 
   const handleNext = (data) => {
     setQuizData(prev => ({ ...prev, ...data }));
@@ -22,21 +23,9 @@ const QuizCreationFlow = () => {
   };
 
   const handleBack = () => {
-  // If we are currently on the Settings page (step 4) and going back...
-  if (currentStep === 4) {
-    // ...calculate the index of the last section and save it.
-    const lastIndex = quizData.sections.length > 0 ? quizData.sections.length - 1 : 0;
-    setQuestionPageStartIndex(lastIndex);
-  }
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
   
-  // If we are currently on the Questions page (step 3) and going back...
-  if (currentStep === 3) {
-    // ...reset the start index to 0 for the next time we come forward.
-    setQuestionPageStartIndex(0);
-  }
-
-  setCurrentStep(prev => Math.max(prev - 1, 1));
-};
     // --- CHANGE: This is the core logic for publishing the quiz ---
 const handleSubmit = async () => {
     const accessToken = sessionStorage.getItem("access_token");
@@ -69,7 +58,7 @@ const handleSubmit = async () => {
     console.log("Submitting cleaned quiz data:", finalQuizData);
 
   try {
-    const response = await fetch('http://localhost:8000/api/test-creation/tests/full-create/', {
+    const response = await fetch(`${BASE_URL}/test-creation/tests/full-create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +68,7 @@ const handleSubmit = async () => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(`errorData.error || HTTP error! status: ${response.status}`);
     }
 
     const result = await response.json();
@@ -107,14 +96,14 @@ const handleImportQuiz = async (testIdToImport) => {
         const accessToken = sessionStorage.getItem("access_token");
         try {
             // Call the new "full-detail" endpoint you created in the backend
-            const response = await fetch(`http://localhost:8000/api/test-creation/tests/full-detail/${testIdToImport}/`, {
+            const response = await fetch(`${BASE_URL}/test-creation/tests/full-detail/${testIdToImport}/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
             const data = await response.json();
             if (!response.ok) throw new Error("Failed to fetch quiz data for import.");
 
             // --- 4. THIS IS THE MAGIC STEP ---
-            // It completely replaces the current `quizData` state with the imported data.
+            // It completely replaces the current quizData state with the imported data.
             // The backend serializer was designed to match this structure exactly.
             setQuizData({
                 details: {
@@ -161,7 +150,7 @@ const handleImportQuiz = async (testIdToImport) => {
           case 2:
               return <SectionSetupPage onBack={handleBack} onNext={handleNext} initialQuizData={quizData} />;
           case 3:
-    return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} initialSectionIndex={questionPageStartIndex} />;
+              return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} />;
           case 4:
               return <QuizSettings onBack={handleBack} onNext={handleNext} initialData={quizData.settings} />;
           case 5:
@@ -180,18 +169,12 @@ const handleImportQuiz = async (testIdToImport) => {
 
   return (
     <>
+      <NavBar />
      <ImportQuizModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImportQuiz}
       />
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo"><span className="logo-square"></span> GA Proctored Test</div>
-          <nav className="header-nav"><a href="#">Dashboard</a><a href="#">Tests</a><a href="#">Candidates</a><a href="#" className="active-link">Create test</a></nav>
-          <div className="user-profile"><span className="notification-bell" role="img" aria-label="notifications">🔔</span><div className="avatar"></div><span>Arjun Pranan ▼</span></div>
-        </div>
-      </header>
       <main className="main-content">
         <div className="stepper">
           {/* Step 1: Test Title */}
