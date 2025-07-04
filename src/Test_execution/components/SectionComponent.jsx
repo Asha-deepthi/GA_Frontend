@@ -598,7 +598,15 @@ const goToNext = () => {
   ) : (
     <button
       className="bg-[#00A398] text-[#626F86] font-[Lexend] px-6 py-2 rounded hover:brightness-110"
-      onClick={handleFinalSubmit}
+      onClick={() => {
+        const current = questions[currentIndex];
+        updateAnswer(current.id, {
+          answer: currentAnswer,
+          markedForReview: false,
+          type: current.type,
+        });
+        setTimeout(handleFinalSubmit, 500);
+      }}
     >
       Submit
     </button>
@@ -626,7 +634,9 @@ const goToNext = () => {
         markedForReview: true,
         type: current.type,
       });
+      if (currentIndex < questions.length - 1) {
       goToNext();
+    }
     }}
   >
     Mark as Review
