@@ -1,7 +1,14 @@
 import React from 'react';
 import { FaQuestionCircle } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 const TopHeader = ({ userName }) => {
+   const navigate = useNavigate();
+
+  const handleFaqClick = () => {
+    navigate('/faqpage'); // Make sure this path matches your routing setup
+  };
+
   return (
     <div className="relative w-full bg-white font-lexend">
       {/* Top Multi-Colored Bar */}
@@ -21,7 +28,9 @@ const TopHeader = ({ userName }) => {
         </div>
 
         <div className="flex items-center gap-6">
-          <button className="flex items-center px-4 py-1.5 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2">
+          <button
+           onClick={handleFaqClick}
+           className="flex items-center px-4 py-1.5 border border-[#E0302D] rounded-full bg-[#E0302D0D] gap-2">
             <FaQuestionCircle className="text-[#E0302D] text-sm" />
             <span className="text-[#E0302D] text-sm font-medium">FAQs</span>
           </button>

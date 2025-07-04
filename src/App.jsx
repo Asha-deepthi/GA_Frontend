@@ -42,6 +42,7 @@ import { AuthProvider } from './Test_creation/contexts/AuthContext';
 import FaqPage from './Test_execution/faqpage';
 import Candidates from './Test_execution/Candidates';
 import Tests from './Test_execution/Tests';
+import ProfileSettings from "./Test_creation/pages/ProfileSettings";
 
 function App() {
   return (
@@ -97,6 +98,7 @@ function App() {
         <Route path="/faqpage" element={<FaqPage/>}/>
         <Route path="/candidates" element={<Candidates />} />
         <Route path="/tests" element={<Tests/>}/>
+        <Route path="/ProfileSettings" element={<ProfileSettings/>}/>
       </Routes>
     </StreamProvider>
     </AuthProvider>

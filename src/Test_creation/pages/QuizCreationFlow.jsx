@@ -7,7 +7,7 @@ import QuizSettings from './QuizSettings';
 import QuizPreview from './QuizPreview';
 import NavBar from '../components/Navbar'; 
 import ImportQuizModal from './ImportQuizModal';
-import BASE_URL from "../../config";
+
 
 const QuizCreationFlow = () => {
   // We still use internal steps 1, 2, 3, 4 for navigation
@@ -16,6 +16,7 @@ const QuizCreationFlow = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [questionPageStartIndex, setQuestionPageStartIndex] = useState(0);
 
   const handleNext = (data) => {
     setQuizData(prev => ({ ...prev, ...data }));
@@ -23,25 +24,24 @@ const QuizCreationFlow = () => {
   };
 
   const handleBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-  
-    // --- CHANGE: This is the core logic for publishing the quiz ---
+  if (currentStep === 4) {
+    const lastIndex = quizData.sections.length > 0 ? quizData.sections.length - 1 : 0;
+    setQuestionPageStartIndex(lastIndex);
+  }
+
+  if (currentStep === 3) {
+    setQuestionPageStartIndex(0);
+  }
+
+  setCurrentStep(prev => Math.max(prev - 1, 1));
+};
 const handleSubmit = async () => {
     const accessToken = sessionStorage.getItem("access_token");
   setIsLoading(true);
   console.log("Submitting full quiz data:", quizData);
 
-      // --- START OF THE FIX ---
-    // Prepare a clean version of the quiz data before sending.
-    
-    // 1. Check the global setting.
     const isNegativeMarkingOn = quizData.settings.negativeMarking === 'negative_marking';
-
-    // 2. Create a "cleaned" version of the sections array.
     const cleanedSections = quizData.sections.map(section => {
-      // If the setting is OFF, force negativeMarks to be null.
-      // If the setting is ON, make sure any blank value becomes 0.
       const cleanedNegativeMarks = isNegativeMarkingOn
         ? (section.negativeMarks || 0) 
         : null;
@@ -49,7 +49,6 @@ const handleSubmit = async () => {
       return { ...section, negativeMarks: cleanedNegativeMarks };
     });
 
-    // 3. Create the final payload with the cleaned sections.
     const finalQuizData = {
       ...quizData,
       sections: cleanedSections,
@@ -58,11 +57,11 @@ const handleSubmit = async () => {
     console.log("Submitting cleaned quiz data:", finalQuizData);
 
   try {
-    const response = await fetch(`${BASE_URL}/test-creation/tests/full-create/`, {
+    const response = await fetch('http://localhost:8000/api/test-creation/tests/full-create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`},
+        'Authorization':` Bearer ${accessToken}`},
       body: JSON.stringify(quizData)
     });
 
@@ -96,15 +95,12 @@ const handleImportQuiz = async (testIdToImport) => {
         const accessToken = sessionStorage.getItem("access_token");
         try {
             // Call the new "full-detail" endpoint you created in the backend
-            const response = await fetch(`${BASE_URL}/test-creation/tests/full-detail/${testIdToImport}/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
+            const response = await fetch(`http://localhost:8000/api/test-creation/tests/full-detail/${testIdToImport}/`, {
+                headers: { 'Authorization':` Bearer ${accessToken}` }
             });
             const data = await response.json();
             if (!response.ok) throw new Error("Failed to fetch quiz data for import.");
 
-            // --- 4. THIS IS THE MAGIC STEP ---
-            // It completely replaces the current `quizData` state with the imported data.
-            // The backend serializer was designed to match this structure exactly.
             setQuizData({
                 details: {
                     title: data.title,
@@ -150,7 +146,7 @@ const handleImportQuiz = async (testIdToImport) => {
           case 2:
               return <SectionSetupPage onBack={handleBack} onNext={handleNext} initialQuizData={quizData} />;
           case 3:
-              return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} />;
+    return <CreateQuestionsPage onBack={handleBack} onNext={handleNext} quizData={quizData} initialSectionIndex={questionPageStartIndex} />;
           case 4:
               return <QuizSettings onBack={handleBack} onNext={handleNext} initialData={quizData.settings} />;
           case 5:
@@ -167,37 +163,63 @@ const handleImportQuiz = async (testIdToImport) => {
       }
   }
 
-  return (
-    <>
-      <NavBar />
-     <ImportQuizModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImport={handleImportQuiz}
-      />
-      <main className="main-content">
-        <div className="stepper">
-          {/* Step 1: Test Title */}
-          <div className={`step ${currentStep > 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}`}>
-            <div className="step-circle">1</div><div className="step-label">Test Title</div>
-          </div>
-          <div className={`connector ${currentStep > 1 ? 'active' : ''}`}></div>
-          {/* Step 2: Set Interview questions (Covers our internal steps 2, 3, 4, and 5) */}
-          <div className={`step ${currentStep >= 6 ? 'completed' : ''} ${[2, 3, 4, 5].includes(currentStep) ? 'active' : ''}`}>
-            <div className="step-circle">2</div><div className="step-label">Set interview questions</div>
-          </div>
-          <div className={`connector ${currentStep >= 6 ? 'active' : ''}`}></div>
-          {/* Step 3: Import candidates (This will be the next page after publishing) */}
-          <div className="step"><div className="step-circle">3</div><div className="step-label">Import candidates</div></div>
-          <div className="connector"></div>
-          {/* Step 4: Send Interview invitation */}
-          <div className="step"><div className="step-circle">4</div><div className="step-label">Send Interview invitation</div></div>
+ return (
+  <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
+    <NavBar />
+    <ImportQuizModal
+      isOpen={isImportModalOpen}
+      onClose={() => setIsImportModalOpen(false)}
+      onImport={handleImportQuiz}
+    />
+    <main className="main-content">
+      <div className="stepper">
+        {/* Step 1: Test Title */}
+        <div
+          className={`step ${currentStep > 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}`}
+        >
+          <div className="step-circle">1</div>
+          <div className="step-label">Test Title</div>
         </div>
-        
-        {isLoading ? <div style={{textAlign: 'center', padding: '50px'}}><h2>Publishing Quiz...</h2></div> : renderStep()}
-      </main>
-    </>
-  );
+
+        <div className={`connector ${currentStep > 1 ? 'active' : ''}`}></div>
+
+        {/* Step 2: Set Interview questions */}
+        <div
+          className={`step ${currentStep >= 5 ? 'completed' : ''} ${
+            [2, 3, 4, 5].includes(currentStep) ? 'active' : ''
+          }`}
+        >
+          <div className="step-circle">2</div>
+          <div className="step-label">Set interview questions</div>
+        </div>
+
+        <div className={`connector ${currentStep >= 5 ? 'active' : ''}`}></div>
+
+        {/* Step 3: Import candidates */}
+        <div className="step">
+          <div className="step-circle">3</div>
+          <div className="step-label">Import candidates</div>
+        </div>
+
+        <div className="connector"></div>
+
+        {/* Step 4: Send Interview invitation */}
+        <div className="step">
+          <div className="step-circle">4</div>
+          <div className="step-label">Send Interview invitation</div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <h2>Publishing Quiz...</h2>
+        </div>
+      ) : (
+        renderStep()
+      )}
+    </main>
+  </div>
+);
 };
 
 export default QuizCreationFlow;
