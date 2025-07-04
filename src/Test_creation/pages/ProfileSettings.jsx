@@ -1,6 +1,7 @@
 // src/pages/ProfileSettings.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import ProfileDropdown from './ProfileDropdown';// Adjust path if needed
+import NavBar from '../components/Navbar';
+
 
 const EyeIcon = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -151,23 +152,23 @@ const handleSubmit = async (e) => {
     return (
         <div className="bg-[#F9F9F9] min-h-screen font-sans">
             {/* Header */}
-            <header className="flex items-center justify-between py-3 px-6 bg-white border-b sticky top-0 z-10">
+     {/*}       <header className="flex items-center justify-between py-3 px-6 bg-white border-b sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-teal-500 flex items-center justify-center text-white font-bold text-lg rounded">■</div>
                     <span className="font-semibold text-gray-800">GA Proctored Test</span>
                 </div>
                 <nav className="flex items-center gap-8 text-sm text-gray-600">
-                    <a href="#" className="hover:text-gray-900">Dashboard</a>
-                    <a href="#" className="hover:text-gray-900">Tests</a>
-                    <a href="#" className="hover:text-gray-900">Candidates</a>
-                    <a href="#" className="hover:text-gray-900">Create a Test</a>
+                        <Link to="/dashboard" className="text-[#121417]">Dashboard</Link>
+    <Link to="/tests" className="text-[#121417]">Tests</Link>
+    <Link to="/candidates" className="text-[#121417]">Candidates</Link>
+    <Link to="/QuizCreationFlow" className="text-[#121417]">Create a Test</Link>
                     <button className="text-gray-500">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                     </button>
                     <ProfileDropdown />
                 </nav>
-            </header>
-
+            </header>*/}
+            <NavBar />
             {/* Main Content */}
             <main className="p-10 max-w-7xl mx-auto">
                 <div className="max-w-5xl mx-auto">

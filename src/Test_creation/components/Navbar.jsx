@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import ProfileDropdown from "../../Test_execution/components/ProfileDropdown.jsx";
+import ProfileDropdown from "../../Test_creation/pages/ProfileDropdown.jsx";
 import { Bell } from "lucide-react";
 
 const Header = () => {
@@ -12,11 +12,11 @@ const Header = () => {
     { label: "Dashboard", path: "/dashboard", width: "w-[74px]" },
     { label: "Tests", path: "/tests", width: "w-[37px]" },
     { label: "Candidates", path: "/candidates", width: "w-[77px]" },
-    { label: "Create test", path: "/importform", width: "w-[78px]" },
+    { label: "Create test", path: "/QuizCreationFlow", width: "w-[78px]" },
   ];
 
   return (
-    <div className="w-[1440px] h-[65px] bg-white flex items-center px-6 justify-between">
+    <div className="w-full h-[65px] bg-white flex items-center px-6 justify-between">
       {/* Left: Logo / Name */}
       <div className="w-[193px] text-[#00A398] text-[18px] font-bold leading-[23px] font-inter">
         GA Proctored Test

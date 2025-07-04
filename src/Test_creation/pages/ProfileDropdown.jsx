@@ -59,7 +59,7 @@ const ProfileDropdown = () => {
           <ul className="text-sm text-gray-700">
             <li>
               <Link
-                to="/profileSettings" 
+                to="/ProfileSettings" 
                 className="block w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
                 onClick={handleCloseDropdown}
               >

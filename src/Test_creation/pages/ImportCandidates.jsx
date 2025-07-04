@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ImportCandidatesModal from './ImportCandidatesModal'; 
 import NavBar from '../components/Navbar'; 
 
-// --- Icon Component (for placeholder icons) ---
 const Icon = ({ name, className = '' }) => {
     const icons = {
         upload: '↑',
@@ -47,7 +46,6 @@ const Stepper = ({ currentStep }) => {
   );
 };
 
-// --- Main Page Component ---
 const ImportCandidates = () => {
   const MAX_CANDIDATES = 5; 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,6 +153,18 @@ const fetchAndSetCandidates = async () => {
   };
    const handleDeleteCandidate = (id) => {
     setCandidates(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleEditCandidate = (id) => {
+    // Before allowing a new candidate to be edited, check if another one is already being edited.
+    if (candidates.some(c => c.isEditing)) {
+      alert("Please save or cancel the current candidate first.");
+      return;
+    }
+    // Set the isEditing flag to true for the selected candidate.
+    setCandidates(prev => 
+      prev.map(c => (c.id === id ? { ...c, isEditing: true } : c))
+    );
   };
   
   // --- THIS IS THE FUNCTION THAT WAS MISSING ---
@@ -265,7 +275,7 @@ const handleFileChange = (event) => {
             onClose={() => setisImportModalOpen(false)}
             onImport={handleImportFromTest}
         />
-        <main className="max-w-4xl mx-auto py-12 px-4">
+         <main className="max-w-6xl mx-auto py-12 px-4">
             <div className="mb-16"><Stepper currentStep={3} /></div>
 
             <div>
@@ -303,7 +313,7 @@ const handleFileChange = (event) => {
                 <div 
                     className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                     // THIS IS THE KEY: Use the 'parsingProgress' state here
-                    style={{width: `${parsingProgress}%`}}
+                    style={{ width: `${parsingProgress}%` }}
                 ></div>
             </div>
         </div>
@@ -335,7 +345,16 @@ const handleFileChange = (event) => {
                                         <div className="col-span-4 text-gray-500">{candidate.email}</div>
                                         <div className="col-span-3 text-gray-500">{candidate.phone}</div>
                                         <div className="col-span-1 flex justify-end">
-                                          {/* We don't show a delete button in view mode to match the design */}
+                                         <button 
+                onClick={() => handleEditCandidate(candidate.id)} 
+                className="text-blue-500 hover:text-blue-700" 
+                title="Edit"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                    <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                </svg>
+            </button>
                                         </div>
                                     </>
                                 )}
