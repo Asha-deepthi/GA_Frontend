@@ -173,34 +173,80 @@ console.log("🧑‍💻 Full fetch URL:",
   };
 
   useEffect(() => {
-    if (!selectedSectionId || !realCandidateTestId) return;
+  if (!selectedSectionId || !realCandidateTestId || stopTimer) return;
 
-    const fetchTimer = async () => {
-      try {
-        const res = await fetch(
-          `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
-        );
-        if (!res.ok) throw new Error("Timer fetch failed");
-        const data = await res.json();
+  let intervalIdRef = null; // 🧠 local ref to ensure single interval
+  let isCancelled = false;
 
-        const parsedTime =
-          typeof data.remaining_time === "string"
-            ? toSeconds(data.remaining_time)
-            : data.remaining_time;
+  const fetchTimerAndStart = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
+      );
+      const data = await res.json();
 
-        setInitialSeconds(parsedTime ?? 600);
-      } catch (err) {
-        const fallbackTime = localStorage.getItem(`timer_${selectedSectionId}`);
-        const sectionObj = sections.find((s) => s.id === selectedSectionId);
-        const fallbackMinutes = sectionObj?.time_limit || 10;
-        setInitialSeconds(fallbackTime ? parseInt(fallbackTime) : fallbackMinutes * 60);
+      let seconds =
+        typeof data.remaining_time === "string"
+          ? toSeconds(data.remaining_time)
+          : data.remaining_time;
+
+      if (!seconds || isNaN(seconds)) {
+        const fallback = localStorage.getItem(`timer_${selectedSectionId}`);
+        seconds = fallback ? parseInt(fallback) : 600; // fallback 10min
       }
-    };
 
-    fetchTimer();
-  }, [selectedSectionId, realCandidateTestId, sections]);
+      setInitialSeconds(seconds);
+      setTimeLeft(seconds);
 
-  useEffect(() => {
+      // Clear any previously running intervals (prevent double speed!)
+      if (intervalIdRef) clearInterval(intervalIdRef);
+
+      intervalIdRef = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (isCancelled) return prev;
+
+          const next = prev - 1;
+          if (next <= 0) {
+            clearInterval(intervalIdRef);
+            localStorage.setItem(`timer_${selectedSectionId}`, 0);
+            setStopTimer(true);
+            return 0;
+          }
+
+          localStorage.setItem(`timer_${selectedSectionId}`, next);
+
+          if (next % 10 === 0) {
+            fetch(`${BASE_URL}/test-creation/save-timer/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                candidate_test_id: realCandidateTestId,
+                section_id: selectedSectionId,
+                remaining_time: next,
+              }),
+            }).catch((err) => console.error("Failed to save timer:", err));
+          }
+
+          return next;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error("❌ Timer fetch/start failed:", err);
+    }
+  };
+
+  fetchTimerAndStart();
+
+  return () => {
+    isCancelled = true;
+    if (intervalIdRef) {
+      clearInterval(intervalIdRef); //Always clean up on section switch
+      intervalIdRef = null;
+    }
+  };
+}, [selectedSectionId, realCandidateTestId, stopTimer]);
+
+  {/*useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || stopTimer) return;
 
     const timerId = setInterval(() => {
@@ -234,7 +280,7 @@ console.log("🧑‍💻 Full fetch URL:",
   useEffect(() => {
     if (initialSeconds !== null) setTimeLeft(initialSeconds);
   }, [initialSeconds]);
-
+*/}
   useEffect(() => {
     if (selectedSectionId && !stopTimer) setStopTimer(false);
   }, [selectedSectionId]);
