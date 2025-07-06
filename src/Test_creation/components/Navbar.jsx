@@ -25,7 +25,7 @@ const Header = () => {
       {/* Right: Nav + Notification + Profile */}
       <div className="flex items-center gap-[36px]">
         {/* Navigation */}
-        <div className="flex gap-[32px] font-inter text-[14px] font-medium leading-[21px] text-[#121417]">
+        <div className="flex gap-[32px] font-sans text-[14px] font-medium leading-[21px] text-[#121417]">
           {navItems.map(({ label, path, width }) => {
             const isActive = location.pathname === path;
             return (

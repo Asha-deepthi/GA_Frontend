@@ -271,7 +271,10 @@ const dismissAndUnblur = (setAlertFn) => {
     clearTimeout(debounceId.current);
     debounceId.current = setTimeout(sendAnswer, 500);
   };
-
+  const flushAnswer = () => {
+  clearTimeout(debounceId.current);
+  sendAnswer(); // immediately send the current buffered answer
+};
   const updateAnswer = (question_id, payload, parent_question_id = null) => {
   const hasAns = payload.answer && payload.answer !== "";
   const status = payload.markedForReview
@@ -605,7 +608,8 @@ const goToNext = () => {
           markedForReview: false,
           type: current.type,
         });
-        setTimeout(handleFinalSubmit, 500);
+        flushAnswer(); 
+        setTimeout(handleFinalSubmit, 500); 
       }}
     >
       Submit
