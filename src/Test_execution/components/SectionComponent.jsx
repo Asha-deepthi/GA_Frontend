@@ -176,10 +176,7 @@ const dismissAndUnblur = (setAlertFn) => {
 
         const backendMap = {};
         ansData.forEach((a) => {
-          let parsedAnswer = null;
-          if (a.answer?.text) parsedAnswer = a.answer.text;
-          else if (a.answer?.audioUrl) parsedAnswer = { type: "audio", url: a.answer.audioUrl };
-          else if (a.answer?.videoUrl) parsedAnswer = { type: "video", url: a.answer.videoUrl };
+          let parsedAnswer = a.answer; // Just use it as-is from backend
 
           backendMap[a.question_id] = {
             answer: parsedAnswer,

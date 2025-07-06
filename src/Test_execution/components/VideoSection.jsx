@@ -99,7 +99,7 @@ const VideoSection = ({ screenshots = [], responses = [] ,section }) => {
     if (typeof answer === "string") {
       return <span>{answer}</span>;
     }
-
+    
     switch (type) {
       case "multiple-choice":
       case "fill-in-blanks":
