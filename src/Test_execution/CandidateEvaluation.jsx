@@ -22,21 +22,21 @@ const CandidateEvaluation = () => {
   const [evaluatedMarks, setEvaluatedMarks] = useState({});
 
   // ✅ Fetch all candidates
- useEffect(() => {
-  const token = sessionStorage.getItem("access_token"); // or sessionStorage, or context
+  useEffect(() => {
+    const token = sessionStorage.getItem("access_token"); // or sessionStorage, or context
 
-  fetch("http://127.0.0.1:8000/api/candidates/", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch candidates");
-      return res.json();
+    fetch("http://127.0.0.1:8000/api/candidates/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
-    .then((data) => setCandidates(data))
-    .catch((err) => console.error("Error fetching candidates:", err));
-}, []);
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch candidates");
+        return res.json();
+      })
+      .then((data) => setCandidates(data))
+      .catch((err) => console.error("Error fetching candidates:", err));
+  }, []);
 
   // ✅ When candidate changes, reset related data
   useEffect(() => {
@@ -100,8 +100,10 @@ const CandidateEvaluation = () => {
           )
             .then((res) => {
               console.log("📡 Fetching screenshots for candidate_test_id:", candidateTestId);
-              if (!res.ok) {console.error("❌ Failed to fetch screenshots:", res.status);
-      throw new Error("Failed to fetch screenshots");}
+              if (!res.ok) {
+                console.error("❌ Failed to fetch screenshots:", res.status);
+                throw new Error("Failed to fetch screenshots");
+              }
               return res.json();
             })
             .then((screenshotsData) => {
@@ -158,16 +160,16 @@ const CandidateEvaluation = () => {
   }, [selectedCandidate]);
 
   useEffect(() => {
-  if (responses.length === 0) return;
-  const initialEvaluatedMarks = {};
-  responses.forEach((resp) => {
-    if (resp.answer_id) {
-      // Use marks_allotted if present, else 0
-      initialEvaluatedMarks[resp.answer_id] = resp.marks_allotted ?? 0;
-    }
-  });
-  setEvaluatedMarks(initialEvaluatedMarks);
-}, [responses]);
+    if (responses.length === 0) return;
+    const initialEvaluatedMarks = {};
+    responses.forEach((resp) => {
+      if (resp.answer_id) {
+        // Use marks_allotted if present, else 0
+        initialEvaluatedMarks[resp.answer_id] = resp.marks_allotted ?? 0;
+      }
+    });
+    setEvaluatedMarks(initialEvaluatedMarks);
+  }, [responses]);
 
   const currentSection = sections[currentSectionIndex];
   const currentSectionQuestions = responses.filter(
@@ -187,18 +189,18 @@ const CandidateEvaluation = () => {
   };
 
   if (selectedCandidate && selectedCandidate.status !== 'COMPLETED') {
-  return (
-    <div className="flex flex-col h-screen">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar candidates={candidates} onSelect={setSelectedCandidate} />
-        <div className="flex-1 p-6 text-center text-gray-500">
-          Test not submitted yet. Evaluation unavailable.
+    return (
+      <div className="flex flex-col h-screen">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar candidates={candidates} onSelect={setSelectedCandidate} />
+          <div className="flex-1 p-6 text-center text-gray-500">
+            Test not submitted yet. Evaluation unavailable.
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -304,35 +306,35 @@ const CandidateEvaluation = () => {
                     Section Name: {currentSection?.name || "Unknown"}
                   </div>
                   {console.log("🧪 Evaluated Marks State:", evaluatedMarks)}
-{console.log(
-  "🧪 Current Section Questions:",
-  currentSectionQuestions.map((q) => ({
-    id: q.id,
-    answer_id: q.answer_id,
-    evaluated: evaluatedMarks[q.answer_id],
-  }))
-)}
+                  {console.log(
+                    "🧪 Current Section Questions:",
+                    currentSectionQuestions.map((q) => ({
+                      id: q.id,
+                      answer_id: q.answer_id,
+                      evaluated: evaluatedMarks[q.answer_id],
+                    }))
+                  )}
                   {currentSection && (
-  <div className="mb-4 text-center text-sm text-gray-700">
-    Section Marks:{" "}
-    <span
-      className={
-        currentSectionQuestions
-          .filter((q) => q.answer_id !== null)
-          .every((q) => (evaluatedMarks[q.answer_id] ?? 0) === 0)
-          ? "text-red-500 font-semibold"
-          : "text-green-600 font-semibold"
-      }
-    >
-      {currentSectionQuestions
-        .filter((q) => q.answer_id !== null)
-        .reduce((sum, q) => sum + Number(evaluatedMarks[q.answer_id] ?? 0), 0)}
-    </span>{" "}
-    out of{" "}
-    {currentSection?.marks_per_question *
-      currentSectionQuestions.filter((q) => q.answer_id !== null).length}
-  </div>
-)}
+                    <div className="mb-4 text-center text-sm text-gray-700">
+                      Section Marks:{" "}
+                      <span
+                        className={
+                          currentSectionQuestions
+                            .filter((q) => q.answer_id !== null)
+                            .every((q) => (evaluatedMarks[q.answer_id] ?? 0) === 0)
+                            ? "text-red-500 font-semibold"
+                            : "text-green-600 font-semibold"
+                        }
+                      >
+                        {currentSectionQuestions
+                          .filter((q) => q.answer_id !== null)
+                          .reduce((sum, q) => sum + Number(evaluatedMarks[q.answer_id] ?? 0), 0)}
+                      </span>{" "}
+                      out of{" "}
+                      {currentSection?.marks_per_question *
+                        currentSectionQuestions.filter((q) => q.answer_id !== null).length}
+                    </div>
+                  )}
 
 
                   <VideoSection
