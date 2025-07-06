@@ -172,13 +172,15 @@ console.log("🧑‍💻 Full fetch URL:",
       });
   };
 
-  useEffect(() => {
+  const timerStartRef = useRef(null);
+const saveIntervalRef = useRef(null);
+
+useEffect(() => {
   if (!selectedSectionId || !realCandidateTestId || stopTimer) return;
 
-  let intervalIdRef = null; // 🧠 local ref to ensure single interval
   let isCancelled = false;
 
-  const fetchTimerAndStart = async () => {
+  const fetchAndStartTimer = async () => {
     try {
       const res = await fetch(
         `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
@@ -192,59 +194,80 @@ console.log("🧑‍💻 Full fetch URL:",
 
       if (!seconds || isNaN(seconds)) {
         const fallback = localStorage.getItem(`timer_${selectedSectionId}`);
-        seconds = fallback ? parseInt(fallback) : 600; // fallback 10min
+        seconds = fallback ? parseInt(fallback) : 600;
       }
 
       setInitialSeconds(seconds);
+      timerStartRef.current = Date.now();
       setTimeLeft(seconds);
-
-      // Clear any previously running intervals (prevent double speed!)
-      if (intervalIdRef) clearInterval(intervalIdRef);
-
-      intervalIdRef = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (isCancelled) return prev;
-
-          const next = prev - 1;
-          if (next <= 0) {
-            clearInterval(intervalIdRef);
-            localStorage.setItem(`timer_${selectedSectionId}`, 0);
-            setStopTimer(true);
-            return 0;
-          }
-
-          localStorage.setItem(`timer_${selectedSectionId}`, next);
-
-          if (next % 10 === 0) {
-            fetch(`${BASE_URL}/test-creation/save-timer/`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                candidate_test_id: realCandidateTestId,
-                section_id: selectedSectionId,
-                remaining_time: next,
-              }),
-            }).catch((err) => console.error("Failed to save timer:", err));
-          }
-
-          return next;
-        });
-      }, 1000);
     } catch (err) {
-      console.error("❌ Timer fetch/start failed:", err);
+      console.error("Timer fetch error:", err);
     }
   };
 
-  fetchTimerAndStart();
+  fetchAndStartTimer();
 
   return () => {
     isCancelled = true;
-    if (intervalIdRef) {
-      clearInterval(intervalIdRef); //Always clean up on section switch
-      intervalIdRef = null;
+    if (saveIntervalRef.current) {
+      clearInterval(saveIntervalRef.current);
+      saveIntervalRef.current = null;
     }
   };
 }, [selectedSectionId, realCandidateTestId, stopTimer]);
+
+useEffect(() => {
+  if (!initialSeconds || !timerStartRef.current || stopTimer) return;
+
+  const interval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
+    const newTimeLeft = Math.max(initialSeconds - elapsed, 0);
+    setTimeLeft(newTimeLeft);
+
+    // Save to backend every 10 seconds
+    if (newTimeLeft % 10 === 0) {
+      fetch(`${BASE_URL}/test-creation/save-timer/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_test_id: realCandidateTestId,
+          section_id: selectedSectionId,
+          remaining_time: newTimeLeft,
+        }),
+      }).catch((err) => console.error("Failed to save timer:", err));
+    }
+
+    if (newTimeLeft === 0) {
+      setStopTimer(true);
+      localStorage.setItem(`timer_${selectedSectionId}`, 0);
+      clearInterval(interval);
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [initialSeconds, stopTimer]);
+
+useEffect(() => {
+  const handleUnload = () => {
+    if (initialSeconds && timerStartRef.current) {
+      const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
+      const timeLeft = Math.max(initialSeconds - elapsed, 0);
+
+      navigator.sendBeacon(
+        `${BASE_URL}/test-creation/save-timer/`,
+        JSON.stringify({
+          candidate_test_id: realCandidateTestId,
+          section_id: selectedSectionId,
+          remaining_time: timeLeft,
+        })
+      );
+    }
+  };
+
+  window.addEventListener("beforeunload", handleUnload);
+  return () => window.removeEventListener("beforeunload", handleUnload);
+}, [initialSeconds, selectedSectionId, realCandidateTestId]);
+
 
   {/*useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || stopTimer) return;
