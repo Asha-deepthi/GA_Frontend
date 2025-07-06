@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import VideoSection from "./components/VideoSection";
 import InterviewFeedback from "./components/InterviewFeedback";
 import Header from "./components/Header";
+import { createCookieSessionStorage } from "react-router-dom";
 
 const mockAIComment =
   "The candidate demonstrates strong interpersonal and problem-solving skills. Suitable for customer-facing roles. Work experience aligns with position requirements.";
@@ -13,7 +14,6 @@ const CandidateEvaluation = () => {
   const [marks, setMarks] = useState({});
   const [sections, setSections] = useState([]);
   const [responses, setResponses] = useState([]);
-  const [allQuestionsBySection, setAllQuestionsBySection] = useState({});
   const [screenshots, setScreenshots] = useState([]);
   const [aiComment, setAiComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,8 +22,8 @@ const CandidateEvaluation = () => {
   const [evaluatedMarks, setEvaluatedMarks] = useState({});
 
   // ✅ Fetch all candidates
- useEffect(() => {
-  const token = sessionStorage.getItem("access_token"); // or sessionStorage, or context
+  useEffect(() => {
+    const token = sessionStorage.getItem("access_token"); // or sessionStorage, or context
 
     fetch("http://127.0.0.1:8000/api/candidates/", {
       headers: {
@@ -38,9 +38,10 @@ const CandidateEvaluation = () => {
       .catch((err) => console.error("Error fetching candidates:", err));
   }, []);
 
-  // When candidate changes, reset related data
+  // ✅ When candidate changes, reset related data
   useEffect(() => {
     if (selectedCandidate?.user) {
+      console.log("🧪 Selected Candidate:", selectedCandidate);
       setCurrentSectionIndex(0);
       setEvaluatedMarks({});
     } else {
@@ -52,12 +53,12 @@ const CandidateEvaluation = () => {
     }
   }, [selectedCandidate]);
 
-  // Fetch sections, questions, answers, and screenshots
+  // ✅ Fetch sections, questions, answers, and screenshots
   useEffect(() => {
     if (!selectedCandidate?.candidate_test_id || !selectedCandidate?.user) return;
-
-    const candidateTestId = selectedCandidate.candidate_test_id;
-    const testId = selectedCandidate.test_id;
+    const candidateId = selectedCandidate.user;
+    const candidateTestId = selectedCandidate?.candidate_test_id;
+    const testId = selectedCandidate?.test_id;
 
     setLoading(true);
     setError(null);
@@ -73,50 +74,79 @@ const CandidateEvaluation = () => {
         return Promise.all(
           sectionList.map((section) =>
             Promise.all([
-              fetch(`http://127.0.0.1:8000/api/test-creation/tests/${testId}/sections/${section.id}/questions/`).then((res) => {
-                if (!res.ok) throw new Error(`Failed to fetch questions for section ${section.id}`);
+              fetch(
+                `http://127.0.0.1:8000/api/test-creation/tests/${testId}/sections/${section.id}/questions/`
+              ).then((res) => {
+                if (!res.ok)
+                  throw new Error(
+                    `Failed to fetch questions for section ${section.id}`
+                  );
                 return res.json();
               }),
-              fetch(`http://127.0.0.1:8000/api/test-execution/get-answers/?candidate_test_id=${candidateTestId}&section_id=${section.id}`).then((res) => {
-                if (!res.ok) throw new Error(`Failed to fetch answers for section ${section.id}`);
+              fetch(
+                `http://127.0.0.1:8000/api/test-execution/get-answers/?candidate_test_id=${candidateTestId}&section_id=${section.id}`
+              ).then((res) => {
+                if (!res.ok)
+                  throw new Error(
+                    `Failed to fetch answers for section ${section.id}`
+                  );
                 return res.json();
               }),
             ])
           )
         ).then((sectionsResults) => {
-          return fetch(`http://127.0.0.1:8000/api/test-execution/proctoring-screenshots/?candidate_test_id=${candidateTestId}`)
+          return fetch(
+            `http://127.0.0.1:8000/api/test-execution/proctoring-screenshots/?candidate_test_id=${candidateTestId}`
+          )
             .then((res) => {
-              if (!res.ok) throw new Error("Failed to fetch screenshots");
+              console.log("📡 Fetching screenshots for candidate_test_id:", candidateTestId);
+              if (!res.ok) {
+                console.error("❌ Failed to fetch screenshots:", res.status);
+                throw new Error("Failed to fetch screenshots");
+              }
               return res.json();
             })
             .then((screenshotsData) => {
-              const allMerged = [];
-              const questionsBySection = {};
+              console.log("📥 Raw screenshots data from API:", screenshotsData);
 
+              const allMerged = [];
               sectionsResults.forEach(([questionsData, answersData], idx) => {
                 const section = sectionList[idx];
-                const questionsArray = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
-
-                questionsBySection[section.id] = questionsArray;
+                console.log(`📚 Section ${idx + 1}:`, section);
+                console.log("📝 Questions:", questionsData);
+                console.log("✅ Answers:", answersData);
+                const questionsArray = Array.isArray(questionsData)
+                  ? questionsData
+                  : questionsData.questions || [];
 
                 const merged = questionsArray.map((q) => {
-                  const matchedAnswer = answersData.find((a) => String(a.question_id) === String(q.id));
+                  const matchedAnswer = answersData.find(
+                    (a) => String(a.question_id) === String(q.id)
+                  );
+                  if (!matchedAnswer) {
+                    console.warn(`❌ No answer found for question ID ${q.id}`);
+                  }
                   return {
                     ...q,
-                    answer: matchedAnswer?.answer_text || matchedAnswer?.answer || null,
-                    question_type: matchedAnswer?.question_type || q.type || "unknown",
+                    answer:
+                      matchedAnswer?.answer_text ||
+                      matchedAnswer?.answer ||
+                      null,
+                    question_type:
+                      matchedAnswer?.question_type || q.type || "unknown",
                     section_id: section.id,
-                    answer_id: matchedAnswer?.answer_id || matchedAnswer?.id || null,
+                    answer_id:
+                      matchedAnswer?.answer_id || matchedAnswer?.id || null,
                     marks_allotted: matchedAnswer?.marks_allotted ?? null,
                     marks_per_question: q.marks_per_question || 1,
                   };
                 });
-
                 allMerged.push(...merged);
               });
-
+              if (allMerged.length === 0) {
+                console.warn("❗ No merged responses. Verify questions/answers exist.");
+              }
               setResponses(allMerged);
-              setAllQuestionsBySection(questionsBySection);
               setScreenshots(screenshotsData);
               setAiComment(mockAIComment);
               setLoading(false);
@@ -134,6 +164,7 @@ const CandidateEvaluation = () => {
     const initialEvaluatedMarks = {};
     responses.forEach((resp) => {
       if (resp.answer_id) {
+        // Use marks_allotted if present, else 0
         initialEvaluatedMarks[resp.answer_id] = resp.marks_allotted ?? 0;
       }
     });
@@ -141,7 +172,9 @@ const CandidateEvaluation = () => {
   }, [responses]);
 
   const currentSection = sections[currentSectionIndex];
-  const currentSectionQuestions = responses.filter((r) => r.section_id === currentSection?.id);
+  const currentSectionQuestions = responses.filter(
+    (r) => r.section_id === currentSection?.id
+  );
 
   const handleMarkChange = (answerId, marks) => {
     setEvaluatedMarks((prev) => ({
@@ -150,52 +183,30 @@ const CandidateEvaluation = () => {
     }));
   };
 
-  const handleEvaluationSubmit = ({ score, recommendation, comment }) => {
-  if (!selectedCandidate?.candidate_test_id) {
-    alert("Candidate test ID not found.");
-    return;
-  }
+  const handleEvaluationSubmit = (evaluation) => {
+    console.log("Submitted evaluation:", evaluation);
+    // Optional: send to backend
+  };
 
-  fetch("http://127.0.0.1:8000/api/test-creation/submit-evaluation/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      candidate_test_id: selectedCandidate.candidate_test_id,
-      total_score: score,
-      result: recommendation,
-      comment: comment,
-    }),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to submit evaluation");
-      return res.json();
-    })
-    .then((data) => {
-      alert("✅ Evaluation submitted successfully!");
-      console.log("Backend response:", data);
-    })
-    .catch((err) => {
-      console.error("❌ Error submitting evaluation:", err);
-      alert("Failed to submit evaluation.");
-    });
-};
-// 💡 Total score calculation
-const totalScore = responses.reduce(
-  (acc, q) => acc + Number(evaluatedMarks[q.answer_id] ?? 0),
-  0
-);
+  if (selectedCandidate && selectedCandidate.status !== 'COMPLETED') {
+    return (
+      <div className="flex flex-col h-screen">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar candidates={candidates} onSelect={setSelectedCandidate} />
+          <div className="flex-1 p-6 text-center text-gray-500">
+            Test not submitted yet. Evaluation unavailable.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-         candidates={candidates}
-         onSelect={setSelectedCandidate}
-         selectedCandidate={selectedCandidate}
-        />
+        <Sidebar candidates={candidates} onSelect={setSelectedCandidate} />
         <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
           {selectedCandidate ? (
             <>
@@ -209,13 +220,17 @@ const totalScore = responses.reduce(
                       className="w-20 h-20 rounded-full object-cover"
                     />
                     <div>
-                      <h2 className="text-xl font-semibold">{selectedCandidate.name}</h2>
+                      <h2 className="text-xl font-semibold">
+                        {selectedCandidate.name}
+                      </h2>
                       <p className="text-sm text-gray-700 mt-1 flex flex-wrap gap-2">
                         <span>{selectedCandidate.gender}</span>
                         <span>|</span>
                         <span>Age {selectedCandidate.age}</span>
                         <span>|</span>
-                        <span>{selectedCandidate.experience?.length || 0} Years EXP</span>
+                        <span>
+                          {selectedCandidate.experience?.length || 0} Years EXP
+                        </span>
                         <span>|</span>
                         <span>{selectedCandidate.degree}</span>
                         <span>|</span>
@@ -225,18 +240,64 @@ const totalScore = responses.reduce(
                       </p>
                     </div>
                   </div>
+
                   <div className="text-teal-600 font-semibold cursor-pointer flex items-center gap-1">
                     {/* Share Icon */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 100-6 3 3 0 000 6zM9 12a3 3 0 100-6 3 3 0 000 6zm6 0a3 3 0 100-6 3 3 0 000 6zM9 16a3 3 0 100 6 3 3 0 000-6zm6 0a3 3 0 100 6 3 3 0 000-6z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 8a3 3 0 100-6 3 3 0 000 6zM9 12a3 3 0 100-6 3 3 0 000 6zm6 0a3 3 0 100-6 3 3 0 000 6zM9 16a3 3 0 100 6 3 3 0 000-6zm6 0a3 3 0 100 6 3 3 0 000-6z"
+                      />
                     </svg>
                     SHARE
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-3 gap-x-8 mt-6 text-sm">
+                  <div>
+                    <p className="text-gray-400 font-medium">Experience</p>
+                    {selectedCandidate.experience?.map((item, idx) => (
+                      <p key={idx} className="text-black">
+                        {item.role} · {item.duration}
+                      </p>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-gray-400 font-medium">Education</p>
+                    <p className="text-black">{selectedCandidate.education}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 font-medium">Resume</p>
+                    <a
+                      href={`/${selectedCandidate.resume}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-teal-600 underline"
+                    >
+                      {selectedCandidate.resume}
+                    </a>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 font-medium">Preference</p>
+                    <p className="text-black">{selectedCandidate.preference}</p>
                   </div>
                 </div>
               </div>
 
               {/* Loading/Error/Sections */}
-              {loading && <p className="text-center text-gray-500">Loading candidate responses...</p>}
+              {loading && (
+                <p className="text-center text-gray-500">
+                  Loading candidate responses...
+                </p>
+              )}
               {error && <p className="text-center text-red-500">{error}</p>}
 
               {!loading && !error && responses.length > 0 && sections.length > 0 && (
@@ -244,30 +305,37 @@ const totalScore = responses.reduce(
                   <div className="mb-4 text-center font-semibold text-lg">
                     Section Name: {currentSection?.name || "Unknown"}
                   </div>
-
-                  {/* Section Marks */}
+                  {console.log("🧪 Evaluated Marks State:", evaluatedMarks)}
+                  {console.log(
+                    "🧪 Current Section Questions:",
+                    currentSectionQuestions.map((q) => ({
+                      id: q.id,
+                      answer_id: q.answer_id,
+                      evaluated: evaluatedMarks[q.answer_id],
+                    }))
+                  )}
                   {currentSection && (
                     <div className="mb-4 text-center text-sm text-gray-700">
                       Section Marks:{" "}
                       <span
                         className={
-                          currentSectionQuestions.every(
-                            (q) => (evaluatedMarks[q.answer_id] ?? 0) === 0
-                          )
+                          currentSectionQuestions
+                            .filter((q) => q.answer_id !== null)
+                            .every((q) => (evaluatedMarks[q.answer_id] ?? 0) === 0)
                             ? "text-red-500 font-semibold"
                             : "text-green-600 font-semibold"
                         }
                       >
-                        {currentSectionQuestions.reduce(
-                          (sum, q) => sum + Number(evaluatedMarks[q.answer_id] ?? 0),
-                          0
-                        )}
+                        {currentSectionQuestions
+                          .filter((q) => q.answer_id !== null)
+                          .reduce((sum, q) => sum + Number(evaluatedMarks[q.answer_id] ?? 0), 0)}
                       </span>{" "}
                       out of{" "}
                       {currentSection?.marks_per_question *
-                        (allQuestionsBySection[currentSection?.id]?.length || 0)}
+                        currentSectionQuestions.filter((q) => q.answer_id !== null).length}
                     </div>
                   )}
+
 
                   <VideoSection
                     screenshots={screenshots}
@@ -288,6 +356,7 @@ const totalScore = responses.reduce(
                     >
                       Previous Section
                     </button>
+
                     <button
                       disabled={currentSectionIndex === sections.length - 1}
                       onClick={() =>
@@ -302,9 +371,8 @@ const totalScore = responses.reduce(
                   </div>
 
                   <InterviewFeedback
-                   onSubmit={handleEvaluationSubmit}
-                   initialData={{ score: totalScore }}
-                   aiComment={aiComment}
+                    onSubmit={handleEvaluationSubmit}
+                    aiComment={aiComment}
                   />
                 </>
               )}
