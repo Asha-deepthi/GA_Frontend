@@ -178,12 +178,22 @@ const saveIntervalRef = useRef(null);
 useEffect(() => {
   if (!selectedSectionId || !realCandidateTestId || stopTimer) return;
 
-  let isCancelled = false;
+  let isActive = true;
+  const currentSectionId = selectedSectionId; // Capture snapshot of sectionId
 
   const fetchAndStartTimer = async () => {
     try {
+      //Clear previous interval
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
+      }
+
+      //Log: When timer fetch starts
+      console.log("🔄 Fetching timer for section:", currentSectionId);
+
       const res = await fetch(
-        `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${selectedSectionId}`
+        `${BASE_URL}/test-creation/get-timer/?candidate_test_id=${realCandidateTestId}&section_id=${currentSectionId}`
       );
       const data = await res.json();
 
@@ -193,13 +203,52 @@ useEffect(() => {
           : data.remaining_time;
 
       if (!seconds || isNaN(seconds)) {
-        const fallback = localStorage.getItem(`timer_${selectedSectionId}`);
+        const fallback = localStorage.getItem(`timer_${currentSectionId}`);
         seconds = fallback ? parseInt(fallback) : 600;
       }
 
-      setInitialSeconds(seconds);
+      //Skip if section changed while waiting
+      if (!isActive || currentSectionId !== selectedSectionId) return;
+
       timerStartRef.current = Date.now();
+      setInitialSeconds(seconds);
       setTimeLeft(seconds);
+
+      //Start the timer interval
+      saveIntervalRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
+        const newTimeLeft = Math.max(seconds - elapsed, 0);
+
+        //Log: Time updates
+        console.log("Section:", currentSectionId, "Time left:", newTimeLeft);
+
+        if (!isActive || selectedSectionId !== currentSectionId) return;
+
+        setTimeLeft(newTimeLeft);
+        localStorage.setItem(`timer_${currentSectionId}`, newTimeLeft);
+
+        // Save every 10 seconds
+        if (newTimeLeft % 10 === 0) {
+          fetch(`${BASE_URL}/test-creation/save-timer/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              candidate_test_id: realCandidateTestId,
+              section_id: currentSectionId,
+              remaining_time: newTimeLeft,
+            }),
+          }).catch((err) => console.error("Failed to save timer:", err));
+        }
+
+        // Stop timer when 0
+        if (newTimeLeft === 0) {
+          setStopTimer(true);
+          clearInterval(saveIntervalRef.current);
+        }
+      }, 1000);
+
+      // 🔔 Log: Timer interval started
+      console.log("Set interval for section:", currentSectionId);
     } catch (err) {
       console.error("Timer fetch error:", err);
     }
@@ -208,44 +257,13 @@ useEffect(() => {
   fetchAndStartTimer();
 
   return () => {
-    isCancelled = true;
+    isActive = false;
     if (saveIntervalRef.current) {
       clearInterval(saveIntervalRef.current);
       saveIntervalRef.current = null;
     }
   };
 }, [selectedSectionId, realCandidateTestId, stopTimer]);
-
-useEffect(() => {
-  if (!initialSeconds || !timerStartRef.current || stopTimer) return;
-
-  const interval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
-    const newTimeLeft = Math.max(initialSeconds - elapsed, 0);
-    setTimeLeft(newTimeLeft);
-
-    // Save to backend every 10 seconds
-    if (newTimeLeft % 10 === 0) {
-      fetch(`${BASE_URL}/test-creation/save-timer/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          candidate_test_id: realCandidateTestId,
-          section_id: selectedSectionId,
-          remaining_time: newTimeLeft,
-        }),
-      }).catch((err) => console.error("Failed to save timer:", err));
-    }
-
-    if (newTimeLeft === 0) {
-      setStopTimer(true);
-      localStorage.setItem(`timer_${selectedSectionId}`, 0);
-      clearInterval(interval);
-    }
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, [initialSeconds, stopTimer]);
 
 useEffect(() => {
   const handleUnload = () => {
