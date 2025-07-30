@@ -307,7 +307,11 @@ const handleNavClick = (navItem) => {
     }
   };
  return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-gray-50 ">
+=======
+    <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
       <NavBar />
       {/* Dashboard */}
       <div className="max-w-7xl mx-auto px-4 py-8">

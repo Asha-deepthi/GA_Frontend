@@ -38,10 +38,13 @@ import Popupalert_5 from './Test_execution/VideoAlert';
 import TestSubmission from './Test_execution/TestSubmission';
 import Timeupscreen from './Test_execution/TimeupScreen';
 import TestSummaryScreen from './Test_execution/TestSummaryScreen';
+<<<<<<< HEAD
 import { AuthProvider } from './Test_creation/contexts/AuthContext';
 import FaqPage from './Test_execution/faqpage';
 import Candidates from './Test_execution/Candidates';
 import Tests from './Test_execution/Tests';
+=======
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
 import ProfileSettings from "./Test_creation/pages/ProfileSettings";
 
 function App() {
@@ -55,6 +58,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/QuizPreview" element={<QuizPreview />} />
       <Route path="/QuizSettings" element={< QuizSettings/>} />
+      <Route path="/ProfileSettings" element={<ProfileSettings />} />
       <Route path="/import-candidates/:testId" element={<ImportCandidates />} />
       <Route path="/send-invitation/:testId" element={<SendInvitations />} />
       <Route 

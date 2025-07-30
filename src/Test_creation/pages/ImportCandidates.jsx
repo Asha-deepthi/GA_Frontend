@@ -214,7 +214,11 @@ const handleFileChange = (event) => {
 
             } else {
                 // SUCCESS CASE: Create and add the new candidate as before
+<<<<<<< HEAD
                  const newCandidate = {
+=======
+                const newCandidate = {
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
                     id: `file-${Date.now()}-${index}`,
                     name: file.name.replace(/\.[^/.]+$/, ""),
                     email: `${file.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
@@ -268,6 +272,7 @@ const handleFileChange = (event) => {
   const uploadedCandidatesCount = candidates.filter(c => c.source === 'upload').length;
 
   return (
+<<<<<<< HEAD
   <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
     <NavBar />
 
@@ -450,6 +455,120 @@ const handleFileChange = (event) => {
           <Icon name="plus" className="font-bold" />
           <span>Add Candidate Manually</span>
         </button>
+=======
+    <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
+        <NavBar />
+      <ImportCandidatesModal
+            isOpen={isImportModalOpen}
+            onClose={() => setisImportModalOpen(false)}
+            onImport={handleImportFromTest}
+        />
+         <main className="max-w-6xl mx-auto py-12 px-4">
+            <div className="mb-16"><Stepper currentStep={3} /></div>
+
+            <div>
+                <h1 className="text-3xl font-bold mb-6">Import Candidates</h1>
+                
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept=".pdf,.doc,.docx"/>
+                
+                <button onClick={handleUploadClick} className="border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md inline-flex items-center space-x-2"><Icon name="upload" className="font-bold text-gray-500"/>
+                <span>Upload Resumes</span></button>
+                 <button 
+                        onClick={() => setisImportModalOpen(true)}
+                        className="border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md inline-flex items-center space-x-2"
+                    >
+                        <span>Import from Previous Test</span>
+                    </button>
+
+{/* --- Parsing Resumes Section --- */}
+<div className="my-8">
+    <p className="text-sm font-semibold mb-2 text-gray-800">
+        {uploadedCandidatesCount}/{MAX_CANDIDATES} Resumes Uploaded
+    </p>
+    <div className="w-full bg-gray-200 rounded-full h-1.5">
+        {/* The main progress bar driven by the total uploaded candidates */}
+        <div 
+            className="bg-teal-500 h-1.5 rounded-full transition-all duration-500" 
+            style={{ width: `${(uploadedCandidatesCount / MAX_CANDIDATES) * 100}%` }}
+        ></div>
+    </div>
+    
+    {/* This is the temporary progress bar that shows DURING an upload animation */}
+    {isParsing && (
+        <div className="mt-4">
+            <p className="text-xs text-gray-500 mb-1">Processing {filesParsed}/{totalFiles} new resumes...</p>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                    // THIS IS THE KEY: Use the 'parsingProgress' state here
+                    style={{ width: `${parsingProgress}%` }}
+                ></div>
+            </div>
+        </div>
+    )}
+</div>
+                {/* --- Candidate Table Container --- */}
+                <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    {/* Table Header */}
+<div className="grid grid-cols-12 gap-4 px-6 py-4 bg-white text-left text-sm font-semibold text-gray-900">
+                        <div className="col-span-4">Name</div>
+                        <div className="col-span-4">Email</div>
+                        <div className="col-span-4">Phone Number</div>
+                        <div className="col-span-1"></div>
+                    </div>
+                    {/* Table Rows */}
+                    <div className="divide-y divide-gray-200">
+                        {candidates.map(candidate => (
+                            <div key={candidate.id} className="grid grid-cols-12 gap-4 px-6 py-4 text-sm items-center">
+                                {candidate.isEditing ? (
+                                    <>
+                                        <div className="col-span-4"><input type="text" placeholder="Name" value={candidate.name} onChange={(e) => handleCandidateChange(candidate.id, 'name', e.target.value)} className="w-full p-1 border rounded"/></div>
+                                        <div className="col-span-4"><input type="email" placeholder="Email" value={candidate.email} onChange={(e) => handleCandidateChange(candidate.id, 'email', e.target.value)} className="w-full p-1 border rounded"/></div>
+                                        <div className="col-span-3"><input type="tel" placeholder="Phone" value={candidate.phone} onChange={(e) => handleCandidateChange(candidate.id, 'phone', e.target.value)} className="w-full p-1 border rounded"/></div>
+                                        <div className="col-span-1 flex space-x-2 justify-end"><button onClick={() => handleSaveCandidate(candidate.id)} className="text-green-500 hover:text-green-700" title="Save" disabled={isSubmitting}><Icon name="check" className="font-bold"/></button><button onClick={() => handleDeleteCandidate(candidate.id)} className="text-red-500 hover:text-red-700" title="Cancel"><Icon name="close" className="font-bold"/></button></div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="col-span-4 font-medium text-gray-900">{candidate.name}</div>
+                                        <div className="col-span-4 text-gray-500">{candidate.email}</div>
+                                        <div className="col-span-3 text-gray-500">{candidate.phone}</div>
+                                        <div className="col-span-1 flex justify-end">
+                                         <button 
+                onClick={() => handleEditCandidate(candidate.id)} 
+                className="text-blue-500 hover:text-blue-700" 
+                title="Edit"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                    <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                </svg>
+            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* --- Add Candidate Button (now outside the table) --- */}
+                <button 
+                    onClick={handleAddCandidate} 
+                    className="mt-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg inline-flex items-center space-x-2 disabled:opacity-50"
+                    disabled={isSubmitting || isParsing}
+                >
+                    <Icon name="plus" className="font-bold"/>
+                    <span>Add Candidate Manually</span>
+                </button>
+
+                {/* --- Failed Files Message --- */}
+                {failedFiles.length > 0 && (
+                    <p className="mt-4 text-sm text-red-600">
+                        Failed to parse: {failedFiles.join(', ')}
+                    </p>
+                )}
+            </div>
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
 
         {/* Failed Files */}
         {failedFiles.length > 0 && (

@@ -163,6 +163,7 @@ const handleImportQuiz = async (testIdToImport) => {
       }
   }
 
+<<<<<<< HEAD
  return (
   <div className="min-h-screen bg-gray-50 ">
     <NavBar />
@@ -220,6 +221,39 @@ const handleImportQuiz = async (testIdToImport) => {
     </main>
   </div>
 );
+=======
+  return (
+     <div className="min-h-screen bg-gray-50 text-gray-600 font-sans">
+      <NavBar />
+     <ImportQuizModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportQuiz}
+      />
+      <main className="main-content">
+        <div className="stepper">
+          {/* Step 1: Test Title */}
+          <div className={`step ${currentStep > 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}`}>
+            <div className="step-circle">1</div><div className="step-label">Test Title</div>
+          </div>
+          <div className={`connector ${currentStep > 1 ? 'active' : ''}`}></div>
+          {/* Step 2: Set Interview questions (Covers our internal steps 2, 3, 4, and 5) */}
+          <div className={`step ${currentStep >= 6 ? 'completed' : ''} ${[2, 3, 4, 5].includes(currentStep) ? 'active' : ''}`}>
+            <div className="step-circle">2</div><div className="step-label">Set interview questions</div>
+          </div>
+          <div className={`connector ${currentStep >= 6 ? 'active' : ''}`}></div>
+          {/* Step 3: Import candidates (This will be the next page after publishing) */}
+          <div className="step"><div className="step-circle">3</div><div className="step-label">Import candidates</div></div>
+          <div className="connector"></div>
+          {/* Step 4: Send Interview invitation */}
+          <div className="step"><div className="step-circle">4</div><div className="step-label">Send Interview invitation</div></div>
+        </div>
+        
+        {isLoading ? <div style={{textAlign: 'center', padding: '50px'}}><h2>Publishing Quiz...</h2></div> : renderStep()}
+      </main>
+    </div>
+  );
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
 };
 
 export default QuizCreationFlow;

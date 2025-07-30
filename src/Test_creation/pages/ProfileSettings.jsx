@@ -126,7 +126,11 @@ const handleSubmit = async (e) => {
         const response = await fetch('http://localhost:8000/api/profile/settings/', {
             method: 'PUT',
             headers: {
+<<<<<<< HEAD
                 'Authorization':` Bearer ${token}`,
+=======
+                'Authorization': `Bearer ${token}`,
+>>>>>>> f9dc1d10788ea1b3da63b64560dc9e67850332cb
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
